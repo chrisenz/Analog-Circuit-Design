@@ -53,34 +53,53 @@ This symbol calls the following subcircuit:
 \* D=0.5
 
 .param Req={1/(fs*C)} Gmeq={1/Req}
+
 R1 1p1 gnd {Req}
+
 G1 gnd 1p1 1p2 gnd Laplace=Gmeq*exp(-s*D/fs)
+
 R2 1p2 gnd {Req}
+
 G2 gnd 1p2 1p1 gnd Laplace=Gmeq*exp(-s*(1-D)/fs)
+
 .ends SCG
 
 3) Switched-OPAMP
 
 ![Switched-OPAMP.](/img/SOPAMP.png)
 
-This symbol should be used for the OPAMP. This symbol calls the following subcircuit:
+This symbol should be used for the OPAMP.
+
+This symbol calls the following subcircuit:
 
 .subckt SOPAMP in+p1 in-p1 outp1 in+p2 in-p2 outp2
-* Parameters:
-* Av=1E5
+
+\* Parameters:
+
+\* Av=1E5
+
 E1 outp1 0 in+p1 in-p1 {Av}
+
 E2 outp2 0 in+p2 in-p2 {Av}
+
 .ends SOPAMP
 
 4) Switched-OPAMP with positive input grounded
 
 ![Grounded switched-OPAMP.](/img/SOPAMPG.png)
 
-This symbol should be used for OPAMPs that have the positive input connected to ground. This symbol calls the following subcircuit:
+This symbol should be used for OPAMPs that have the positive input connected to ground.
+
+This symbol calls the following subcircuit:
 
 .subckt SOPAMPG in+ in-p1 outp1 in-p2 outp2
-* Parameters:
-* Av=1E5
+
+\* Parameters:
+
+\* Av=1E5
+
 E1 outp1 0 in+ in-p1 {Av}
+
 E2 outp2 0 in+ in-p2 {Av}
+
 .ends SOPAMPG
