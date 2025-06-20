@@ -11,7 +11,7 @@ The library includes the following 4 symbols
 This symbol should used for all capacitors in the circuit whether it is switched or not. The reason we need to use this symbol also for capacitors which are not switched (like the integrating capacitor between the output and negative input of an OPAMP) is because the circuits during phases $\Phi_1$ and $\Phi_2$ should be fully separated and they are only coupled for ensuring the charge conservation between $\Phi_1$ and $\Phi_2$. This symbol calls the following subcircuit:
 
 .subckt SC 1p1 2p1 1p2 2p2
-* Parameters:
+\* Parameters:
 * C=1p
 * fs=1k
 * D=0.5
