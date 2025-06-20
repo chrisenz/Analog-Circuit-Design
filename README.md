@@ -1,2 +1,4 @@
 # Analog-Circuit-Design
-Collection of various Jupyter and Quarto notebooks related to the design of CMOS analog integrated circuits
+
+This repository presents various examples of analog circuit design. It currently includes:
+* AC simulation of switched-capacitor circuits using a standard Spice simulator such as LTSpice or ngspice.
