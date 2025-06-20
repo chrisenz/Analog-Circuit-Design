@@ -1,0 +1,62 @@
+Using SPARSE 1.3 as Direct Linear Solver
+Note: Starting dynamic gmin stepping
+Warning: Dynamic gmin stepping failed
+Note: Starting true gmin stepping
+Warning: True gmin stepping failed
+Note: Starting source stepping
+Warning: source stepping failed
+Note: Transient op started
+Error: Transient op failed, timestep too small
+
+
+Error: The operating point could not be simulated successfully.
+    Any of the following steps may fail.!
+
+
+Note: No compatibility mode selected!
+
+
+Circuit: * third-order sc lp filter
+
+Reducing trtol to 1 for xspice 'A' devices
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+
+AC operating point failed -
+
+Last Node Voltages
+------------------
+
+Node                                   Last Voltage        Previous Iter
+----                                   ------------        -------------
+n002                                   -1.93829e+28         -2.42287e+28 *
+n005                                    1.93829e+23          2.42287e+23 *
+n001                                   1.17895e+170         1.17895e+170
+n007                                  -1.17895e+165        -1.17895e+165
+in                                                0                    0
+n010                                    2.06833e+27          2.58541e+27 *
+n009                                   -2.83064e+27          -3.5383e+27 *
+n004                                    2.83064e+22           3.5383e+22 *
+n003                                   -2.06833e+22         -2.58541e+22 *
+out1                                   -1.23501e+26         -1.54376e+26 *
+n006                                    1.23501e+21          1.54376e+21 *
+out2                                    1.56667e+26          1.95834e+26 *
+n008                                   -1.56667e+21         -1.95834e+21 *
+e.xoa3.e2#branch                       -1.56667e+17         -1.95834e+17 *
+e.xoa3.e1#branch                       -8.03403e+21         -1.00425e+22 *
+e.xoa2.e2#branch        doAnalyses: AC:  Timestep too small; frequency = 0: cause unrecorded.
+
+
+ac simulation(s) aborted
+Warning from checkvalid: vector out1 is not available or has zero length.
+Error: RHS "vdb(out1)" invalid
+Warning from checkvalid: vector out2 is not available or has zero length.
+Error: RHS "vdb(out2)" invalid
+Error: no such vector Hph1magdB
+Note: No ".plot", ".print", or ".fourier" lines; no simulations run
+                -2.416e+158          -2.416e+158
+e.xoa2.e1#branch                        8.59175e+21          1.07397e+22 *
+e.xoa1.e2#branch                      -4.92977e+163        -4.92977e+163
+e.xoa1.e1#branch                        1.93829e+19          2.42287e+19 *
+vin#branch                             8.02278e+164         8.02278e+164
+

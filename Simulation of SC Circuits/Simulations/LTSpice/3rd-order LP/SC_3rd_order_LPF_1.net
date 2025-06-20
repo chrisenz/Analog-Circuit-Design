@@ -1,0 +1,18 @@
+* M:\My Cloud\Google Drive (EPFL)\Lectures\Postgraduated\Advanced Analog\Slides\SCF\Quarto\Simulation of SC Circuits\Simulations\LTSpice\3rd-order LP\SC_3rd_order_LPF.asc
+XOA1 0 N005 N002 N007 N001 SOPAMPG Av={A}
+XSC3 N005 N002 N007 N001 SC C={C1} fs={fs} D=0.5
+XSC2 in 0 N010 N007 SC C={C11} fs={fs} D=0.5
+XSC1 in 0 N001 N007 SC C={C12} fs={fs} D=0.5
+Vin in 0 AC=1
+XOA2 0 N004 N009 N003 N010 SOPAMPG Av={A}
+XSC5 N009 N004 N010 N003 SC C={C2} fs={fs} D=0.5
+XSC4 N004 out1 0 N001 SC C={C22} fs={fs} D=0.5
+XOA3 0 N006 out1 N008 out2 SOPAMPG Av={A}
+XSC7 N006 out1 N008 out2 SC C={C3} fs={fs} D=0.5
+XSC6 N009 0 out2 N008 SC C={C33} fs={fs} D=0.5
+.param A= 100k fs= 2Meg a11= 31.0497m a12= 31.0497m a2= 63.2046m a3= 31.0497m
+.param C1= 3.3p C11=a11*C1 C12=a12*C1 C2= 3.3p C22=a2*C2 C3= 3.3p C33=a3*C3
+.ac dec 101 1k 1MEG
+.lib analog.lib
+.backanno
+.end

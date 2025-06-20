@@ -1,0 +1,38 @@
+* Delay approximation
+
+Vin in 0 DC=0 AC=1
+
+A1 in out1 delay1
+.model delay1 s_xfer (
++ gain = 1.0
++ int_ic = [0 0 0] 
++ num_coeff = [{-DT} 2]
++ den_coeff = [{+DT} 2] )
+
+A2 in out2 delay2
+.model delay2 s_xfer (
++ gain = 1.0
++ int_ic = [0 0 0] 
++ num_coeff = [{DT^2} {-6*DT} 12]
++ den_coeff = [{DT^2} {+6*DT} 12] )
+
+A3 in out3 delay3
+.model delay3 s_xfer (
++ gain = 1.0
++ int_ic = [0 0 0] 
++ num_coeff = [{-DT^3} {12*DT^2} {-60*DT} 120]
++ den_coeff = [{DT^3} {12*DT^2} {60*DT} 120] )
+
+A4 in out4 delay4
+.model delay4 s_xfer (
++ gain = 1.0
++ int_ic = [0 0 0] 
++ num_coeff = [{DT^4} {-20*DT^3} {180*DT^2} {-840*DT} 1680]
++ den_coeff = [{DT^4} {20*DT^3} {180*DT^2} {840*DT} 1680] )
+
+A5 in out5 delay5
+.model delay5 s_xfer (
++ gain = 1.0
++ int_ic = [0 0 0] 
++ num_coeff = [{-DT^5} {30*DT^4} {-420*DT^3} {3360*DT^2} {-15120*DT} 30240]
++ den_coeff = [{DT^5} {30*DT^4} {420*DT^3} {3360*DT^2} {15120*DT} 30240] )

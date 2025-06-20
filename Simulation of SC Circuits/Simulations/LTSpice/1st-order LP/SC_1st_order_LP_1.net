@@ -1,0 +1,12 @@
+* M:\My Cloud\Google Drive (EPFL)\Lectures\Postgraduated\Advanced Analog\Slides\SCF\Quarto\Simulation of SC Circuits\Simulations\LTSpice\1st-order LP\SC_1st_order_LP.asc
+Vin in 0 AC=1
+XOA1 0 in1 out1 in2 out2 SOPAMPG Av={A}
+XSC2 0 in in2 0 SC C={C2} fs={fck} D=0.5
+XSC1 out1 in1 out2 in2 SC C={C} fs={fck} D=0.5
+XSC3 0 0 out2 in2 SC C={C3} fs={fck} D=0.5
+.param A=1E5 fck=200k
+.param C=1p alpha=0.031416 C2=alpha*C C3=alpha*C
+.ac dec 100 10 100k
+.lib analog.lib
+.backanno
+.end

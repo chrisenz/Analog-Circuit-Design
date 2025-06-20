@@ -1,0 +1,28 @@
+* Delay approximation
+
+.param fs=1 T={1/fs} D=0.5 DT={D*T}
+.include delay.net ; Circuit netlist
+
+.control
+ save v(out1)
+ save v(out2)
+ save v(out3)
+ save v(out4)
+ save v(out5)
+* reset all
+ ac dec 200 0.1 10
+ let H1magdB=vdb(out1) 
+ let H1delay=group_delay(out1)
+ let H2magdB=vdb(out2)
+ let H2delay=group_delay(out2)
+ let H3magdB=vdb(out3)
+ let H3delay=group_delay(out3)
+ let H4magdB=vdb(out4)
+ let H4delay=group_delay(out4)
+ let H5magdB=vdb(out5)
+ let H5delay=group_delay(out5)
+ set wr_singlescale
+ set wr_vecnames
+ wrdata $inputdir/delay.ac.dat H1magdB H1delay H2magdB H2delay H3magdB H3delay H4magdB H4delay H5magdB H5delay
+.endc
+.end

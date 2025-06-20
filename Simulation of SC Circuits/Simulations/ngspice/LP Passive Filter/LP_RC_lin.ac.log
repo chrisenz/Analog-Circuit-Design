@@ -1,0 +1,47 @@
+Using SPARSE 1.3 as Direct Linear Solver
+Note: Starting dynamic gmin stepping
+Warning: Dynamic gmin stepping failed
+Note: Starting true gmin stepping
+Warning: True gmin stepping failed
+Note: Starting source stepping
+Warning: source stepping failed
+Note: Transient op started
+Error: Transient op failed, timestep too small
+
+
+Error: The operating point could not be simulated successfully.
+    Any of the following steps may fail.!
+
+
+Note: No compatibility mode selected!
+
+
+Circuit: * first-order passive sc lp filter
+
+Reducing trtol to 1 for xspice 'A' devices
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+
+AC operating point failed -
+
+Last Node Voltages
+------------------
+
+Node                                   Last Voltage        Previous Iter
+----                                   ------------        -------------
+in                                                0                    0
+outct                                 doAnalyses: AC:  Timestep too small; frequency = 0: cause unrecorded.
+
+
+ac simulation(s) aborted
+Warning from checkvalid: vector outct is not available or has zero length.
+Error: RHS "vdb(outct)" invalid
+Warning from checkvalid: vector outsc is not available or has zero length.
+Error: RHS "vdb(outsc)" invalid
+Error: no such vector HctmagdB
+Note: No ".plot", ".print", or ".fourier" lines; no simulations run
+    -nan(ind)            -nan(ind)
+1                                      -1.82372e+28         -2.27966e+28 *
+outsc                                  7.56083e+254         7.56083e+254
+vin#branch                                -nan(ind)            -nan(ind)
+

@@ -1,0 +1,19 @@
+* Third-order SC LP Filter
+.include SC_3rd_order_LP.net ; Circuit with 5th-order approximation of the delay element
+
+.param A=1E5 fs=2MEG T={1/fs} D=0.5 DT={D*T}
+.param alpha11=0.031049655 alpha12=0.031049655 alpha2=0.063204606 alpha3=0.031049655
+.param C=3.3p C1={C} C11={alpha11*C1} C12={alpha12*C1} C2={C} C22={alpha2*C2} C3={C} C33={alpha3*C3}
+
+.control
+ save v(out1)
+ save v(out2)
+* reset all
+ ac dec 333 1k 1MEG
+ let Hph1magdB=vdb(out1) 
+ let Hph2magdB=vdb(out2)
+ set wr_singlescale
+ set wr_vecnames
+ wrdata $inputdir/SC_3rd_order_LP.ac.dat Hph1magdB Hph2magdB
+.endc
+.end

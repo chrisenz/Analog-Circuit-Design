@@ -1,0 +1,38 @@
+* First-order non-inverting SC LP Filter
+XOA1 0 in1 out1 in2 out2 SOPAMPG Av_val={A}
+XSC2 0 in in2 0 SC C_val={C2} fs_val={fck} D_val={D}
+XSC1 out1 in1 out2 in2 SC C_val={C} fs_val={fck} D_val={D}
+XSC3 0 0 out2 in2 SC C_val={C3} fs_val={fck} D_val={D}
+Vin in 0 DC 0 AC 1
+
+.subckt SC 1p1 2p1 1p2 2p2 C_val=1p fs_val=1MEG D_val=0.5
+* SC capacitors of value C_val with sampling frequency fs_val
+* The circuit uses a transconductor of value Gmeq and delayed by DT=D*T
+* Because LAPLACE is not available in ngspice we use XSpice s_xfer
+* The latter implements a transfer function corresponding to a rational function in s
+* The function below implements a 5th-order approximation of a constant delay exp(-s*DT)
+.param Req={1/(fs_val*C_val)} Gmeq={1/Req}
+.model delay1 s_xfer (
++ gain = {Gmeq}
++ int_ic = [0 0 0] 
++ num_coeff = [-1 30 -420 3360 -15120 30240]
++ den_coeff = [1 30 420 3360 15120 30240]
++ denormalized_freq={fs_val/D_val} )
+.model delay2 s_xfer (
++ gain = {Gmeq}
++ int_ic = [0 0 0] 
++ num_coeff = [-1 30 -420 3360 -15120 30240]
++ den_coeff = [1 30 420 3360 15120 30240]
++ denormalized_freq={fs_val/(1-D_val)} )
+R1 1p1 2p1 {Req}
+A1 %vd 1p2 2p2 %id 2p1 1p1 delay1
+R2 1p2 2p2 {Req}
+A2 %vd 1p1 2p1 %id 2p2 1p2 delay2
+.ends SC
+
+.subckt SOPAMPG in+ in-p1 outp1 in-p2 outp2 Av_val=1e5
+E1 outp1 0 in+ in-p1 {Av_val}
+Ro1 outp1 0 1G
+E2 outp2 0 in+ in-p2 {Av_val}
+Ro2 outp2 0 1G
+.ends SOPAMPG

@@ -1,0 +1,24 @@
+* First-order passive SC LP Filter
+.include LP_RC_all.net ; Circuit with 5th-order approximation of the delay element
+.param fc=1k fs=100k T={1/fs} D=0.5 DT={D*T} C2=1p pi=3.14159265359 C1={2*pi*fc/fs*C2} R={1/(2*pi*C2*fc)}
+
+.control
+ save v(outct)
+ save v(outsc1)
+ save v(outsc2)
+ save v(outsc3)
+ save v(outsc4)
+ save v(outsc5)
+* reset all
+ ac lin 1000 1 200k
+ let HctmagdB=vdb(outct) 
+ let Hsc1magdB=vdb(outsc1)
+ let Hsc2magdB=vdb(outsc2)
+ let Hsc3magdB=vdb(outsc3)
+ let Hsc4magdB=vdb(outsc4)
+ let Hsc5magdB=vdb(outsc5)
+ set wr_singlescale
+ set wr_vecnames
+ wrdata $inputdir/LP_RC_lin_all.ac.dat HctmagdB Hsc1magdB Hsc2magdB Hsc3magdB Hsc4magdB Hsc5magdB
+.endc
+.end

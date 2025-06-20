@@ -1,0 +1,151 @@
+* LP passive RC circuit
+
+* Continuous-time LP RC circuit
+Vin in 0 DC 0 AC 1
+R1 in outct {R}
+C2 outct 0 {C2}
+* SC circuit with 1st-order delay approximation
+XSC11 in 1 0 SCG1 C_val={C1} fs_val={fs} D_val={D}
+XSC12 outsc1 1 0 SCG1 C_val={C2} fs_val={fs} D_val={D}
+
+* SC circuit with 2nd-order delay approximation
+XSC21 in 2 0 SCG2 C_val={C1} fs_val={fs} D_val={D}
+XSC22 outsc2 2 0 SCG2 C_val={C2} fs_val={fs} D_val={D}
+
+* SC circuit with 3rd-order delay approximation
+XSC31 in 3 0 SCG3 C_val={C1} fs_val={fs} D_val={D}
+XSC32 outsc3 3 0 SCG3 C_val={C2} fs_val={fs} D_val={D}
+
+* SC circuit with 4th-order delay approximation
+XSC41 in 4 0 SCG4 C_val={C1} fs_val={fs} D_val={D}
+XSC42 outsc4 4 0 SCG4 C_val={C2} fs_val={fs} D_val={D}
+
+* SC circuit with 5th-order delay approximation
+XSC51 in 5 0 SCG5 C_val={C1} fs_val={fs} D_val={D}
+XSC52 outsc5 5 0 SCG5 C_val={C2} fs_val={fs} D_val={D}
+
+.subckt SCG1 1p1 1p2 gnd C_val=1p fs_val=1MEG D_val=0.5
+* SC capacitors of value C_val with sampling frequency fs_val
+* The circuit uses a transconductor of value Gmeq and delayed by DT=D*T
+* Because LAPLACE is not available in ngspice we use XSpice s_xfer
+* The latter implements a transfer function corresponding to a rational function in s
+* The function below implements a 5th-order approximation of a constant delay exp(-s*DT)
+.param Req={1/(fs_val*C_val)} Gmeq={1/Req}
+.model delay1 s_xfer (
++ gain = {Gmeq}
++ int_ic = [0 0 0]
++ num_coeff = [-1 2]
++ den_coeff = [1 2]
++ denormalized_freq={fs_val/D_val} )
+.model delay2 s_xfer (
++ gain = {Gmeq}
++ int_ic = [0 0 0] 
++ num_coeff = [-1 2]
++ den_coeff = [1 2]
++ denormalized_freq={fs_val/(1-D_val)} )
+R1 1p1 gnd {Req}
+A1 %vd 1p2 gnd %id gnd 1p1 delay1
+R2 1p2 gnd {Req}
+A2 %vd 1p1 gnd %id gnd 1p2 delay2
+.ends SCG1
+
+.subckt SCG2 1p1 1p2 gnd C_val=1p fs_val=1MEG D_val=0.5
+* SC capacitors of value C_val with sampling frequency fs_val
+* The circuit uses a transconductor of value Gmeq and delayed by DT=D*T
+* Because LAPLACE is not available in ngspice we use XSpice s_xfer
+* The latter implements a transfer function corresponding to a rational function in s
+* The function below implements a 5th-order approximation of a constant delay exp(-s*DT)
+.param Req={1/(fs_val*C_val)} Gmeq={1/Req}
+.model delay1 s_xfer (
++ gain = {Gmeq}
++ int_ic = [0 0 0]
++ num_coeff = [1 -6 12]
++ den_coeff = [1 6 12]
++ denormalized_freq={fs_val/D_val} )
+.model delay2 s_xfer (
++ gain = {Gmeq}
++ int_ic = [0 0 0] 
++ num_coeff = [1 -6 12]
++ den_coeff = [1 6 12]
++ denormalized_freq={fs_val/(1-D_val)} )
+R1 1p1 gnd {Req}
+A1 %vd 1p2 gnd %id gnd 1p1 delay1
+R2 1p2 gnd {Req}
+A2 %vd 1p1 gnd %id gnd 1p2 delay2
+.ends SCG2
+
+.subckt SCG3 1p1 1p2 gnd C_val=1p fs_val=1MEG D_val=0.5
+* SC capacitors of value C_val with sampling frequency fs_val
+* The circuit uses a transconductor of value Gmeq and delayed by DT=D*T
+* Because LAPLACE is not available in ngspice we use XSpice s_xfer
+* The latter implements a transfer function corresponding to a rational function in s
+* The function below implements a 5th-order approximation of a constant delay exp(-s*DT)
+.param Req={1/(fs_val*C_val)} Gmeq={1/Req}
+.model delay1 s_xfer (
++ gain = {Gmeq}
++ int_ic = [0 0 0]
++ num_coeff = [-1 12 -60 120]
++ den_coeff = [1 12 60 120]
++ denormalized_freq={fs_val/D_val} )
+.model delay2 s_xfer (
++ gain = {Gmeq}
++ int_ic = [0 0 0] 
++ num_coeff = [-1 12 -60 120]
++ den_coeff = [1 12 60 120]
++ denormalized_freq={fs_val/(1-D_val)} )
+R1 1p1 gnd {Req}
+A1 %vd 1p2 gnd %id gnd 1p1 delay1
+R2 1p2 gnd {Req}
+A2 %vd 1p1 gnd %id gnd 1p2 delay2
+.ends SCG3
+
+.subckt SCG4 1p1 1p2 gnd C_val=1p fs_val=1MEG D_val=0.5
+* SC capacitors of value C_val with sampling frequency fs_val
+* The circuit uses a transconductor of value Gmeq and delayed by DT=D*T
+* Because LAPLACE is not available in ngspice we use XSpice s_xfer
+* The latter implements a transfer function corresponding to a rational function in s
+* The function below implements a 5th-order approximation of a constant delay exp(-s*DT)
+.param Req={1/(fs_val*C_val)} Gmeq={1/Req}
+.model delay1 s_xfer (
++ gain = {Gmeq}
++ int_ic = [0 0 0]
++ num_coeff = [1 -20 180 -840 1680]
++ den_coeff = [1 20 180 840 1680]
++ denormalized_freq={fs_val/D_val} )
+.model delay2 s_xfer (
++ gain = {Gmeq}
++ int_ic = [0 0 0] 
++ num_coeff = [1 -20 180 -840 1680]
++ den_coeff = [1 20 180 840 1680]
++ denormalized_freq={fs_val/(1-D_val)} )
+R1 1p1 gnd {Req}
+A1 %vd 1p2 gnd %id gnd 1p1 delay1
+R2 1p2 gnd {Req}
+A2 %vd 1p1 gnd %id gnd 1p2 delay2
+.ends SCG4
+
+.subckt SCG5 1p1 1p2 gnd C_val=1p fs_val=1MEG D_val=0.5
+* SC capacitors of value C_val with sampling frequency fs_val
+* The circuit uses a transconductor of value Gmeq and delayed by DT=D*T
+* Because LAPLACE is not available in ngspice we use XSpice s_xfer
+* The latter implements a transfer function corresponding to a rational function in s
+* The function below implements a 5th-order approximation of a constant delay exp(-s*DT)
+.param Req={1/(fs_val*C_val)} Gmeq={1/Req}
+.model delay1 s_xfer (
++ gain = {Gmeq}
++ int_ic = [0 0 0] 
++ num_coeff = [-1 30 -420 3360 -15120 30240]
++ den_coeff = [1 30 420 3360 15120 30240]
++ denormalized_freq={fs_val/D_val} )
+.model delay2 s_xfer (
++ gain = {Gmeq}
++ int_ic = [0 0 0] 
++ num_coeff = [-1 30 -420 3360 -15120 30240]
++ den_coeff = [1 30 420 3360 15120 30240]
++ denormalized_freq={fs_val/(1-D_val)} )
+R1 1p1 gnd {Req}
+A1 %vd 1p2 gnd %id gnd 1p1 delay1
+R2 1p2 gnd {Req}
+A2 %vd 1p1 gnd %id gnd 1p2 delay2
+.ends SCG5
+

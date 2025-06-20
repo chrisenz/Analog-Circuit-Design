@@ -1,0 +1,11 @@
+* M:\My Cloud\Google Drive (EPFL)\Lectures\Postgraduated\Advanced Analog\Slides\SCF\Quarto\Simulation of SC Circuits\Simulations\LTSpice\LP Passive Filter\LP_RC_log.asc
+Vin in 0 AC 1
+C2 0 outct {C2}
+R1 outct in {R}
+XU2 in 1 0 SCG C={C1} fs={fs} D=0.5
+XU1 outsc 1 0 SCG C={C2} fs={fs} D=0.5
+.param fs=100k fc=1k C2=1p C1=2*pi*fc/fs*C2 R=1/(2*pi*C2*fc)
+.ac dec 100 10 100k
+.lib analog.lib
+.backanno
+.end

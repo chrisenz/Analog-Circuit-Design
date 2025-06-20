@@ -1,0 +1,21 @@
+Circuit: * L:\My Drive\Lectures\Master\Fundamentals of Analog VLSI Design\2024\Jupyter Notebooks\SC Filters\Simulations\LTSpice\1st-order LP\SC_1st_order_LP.asc
+
+Ignoring empty pin current: Ix(oa1:in+)
+Ignoring empty pin current: Ix(oa1:in-p1)
+Ignoring empty pin current: Ix(oa1:in-p2)
+
+Date: Thu Dec 19 11:34:17 2024
+Total elapsed time: 0.143 seconds.
+
+tnom = 27
+temp = 27
+method = trap
+totiter = 0
+traniter = 0
+tranpoints = 0
+accept = 0
+rejected = 0
+matrix size = 8
+fillins = 1
+solver = Normal
+

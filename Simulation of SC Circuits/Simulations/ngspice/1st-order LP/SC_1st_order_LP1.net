@@ -1,0 +1,35 @@
+* First-order non-inverting SC LP Filter
+XOA1 0 in1 out1 in2 out2 SOPAMPG Av_val={A}
+XSC2 0 in in2 0 SC C_val={C2} fs_val={fck} DT_val={DT}
+XSC1 out1 in1 out2 in2 SC C_val={C} fs_val={fck} DT_val={DT}
+XSC3 0 0 out2 in2 SC C_val={C3} fs_val={fck} DT_val={DT}
+Vin in 0 DC=0 AC=1
+
+.model delay s_xfer (
++ gain = 1.0
++ int_ic = [0 0 0] 
++ num_coeff = [{-DT} 2]
++ den_coeff = [{+DT} 2] )
+
+.subckt SC 1p1 2p1 1p2 2p2 C_val=1p fs_val=1MEG DT_val=0.5
+.param Req={1/(fs_val*C_val)} Gmeq={1/Req}
+R1 1p1 2p1 {Req}
+E1 3p1 0 1p1 2p1 1
+A1 3p1 4p1 delay
+Rdum1 4p1 0 1
+G1 2p1 1p1 4p2 0 {Gmeq}
+R2 1p2 2p2 {Req}
+E2 3p2 0 1p2 2p2 1
+A2 3p2 4p2 delay
+Rdum2 4p2 0 1
+G2 2p2 1p2 4p1 0 {Gmeq}
+.ends SC
+
+.subckt SOPAMPG in+ in-p1 outp1 in-p2 outp2 Av_val=1e5
+E1 outp1 0 in+ in-p1 {Av_val}
+Ro1 outp1 0 1G
+E2 outp2 0 in+ in-p2 {Av_val}
+Ro2 outp2 0 1G
+.ends SOPAMPG
+
+

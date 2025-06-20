@@ -1,0 +1,28 @@
+* M:\My Cloud\Google Drive (EPFL)\Lectures\Postgraduated\Advanced Analog\Slides\SCF\Quarto\Simulation of SC Circuits\Simulations\LTSpice\Delay\Delay.asc
+V1 in 0 AC=1
+E0 out0 0 in 0 Laplace=exp(-s*DT)
+R0 out0 0 1
+E1 out1 0 in 0 Laplace=(n11*DT*s+n10)/(d11*DT*s+d10)
+R1 out1 0 1
+E2 out2 0 in 0 Laplace=(n22*(DT*s)^2+n21*DT*s+n20)/(d22*(DT*s)^2+d21*DT*s+d20)
+R2 out2 0 1
+E3 out3 0 in 0 Laplace=(n33*(DT*s)^3+n32*(DT*s)^2+n31*DT*s+n30)/(d33*(DT*s)^3+d32*(DT*s)^2+d31*DT*s+d30)
+R3 out3 0 1
+E4 out4 0 in 0 Laplace=(n44*(DT*s)^4+n43*(DT*s)^3+n42*(DT*s)^2+n41*DT*s+n40)/(d44*(DT*s)^4+d43*(DT*s)^3+d42*(DT*s)^2+d41*DT*s+d40)
+R4 out4 0 1
+E5 out5 0 in 0 Laplace=(n55*(DT*s)^5+n54*(DT*s)^4+n53*(DT*s)^3+n52*(DT*s)^2+n51*DT*s+n50)/(d55*(DT*s)^5+d54*(DT*s)^4+d53*(DT*s)^3+d52*(DT*s)^2+d51*DT*s+d50)
+R5 out5 0 1
+.param fs=1 T={1/fs} D=0.5 DT={D*T}
+.ac dec 200 0.1 10
+.param n10=2 n11=-1
+.param d10=2 d11=1
+.param n20=12 n21=-6 n22=1
+.param d20=12 d21=6 d22=1
+.param n30=120 n31=-60 n32=12 n33=-1
+.param d30=120 d31=60 d32=12 d33=1
+.param n40=1680 n41=-840 n42=180 n43=-20 n44=1
+.param d40=1680 d41=840 d42=180 d43=20 d44=1
+.param n50=30240 n51=-15120 n52=3360 n53=-420 n54=30 n55=-1
+.param d50=30240 d51=15120 d52=3360 d53=420 d54=30 d55=1
+.backanno
+.end

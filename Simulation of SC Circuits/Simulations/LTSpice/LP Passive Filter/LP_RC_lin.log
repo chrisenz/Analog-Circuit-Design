@@ -1,0 +1,18 @@
+Circuit: * L:\My Drive\Lectures\Master\Fundamentals of Analog VLSI Design\2024\Jupyter Notebooks\Simulation of SC Circuits\Simulations\LTSpice\LP Passive Filter\LP_RC_lin.asc
+
+
+Date: Tue Dec 24 11:58:58 2024
+Total elapsed time: 0.111 seconds.
+
+tnom = 27
+temp = 27
+method = trap
+totiter = 0
+traniter = 0
+tranpoints = 0
+accept = 0
+rejected = 0
+matrix size = 5
+fillins = 0
+solver = Normal
+
