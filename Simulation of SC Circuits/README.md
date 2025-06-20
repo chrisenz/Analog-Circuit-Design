@@ -12,8 +12,7 @@ This symbol should used for all capacitors in the circuit whether it is switched
 
 This symbol calls the following subcircuit:
 
-.subckt SC 1p1 2p1 1p2 2p2
-
+.subckt SC 1p1 2p1 1p2 2p2\\
 \* Parameters:
 
 \* C=1p
