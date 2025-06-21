@@ -4,7 +4,7 @@ This directory contains all the tools to do AC simulation of switched-capacitor 
 
 The library includes the following 4 symbols:
 
-1) Switched-capacitor
+## Switched-capacitor
 
 ![Switched-capacitor.](/img/SC.png)
 
@@ -26,7 +26,7 @@ G2 2p2 1p2 1p1 2p1 Laplace=Gmeq*exp(-s*(1-D)/fs)\
 
 This subcircuit corresponds to the two port network described in the ![quarto pdf file](/Simulation%20of%20SC%20Circuits/SCC_simulation.pdf). It couples phase $\Phi_1$ and $\Phi_2$ for ensuring charge conservation.
 
-2) Switched-capacitor with one side grounded
+## Switched-capacitor with one side grounded
 
 ![Grounded switched-capacitor.](/img/SCG.png)
 
@@ -44,7 +44,7 @@ R2 1p2 gnd {Req}\
 G2 gnd 1p2 1p1 gnd Laplace=Gmeq*exp(-s*(1-D)/fs)\
 .ends SCG
 
-3) Switched-OPAMP
+## Switched-OPAMP
 
 ![Switched-OPAMP.](/img/SOPAMP.png)
 
@@ -57,7 +57,7 @@ E1 outp1 0 in+p1 in-p1 {Av}\
 E2 outp2 0 in+p2 in-p2 {Av}\
 .ends SOPAMP
 
-4) Switched-OPAMP with positive input grounded
+## Switched-OPAMP with positive input grounded
 
 ![Grounded switched-OPAMP.](/img/SOPAMPG.png)
 
