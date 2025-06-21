@@ -33,16 +33,16 @@ This subcircuit corresponds to the two port network described in the ![quarto pd
 
 This symbol should be used for capacitors (switched or not) that have one node connected to ground. The ground is the only node that is common to the circuit of phase $\Phi_1$ and the circuit of phase $\Phi_2$. It calls the following subcircuit:
 
-.subckt SCG 1p1 1p2 gnd\
-\* Parameters:\
-\* C=1p\
-\* fs=1k\
-\* D=0.5\
-.param Req={1/(fs*C)} Gmeq={1/Req}\
-R1 1p1 gnd {Req}\
-G1 gnd 1p1 1p2 gnd Laplace=Gmeq*exp(-s*D/fs)\
-R2 1p2 gnd {Req}\
-G2 gnd 1p2 1p1 gnd Laplace=Gmeq*exp(-s*(1-D)/fs)\
+.subckt SCG 1p1 1p2 gnd  
+\* Parameters:  
+\* C=1p  
+\* fs=1k  
+\* D=0.5  
+.param Req={1/(fs*C)} Gmeq={1/Req}  
+R1 1p1 gnd {Req}  
+G1 gnd 1p1 1p2 gnd Laplace=Gmeq*exp(-s*D/fs)  
+R2 1p2 gnd {Req}  
+G2 gnd 1p2 1p1 gnd Laplace=Gmeq*exp(-s*(1-D)/fs)  
 .ends SCG
 
 ### Switched-OPAMP
@@ -51,11 +51,11 @@ G2 gnd 1p2 1p1 gnd Laplace=Gmeq*exp(-s*(1-D)/fs)\
 
 This symbol should be used for the OPAMP. It calls the following subcircuit:
 
-.subckt SOPAMP in+p1 in-p1 outp1 in+p2 in-p2 outp2\
-\* Parameters:\
-\* Av=1E5\
-E1 outp1 0 in+p1 in-p1 {Av}\
-E2 outp2 0 in+p2 in-p2 {Av}\
+.subckt SOPAMP in+p1 in-p1 outp1 in+p2 in-p2 outp2  
+\* Parameters:  
+\* Av=1E5  
+E1 outp1 0 in+p1 in-p1 {Av}  
+E2 outp2 0 in+p2 in-p2 {Av}  
 .ends SOPAMP
 
 ### Switched-OPAMP with positive input grounded
@@ -64,9 +64,9 @@ E2 outp2 0 in+p2 in-p2 {Av}\
 
 This symbol should be used for OPAMPs that have the positive input connected to ground. It calls the following subcircuit:
 
-.subckt SOPAMPG in+ in-p1 outp1 in-p2 outp2\
-\* Parameters:\
-\* Av=1E5\
-E1 outp1 0 in+ in-p1 {Av}\
-E2 outp2 0 in+ in-p2 {Av}\
+.subckt SOPAMPG in+ in-p1 outp1 in-p2 outp2  
+\* Parameters:  
+\* Av=1E5  
+E1 outp1 0 in+ in-p1 {Av}  
+E2 outp2 0 in+ in-p2 {Av}  
 .ends SOPAMPG
