@@ -1,6 +1,6 @@
 # AC simulation of SC circuits with a standard Spice simulator
 
-This directory contains all the tools to do AC simulation of switched-capacitor (SC) circuits with LTSpice or ngspice. The quarto notebook explains the theory behind this technique and gives sevral SC filter examples. The LTSpice examples includes the schematic which can be captured in LTSpice using the ![dedicated library](Simulation of SC Circuits/lib/LTSpice). Note that this library also incldes other models, symbols and subcircuits than the ones discussed below. The LTSpice library contains three directories: cmp, sub and sym. In order for the LTSpice examples to work, for Windows 11, you should place the lib directory in the user directory of LTSpice, for example C:\Users\<your name>\Documents\LTSpice.
+This directory contains all the tools to do AC simulation of switched-capacitor (SC) circuits with LTSpice or ngspice. The quarto notebook explains the theory behind this technique and gives sevral SC filter examples. The LTSpice examples includes the schematic which can be captured in LTSpice using the ![dedicated library](/Simulation%20of%20SC%20Circuits/lib/LTSpice). Note that this library also incldes other models, symbols and subcircuits than the ones discussed below. The LTSpice library contains three directories: cmp, sub and sym. In order for the LTSpice examples to work, for Windows 11, you should place the lib directory in the user directory of LTSpice, for example C:\Users\<your name>\Documents\LTSpice.
 
 The library includes the following 4 symbols:
 
@@ -28,68 +28,42 @@ G2 2p2 1p2 1p1 2p1 Laplace=Gmeq*exp(-s*(1-D)/fs)\
 
 ![Grounded switched-capacitor.](/img/SCG.png)
 
-This symbol should be used for capacitors (switched or not) that have one node connected to ground.
+This symbol should be used for capacitors (switched or not) that have one node connected to ground. It calls the following subcircuit:
 
-This symbol calls the following subcircuit:
-
-.subckt SCG 1p1 1p2 gnd
-
-\* Parameters:
-
-\* C=1p
-
-\* fs=1k
-
-\* D=0.5
-
-.param Req={1/(fs*C)} Gmeq={1/Req}
-
-R1 1p1 gnd {Req}
-
-G1 gnd 1p1 1p2 gnd Laplace=Gmeq*exp(-s*D/fs)
-
-R2 1p2 gnd {Req}
-
-G2 gnd 1p2 1p1 gnd Laplace=Gmeq*exp(-s*(1-D)/fs)
-
+.subckt SCG 1p1 1p2 gnd\
+\* Parameters:\
+\* C=1p\
+\* fs=1k\
+\* D=0.5\
+.param Req={1/(fs*C)} Gmeq={1/Req}\
+R1 1p1 gnd {Req}\
+G1 gnd 1p1 1p2 gnd Laplace=Gmeq*exp(-s*D/fs)\
+R2 1p2 gnd {Req}\
+G2 gnd 1p2 1p1 gnd Laplace=Gmeq*exp(-s*(1-D)/fs)\
 .ends SCG
 
 3) Switched-OPAMP
 
 ![Switched-OPAMP.](/img/SOPAMP.png)
 
-This symbol should be used for the OPAMP.
+This symbol should be used for the OPAMP. It calls the following subcircuit:
 
-This symbol calls the following subcircuit:
-
-.subckt SOPAMP in+p1 in-p1 outp1 in+p2 in-p2 outp2
-
-\* Parameters:
-
-\* Av=1E5
-
-E1 outp1 0 in+p1 in-p1 {Av}
-
-E2 outp2 0 in+p2 in-p2 {Av}
-
+.subckt SOPAMP in+p1 in-p1 outp1 in+p2 in-p2 outp2\
+\* Parameters:\
+\* Av=1E5\
+E1 outp1 0 in+p1 in-p1 {Av}\
+E2 outp2 0 in+p2 in-p2 {Av}\
 .ends SOPAMP
 
 4) Switched-OPAMP with positive input grounded
 
 ![Grounded switched-OPAMP.](/img/SOPAMPG.png)
 
-This symbol should be used for OPAMPs that have the positive input connected to ground.
+This symbol should be used for OPAMPs that have the positive input connected to ground. It calls the following subcircuit:
 
-This symbol calls the following subcircuit:
-
-.subckt SOPAMPG in+ in-p1 outp1 in-p2 outp2
-
-\* Parameters:
-
-\* Av=1E5
-
-E1 outp1 0 in+ in-p1 {Av}
-
-E2 outp2 0 in+ in-p2 {Av}
-
+.subckt SOPAMPG in+ in-p1 outp1 in-p2 outp2\
+\* Parameters:\
+\* Av=1E5\
+E1 outp1 0 in+ in-p1 {Av}\
+E2 outp2 0 in+ in-p2 {Av}\
 .ends SOPAMPG
