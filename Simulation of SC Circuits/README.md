@@ -8,7 +8,7 @@ The library includes the following 4 symbols:
 
 ![Switched-capacitor.](/img/SC.png)
 
-This symbol should used for all capacitors in the circuit whether it is switched or not. The reason we need to use this symbol also for capacitors which are not switched (like the integrating capacitor between the output and negative input of an OPAMP) is because the circuits during phases $\Phi_1$ and $\Phi_2$ should be fully separated and they are only coupled for ensuring the charge conservation between $\Phi_1$ and $\Phi_2$.
+This symbol should be used for all capacitors in the circuit whether it is switched or not. The reason we need to use this symbol also for capacitors which are not switched (like the integrating capacitor between the output and negative input of an OPAMP) is because the circuits during phases $\Phi_1$ and $\Phi_2$ should be fully separated and they are only coupled for ensuring the charge conservation between phase $\Phi_1$ and $\Phi_2$.
 
 This symbol calls the following subcircuit:
 
@@ -23,6 +23,8 @@ G1 2p1 1p1 1p2 2p2 Laplace=Gmeq*exp(-s*D/fs)\
 R2 1p2 2p2 {Req}\
 G2 2p2 1p2 1p1 2p1 Laplace=Gmeq*exp(-s*(1-D)/fs)\
 .ends SC
+
+This subcircuit corresponds to the two port network described in the ![quarto pdf file](/Simulation%20of%20SC%20Circuits/SCC_simulation.pdf). It couples phase $\Phi_1$ and $\Phi_2$ for ensuring charge conservation.
 
 2) Switched-capacitor with one side gounded
 
