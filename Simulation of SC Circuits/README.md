@@ -26,11 +26,11 @@ G2 2p2 1p2 1p1 2p1 Laplace=Gmeq*exp(-s*(1-D)/fs)\
 
 This subcircuit corresponds to the two port network described in the ![quarto pdf file](/Simulation%20of%20SC%20Circuits/SCC_simulation.pdf). It couples phase $\Phi_1$ and $\Phi_2$ for ensuring charge conservation.
 
-2) Switched-capacitor with one side gounded
+2) Switched-capacitor with one side grounded
 
 ![Grounded switched-capacitor.](/img/SCG.png)
 
-This symbol should be used for capacitors (switched or not) that have one node connected to ground. It calls the following subcircuit:
+This symbol should be used for capacitors (switched or not) that have one node connected to ground. The ground is the only node that is common to the circuit of phase $\Phi_1$ and the circuit of phase $\Phi_2$. It calls the following subcircuit:
 
 .subckt SCG 1p1 1p2 gnd\
 \* Parameters:\
