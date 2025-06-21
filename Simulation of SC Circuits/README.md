@@ -1,8 +1,8 @@
 # AC simulation of SC circuits with a standard Spice simulator
 
-This directory contains all the tools to do AC simulation of switched-capacitor (SC) circuits with LTSpice or ngspice. The quarto notebook explains the theory behind this technique and gives sevral SC filter examples. The LTSpice examples includes the schematic which can be captured in LTSpice using the dedicated library.
+This directory contains all the tools to do AC simulation of switched-capacitor (SC) circuits with LTSpice or ngspice. The quarto notebook explains the theory behind this technique and gives sevral SC filter examples. The LTSpice examples includes the schematic which can be captured in LTSpice using the ![dedicated library](Simulation of SC Circuits/lib/LTSpice). Note that this library also incldes other models, symbols and subcircuits than the ones discussed below. The LTSpice library contains three directories: cmp, sub and sym. In order for the LTSpice examples to work, for Windows 11, you should place the lib directory in the user directory of LTSpice, for example C:\Users\<your name>\Documents\LTSpice.
 
-The library includes the following 4 symbols
+The library includes the following 4 symbols:
 
 1) Switched-capacitor
 
@@ -12,26 +12,16 @@ This symbol should used for all capacitors in the circuit whether it is switched
 
 This symbol calls the following subcircuit:
 
-.subckt SC 1p1 2p1 1p2 2p2
-
-\* Parameters:
-
-\* C=1p
-
-\* fs=1k
-
-\* D=0.5
-
-.param Req={1/(fs*C)} Gmeq={1/Req}
-
-R1 1p1 2p1 {Req}
-
-G1 2p1 1p1 1p2 2p2 Laplace=Gmeq*exp(-s*D/fs)
-
-R2 1p2 2p2 {Req}
-
-G2 2p2 1p2 1p1 2p1 Laplace=Gmeq*exp(-s*(1-D)/fs)
-
+.subckt SC 1p1 2p1 1p2 2p2\
+\* Parameters:\
+\* C=1p\
+\* fs=1k\
+\* D=0.5\
+.param Req={1/(fs*C)} Gmeq={1/Req}\
+R1 1p1 2p1 {Req}\
+G1 2p1 1p1 1p2 2p2 Laplace=Gmeq*exp(-s*D/fs)\
+R2 1p2 2p2 {Req}\
+G2 2p2 1p2 1p1 2p1 Laplace=Gmeq*exp(-s*(1-D)/fs)\
 .ends SC
 
 2) Switched-capacitor with one side gounded
