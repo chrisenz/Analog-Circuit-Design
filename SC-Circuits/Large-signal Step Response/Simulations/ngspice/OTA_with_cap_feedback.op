@@ -1,0 +1,17 @@
+Title: large-signal step response of capacitively coupled ota by c. enz
+Date: Wed Jul  2 11:50:17  2025
+Plotname: Operating Point
+Flags: real
+No. Variables: 4
+No. Points: 1
+Variables:
+	0	v(out)	voltage
+	1	v(1)	voltage
+	2	v(in)	voltage
+	3	i(vin)	current
+Values:
+ 0	0.000000000000000e+00
+	0.000000000000000e+00
+	0.000000000000000e+00
+	0.000000000000000e+00
+

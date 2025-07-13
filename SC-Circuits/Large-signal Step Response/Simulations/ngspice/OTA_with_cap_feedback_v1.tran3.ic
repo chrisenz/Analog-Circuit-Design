@@ -1,0 +1,6 @@
+* Intermediate Transient Solution
+* Circuit: large-signal step response of capacitively coupled ota by c. enz
+* Recorded at simulation time: 0
+.ic v(out) = 0
+.ic v(1) = 0
+.ic v(in) = 0

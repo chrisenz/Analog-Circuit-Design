@@ -1,0 +1,15 @@
+Large-signal step response of capacitively coupled OTA by C. Enz
+
+.include parameters.par ; Parameters values
+.include simulation.tran.par ; Parameter for the TRAN simulation
+.include pulse.par ; Parameters for the PULSE parameters used in the netlist
+.include OTA_with_cap_feedback.net ; Circuit netlist
+
+.control
+ save v(in) v(out)
+ tran $&tstep $&tstop $&tstart
+ set wr_singlescale
+ set wr_vecnames
+ wrdata $inputdir/OTA_with_cap_feedback.tran.dat v(in) v(out)
+.endc
+.end

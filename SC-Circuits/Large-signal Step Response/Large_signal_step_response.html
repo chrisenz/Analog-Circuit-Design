@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.40">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Christian Enz">
+<meta name="dcterms.date" content="2025-07-13">
+
+<title>OTA with Capacitive Feedback</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="Large_signal_step_response_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Large_signal_step_response_files/libs/quarto-html/quarto.js"></script>
+<script src="Large_signal_step_response_files/libs/quarto-html/popper.min.js"></script>
+<script src="Large_signal_step_response_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Large_signal_step_response_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Large_signal_step_response_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Large_signal_step_response_files/libs/quarto-html/quarto-syntax-highlighting-1092c56c6cadf2eb47b1bc8063ab382a.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Large_signal_step_response_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Large_signal_step_response_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Large_signal_step_response_files/libs/bootstrap/bootstrap-702031831562ce241c7b2b72fc53a41f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script>
+
+  MathJax = {
+
+    tex: {
+
+      tags: 'ams'  // should be 'ams', 'none', or 'all'
+
+    }
+
+  };
+
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a></li>
+  <li><a href="#small-signal-analysis" id="toc-small-signal-analysis" class="nav-link" data-scroll-target="#small-signal-analysis"><span class="header-section-number">2</span> Small-signal Analysis</a>
+  <ul class="collapse">
+  <li><a href="#transfer-function" id="toc-transfer-function" class="nav-link" data-scroll-target="#transfer-function"><span class="header-section-number">2.1</span> Transfer Function</a></li>
+  <li><a href="#step-response" id="toc-step-response" class="nav-link" data-scroll-target="#step-response"><span class="header-section-number">2.2</span> Step response</a></li>
+  <li><a href="#settling-time" id="toc-settling-time" class="nav-link" data-scroll-target="#settling-time"><span class="header-section-number">2.3</span> Settling Time</a></li>
+  <li><a href="#example" id="toc-example" class="nav-link" data-scroll-target="#example"><span class="header-section-number">2.4</span> Example</a></li>
+  </ul></li>
+  <li><a href="#large-signal-analysis" id="toc-large-signal-analysis" class="nav-link" data-scroll-target="#large-signal-analysis"><span class="header-section-number">3</span> Large-signal Analysis</a>
+  <ul class="collapse">
+  <li><a href="#sec-nonlinear_step_response" id="toc-sec-nonlinear_step_response" class="nav-link" data-scroll-target="#sec-nonlinear_step_response"><span class="header-section-number">3.1</span> Step Response</a></li>
+  <li><a href="#settling-time-1" id="toc-settling-time-1" class="nav-link" data-scroll-target="#settling-time-1"><span class="header-section-number">3.2</span> Settling time</a></li>
+  <li><a href="#sec-example_large_signal" id="toc-sec-example_large_signal" class="nav-link" data-scroll-target="#sec-example_large_signal"><span class="header-section-number">3.3</span> Example</a></li>
+  </ul></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion"><span class="header-section-number">4</span> Conclusion</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">5</span> References</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="Large_signal_step_response.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">OTA with Capacitive Feedback</h1>
+<p class="subtitle lead">Step Response (Version 1)</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Christian Enz </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">July 13, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
+<div id="fig-OTA_with_capacitive_feedback" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-OTA_with_capacitive_feedback-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/OTA_with_capacitive_feedback.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-OTA_with_capacitive_feedback-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Schematic of an OTA with capacitive feedback.
+</figcaption>
+</figure>
+</div>
+<p>The design of OTAs used in SC circuits requires a good estimation of the required settling time to make sure that the charge transfer is complete. In this notebook we start with a linear analysis of the amplifier for deriving the small-signal settling time. However, the OTA show a very nonlinear behavior, particularly when it is biased in weak inversion. As soon as its differential input voltage gets larger than a few <span class="math inline">\(U_T\)</span>, the output current saturates and the output voltage is then slewing before recovering the linear settling. This slewing period obviously increases the settling time and can even become dominant for low-power OTA where the bias current of the input differential pair is very small. We therefore will conduct a nonlinear analysis to derive an expression of the settling time that includes this period of slewing <span class="citation" data-cites="bib:krummenacher:leg:1982"><a href="#ref-bib:krummenacher:leg:1982" role="doc-biblioref">[1]</a></span>.</p>
+</section>
+<section id="small-signal-analysis" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Small-signal Analysis</h1>
+<section id="transfer-function" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="transfer-function"><span class="header-section-number">2.1</span> Transfer Function</h2>
+<div id="fig-Small_signal_schematic" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-Small_signal_schematic-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/Small_signal_schematic.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-Small_signal_schematic-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Small-signal schematic assuming a single-stage OTA.
+</figcaption>
+</figure>
+</div>
+<p>The equivalent linear schematic of <a href="#fig-OTA_with_capacitive_feedback" class="quarto-xref">Figure&nbsp;1</a> is shown in <a href="#fig-Small_signal_schematic" class="quarto-xref">Figure&nbsp;2</a> where we have assumed that the OTA is a single-stage OTA and can be replaced by a simple VCCS of value <span class="math inline">\(G_m\)</span> with an output resistance <span class="math inline">\(R_{out}\)</span>. From <a href="#fig-Small_signal_schematic" class="quarto-xref">Figure&nbsp;2</a>, it is easy to show that the voltage transfer function is given by <span class="math display">\[\begin{equation}
+  A(s) \triangleq \frac{\Delta V_{out}}{\Delta V_{in}} = A_0 \cdot \frac{1-s/\omega_z}{1+s/\omega_p}
+\end{equation}\]</span> where <span class="math inline">\(A_0\)</span> is the amplifier DC gain, <span class="math inline">\(\omega_p\)</span> the cut-off frequency and <span class="math inline">\(\omega_z\)</span> the zero given by <span class="math display">\[\begin{align}
+  A_0 &amp;= A_{0,ideal} \cdot \frac{\beta\,A_{dc}}{1 + \beta\,A_{dc}},\\
+  A_{0,ideal} &amp;= -\frac{C_S}{C_F},\\
+  \omega_p &amp;= \frac{1+\beta\,A_{dc}}{R_{out}\,C_{out}},\\
+  \omega_z &amp;= \frac{G_m}{C_F}.
+\end{align}\]</span> <span class="math inline">\(A_{dc} = G_m \cdot R_{out}\)</span> is the OTA DC voltage gain, <span class="math inline">\(\beta\,A_{dc}\)</span> the DC loop gain, <span class="math inline">\(\beta\)</span> the feedback gain and <span class="math inline">\(C_{out}\)</span> the total capacitance seen at the output. If the loop-gain <span class="math inline">\(\beta\,A_{dc} \gg 1\)</span>, the amplifier DC gain and cut-off frequency simplify to <span class="math display">\[\begin{align}
+  A_0 &amp;\cong A_{0,ideal} = -\frac{C_S}{C_F},\\
+  \omega_p &amp;\cong \frac{\beta\,A_{dc}}{R_{out}\,C_{out}} = \frac{\beta\,G_m}{C_{out}}.
+\end{align}\]</span></p>
+<div id="fig-feedback_gain" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-feedback_gain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/Feedback_gain.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-feedback_gain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Equivalent circuit to evaluate the feedback gain <span class="math inline">\(\beta\)</span>.
+</figcaption>
+</figure>
+</div>
+<p>The feedback gain <span class="math inline">\(\beta\)</span> can be calculated from the schematic shown in <a href="#fig-feedback_gain" class="quarto-xref">Figure&nbsp;3</a> as <span class="math display">\[\begin{equation}
+  \beta \triangleq \frac{V}{V_{out}} = \frac{C_F}{C_F + C_S + C_{in}}.
+\end{equation}\]</span></p>
+<p>The amplifier bandwidth is given by <span class="math inline">\(\omega_c = \omega_p \cong \beta \cdot G_m/C_{out}\)</span> where the total capacitance seen at the output <span class="math inline">\(C_{out}\)</span> can be expressed as <span class="math display">\[\begin{equation}
+  C_{out} = C_L + \frac{C_S + C_{in}}{C_F + C_S + C_{in}} \cdot C_F,
+\end{equation}\]</span> which can also be written in terms of the feedback factor <span class="math inline">\(\beta\)</span> as <span class="math display">\[\begin{equation}
+  C_{out} = C_L + \beta \cdot (C_S + C_{in}) = C_L + (1-\beta) \cdot C_F.
+\end{equation}\]</span></p>
+<div id="fig-transfer_function" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-transfer_function-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/Transfer_function.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-transfer_function-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Small-signal transfer function of the amplifier.
+</figcaption>
+</figure>
+</div>
+<p>In order to achieve some DC gain, <span class="math inline">\(C_F\)</span> is smaller than <span class="math inline">\(C_S\)</span> and usually also smaller than <span class="math inline">\(C_L\)</span>. This means that the right-hand side (RHS) zero is located higher than the unity gain frequency which is then simply given by <span class="math inline">\(\omega_u \cong G_m/C_{out}\)</span>. For frequencies below <span class="math inline">\(\omega_u\)</span>, the magnitude of the transfer function is shown in <a href="#fig-transfer_function" class="quarto-xref">Figure&nbsp;4</a>.</p>
+<p>We now will derive the small-signal step response.</p>
+</section>
+<section id="step-response" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="step-response"><span class="header-section-number">2.2</span> Step response</h2>
+<p>The small-signal step response for an input step voltage <span class="math inline">\(\Delta V_{in}\)</span> is obtained by taking the inverse Laplace transform of <span class="math display">\[\begin{equation}
+  V_{out}(s)= \frac{\Delta V_{in}}{s} \cdot A(s),
+\end{equation}\]</span> resulting in <span class="math display">\[\begin{equation}\label{eqn:vout_small}
+  V_{out}(t) = u(t) \cdot \Delta V_{in} \cdot A_0 \cdot \left[1 - \left(1+\frac{\tau_z}{\tau_p}\right) \cdot e^{-\frac{t}{\tau_p}}\right].
+\end{equation}\]</span> where <span class="math inline">\(\tau_z \triangleq 1/\omega_z\)</span> and <span class="math inline">\(\tau_p \triangleq 1/\omega_p\)</span> and <span class="math inline">\(u(t)\)</span> is the unit step <span class="math display">\[\begin{equation}
+  u(t) =
+  \begin{cases}
+    1 &amp; \textsf{for $0 &lt; t$}\\
+    0 &amp; \textsf{elsewhere}.
+  \end{cases}
+\end{equation}\]</span></p>
+<p>The <span class="math inline">\(\tau_z/\tau_p\)</span> ratio is approximately given by <span class="math display">\[\begin{equation}
+  \frac{\tau_z}{\tau_p} \cong \beta \cdot \frac{C_F}{C_{out}}.
+\end{equation}\]</span></p>
+<p>The steady-state value <span class="math inline">\(V_{out}(t \rightarrow \infty)\)</span> is given by <span class="math display">\[\begin{equation}
+  V_{out\infty} \triangleq V_{out}(t \rightarrow \infty) = \Delta V_{in} \cdot A_0 = A_{0,ideal} \cdot \frac{\beta\,A_{dc}}{1+\beta\,A_{dc}} \cdot \Delta V_{in} = \frac{A_{0,ideal}}{1+\frac{1}{\beta\,A_{dc}}} \cdot \Delta V_{in},
+\end{equation}\]</span> which for <span class="math inline">\(\beta\,A_{dc} \gg 1\)</span> simplifies to <span class="math display">\[\begin{equation}
+  V_{out\infty} \cong A_{0,ideal} \cdot (1-\varepsilon_{gain}) \cdot \Delta V_{in} \cong A_{0,ideal} \cdot \Delta V_{in},
+\end{equation}\]</span> where <span class="math inline">\(\varepsilon_{gain} =1/(\beta\,A_{dc}) \ll 1\)</span> is the relative settling error due to the OTA finite DC gain.</p>
+<div id="fig-Capacitive_network" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-Capacitive_network-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/Capacitive_network.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-Capacitive_network-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Capacitive network at <span class="math inline">\(t=0\)</span>.
+</figcaption>
+</figure>
+</div>
+<p>The positive zero introduces a step at <span class="math inline">\(t=0\)</span> that is opposite to the final value <span class="math display">\[\begin{align}
+  V_{out}(t=0^+) &amp;= -V_{out\infty} \cdot \frac{\tau_z}{\tau_p} = -\Delta V_{in} \cdot A_0 \cdot \frac{\tau_z}{\tau_p} \cong -\Delta V_{in} \cdot A_{0,ideal} \cdot \beta \cdot \frac{C_F}{C_{out}}\\
+  &amp;= \Delta V_{in} \cdot \frac{C_S\,C_F}{(C_S+C_{in})\,(C_F+C_L)+C_F\,C_L},\label{eqn:DVout0}
+\end{align}\]</span> This comes from the fact that at time <span class="math inline">\(t=0^+\)</span>, the OTA did not yet react and the voltage step <span class="math inline">\(\Delta V_{in}\)</span> imposed at the input is transmitted directly to the output through the capacitive network shown in <a href="#fig-Capacitive_network" class="quarto-xref">Figure&nbsp;5</a>, resulting in <span class="math display">\[\begin{align}
+  V_{out}(t=0^+) &amp;= \Delta V_{in} \cdot \frac{C_S}{C_S+C_{in}+\frac{C_F\,C_L}{C_F+C_L}} \cdot \frac{C_F}{C_F+C_L}\\
+  &amp;= \Delta V_{in} \cdot \frac{C_S\,C_F}{(C_S+C_{in})\,(C_F+C_L)+C_F\,C_L}
+\end{align}\]</span> which is identical to <span class="math inline">\(\eqref{eqn:DVout0}\)</span>. The step response starts in the wrong direction and then settles to the steady-state value as illustrated in <a href="#fig-Step_response" class="quarto-xref">Figure&nbsp;6</a>.</p>
+<div id="fig-Step_response" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-Step_response-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/Step_response.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-Step_response-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Small-signal step response.
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="settling-time" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="settling-time"><span class="header-section-number">2.3</span> Settling Time</h2>
+<p>As shown in <a href="#fig-Step_response" class="quarto-xref">Figure&nbsp;6</a>, the small-signal settling time <span class="math inline">\(t_{set}\)</span> is defined as the time required for the output voltage to approach the steady-state value with a precision equal to <span class="math inline">\(\varepsilon_{set}\)</span> <span class="math display">\[\begin{equation}
+  V_{out}(t=t_{set}) = (1-\varepsilon_{set}) \cdot V_{out}(t \rightarrow \infty)
+\end{equation}\]</span> which leads to <span class="math display">\[\begin{equation}\label{eqn:tset_linear}
+  t_{set} = -\tau_p \cdot \ln\left(\frac{\varepsilon_{set}}{1+\tau_z/\tau_p}\right)
+  = -\tau_p \cdot \ln\left(\frac{\varepsilon_{set}}{1+\beta\,C_F/C_{out}}\right)
+  \cong -\tau_p \cdot \ln\left[\varepsilon_{set} \cdot \left(1 - \beta \cdot \frac{C_F}{C_{out}}\right)\right].
+\end{equation}\]</span></p>
+</section>
+<section id="example" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="example"><span class="header-section-number">2.4</span> Example</h2>
+<div id="fig-SC_amplifier_phases" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-SC_amplifier_phases-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/SC_amplifier_phases.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-SC_amplifier_phases-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7: Non-overlaping phases for the SC amplifier shown in <a href="#fig-SC_amplifier_phase1" class="quarto-xref">Figure&nbsp;8</a> and <a href="#fig-SC_amplifier_phase2" class="quarto-xref">Figure&nbsp;9</a>.
+</figcaption>
+</figure>
+</div>
+<div id="fig-SC_amplifier_phase1" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-SC_amplifier_phase1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/SC_amplifier_phase1.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-SC_amplifier_phase1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;8: SC amplifier with offset cancellation during the reset or autozero phase (phase <span class="math inline">\(\Phi_1\)</span>).
+</figcaption>
+</figure>
+</div>
+<div id="fig-SC_amplifier_phase2" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-SC_amplifier_phase2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/SC_amplifier_phase2.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-SC_amplifier_phase2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;9: SC amplifier with offset cancellation during the amplification phase (phase <span class="math inline">\(\Phi_2\)</span>).
+</figcaption>
+</figure>
+</div>
+<p>The circuit shown in <a href="#fig-SC_amplifier_phase1" class="quarto-xref">Figure&nbsp;8</a> and <a href="#fig-SC_amplifier_phase2" class="quarto-xref">Figure&nbsp;9</a> is a SC amplifier with autozero offset cancelation. It uses the two non-.overlapping phases shown in <a href="#fig-SC_amplifier_phases" class="quarto-xref">Figure&nbsp;7</a>. During phase <span class="math inline">\(\Phi_1\)</span>, the sampling and feedback capacitances <span class="math inline">\(C_S\)</span> and <span class="math inline">\(C_F\)</span> are reset and sample the OTA offset voltage. During phase <span class="math inline">\(\Phi_2\)</span> the input voltage is amplified with ideally a gain equal to <span class="math inline">\(A_{0,ideal} = -C_S/C_F\)</span>. It is easy to show that the offset voltage is canceled.</p>
+<p>We want to design this SC amplifer for an ideal unity gain <span class="math inline">\(A_{0,ideal} =\)</span> -1 and operating with a clock frequency <span class="math inline">\(f_{ck} =\)</span> 1 <span class="math inline">\(MHz\)</span>. We want the signal to settle within a half clock period for an input step voltage <span class="math inline">\(\Delta V_{in} =\)</span> -10 <span class="math inline">\(mV\)</span> with a precision <span class="math inline">\(\varepsilon_{set} =\)</span> 1e-03. The settling time is therefore <span class="math inline">\(t_{set} =\)</span> 500 <span class="math inline">\(ns\)</span>. Assuming the feedback, load and input capacitances are given by <span class="math inline">\(C_F =\)</span> 1.0 <span class="math inline">\(pF\)</span>, <span class="math inline">\(C_L =\)</span> 0.1 <span class="math inline">\(pF\)</span> and <span class="math inline">\(C_{in} =\)</span> 10 <span class="math inline">\(fF\)</span>, we need to find the required transconductance of the OTA. The specifications are summarized in <a href="#tbl-example_small_step_specs" class="quarto-xref">Table&nbsp;1</a> and the calculated parameters are given in <a href="#tbl-example_small_step" class="quarto-xref">Table&nbsp;2</a>.</p>
+<div class="cell" data-execution_count="3">
+<div id="tbl-example_small_step_specs" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="3">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-example_small_step_specs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Specifications for the small-signal step response.
+</figcaption>
+<div aria-describedby="tbl-example_small_step_specs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="17">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Clock frequency</td>
+<td style="text-align: center;"><span class="math inline">\(f_{{ck}}\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Clock period</td>
+<td style="text-align: center;"><span class="math inline">\(T_s\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(\mu s\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Settling time</td>
+<td style="text-align: center;"><span class="math inline">\(t_{{set}}\)</span></td>
+<td style="text-align: center;">500</td>
+<td style="text-align: center;"><span class="math inline">\(ns\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Settling error</td>
+<td style="text-align: center;"><span class="math inline">\(\varepsilon_{{set}}\)</span></td>
+<td style="text-align: center;">0.001</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ideal DC gain</td>
+<td style="text-align: center;"><span class="math inline">\(A_{{0,ideal}}\)</span></td>
+<td style="text-align: center;">-1</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">OTA DC gain</td>
+<td style="text-align: center;"><span class="math inline">\(A_{{dc}}\)</span></td>
+<td style="text-align: center;">1000</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Feedback capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C_F\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Load capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C_L\)</span></td>
+<td style="text-align: center;">0.1</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Input capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C_{{in}}\)</span></td>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Input step</td>
+<td style="text-align: center;"><span class="math inline">\(\Delta V_{{in}}\)</span></td>
+<td style="text-align: center;">-10</td>
+<td style="text-align: center;"><span class="math inline">\(mV\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div class="cell" data-execution_count="4">
+<div id="tbl-example_small_step" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="4">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-example_small_step-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: Calculated parameters for the small-signal step response.
+</figcaption>
+<div aria-describedby="tbl-example_small_step-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="18">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Source capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C_S\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Feedback gain</td>
+<td style="text-align: center;"><span class="math inline">\(\beta\)</span></td>
+<td style="text-align: center;">0.498</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Effective DC gain</td>
+<td style="text-align: center;"><span class="math inline">\(A_0\)</span></td>
+<td style="text-align: center;">-0.998</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Total output capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C_{{out}}\)</span></td>
+<td style="text-align: center;">0.602</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Time constant</td>
+<td style="text-align: center;"><span class="math inline">\(\tau_p\)</span></td>
+<td style="text-align: center;">68.832</td>
+<td style="text-align: center;"><span class="math inline">\(ns\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Time constant</td>
+<td style="text-align: center;"><span class="math inline">\(\tau_z\)</span></td>
+<td style="text-align: center;">56.839</td>
+<td style="text-align: center;"><span class="math inline">\(ns\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Pole</td>
+<td style="text-align: center;"><span class="math inline">\(f_p\)</span></td>
+<td style="text-align: center;">2.312</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Zero</td>
+<td style="text-align: center;"><span class="math inline">\(f_z\)</span></td>
+<td style="text-align: center;">2.8</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Initial output voltage</td>
+<td style="text-align: center;"><span class="math inline">\(V_{{out}}(t=0^+)\)</span></td>
+<td style="text-align: center;">-8.241</td>
+<td style="text-align: center;"><span class="math inline">\(mV\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Final output voltage</td>
+<td style="text-align: center;"><span class="math inline">\(V_{{out}}(t \rightarrow \infty)\)</span></td>
+<td style="text-align: center;">9.98</td>
+<td style="text-align: center;"><span class="math inline">\(mV\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Gain-bandwidth product</td>
+<td style="text-align: center;"><span class="math inline">\(f_u\)</span></td>
+<td style="text-align: center;">4.648</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">OTA Transconductance</td>
+<td style="text-align: center;"><span class="math inline">\(G_m\)</span></td>
+<td style="text-align: center;">17.594</td>
+<td style="text-align: center;"><span class="math inline">\(\mu A/V\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">OTA output resistance</td>
+<td style="text-align: center;"><span class="math inline">\(R_{{out}}\)</span></td>
+<td style="text-align: center;">56.839</td>
+<td style="text-align: center;"><span class="math inline">\(M \Omega\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>This example can be simulated using ngspice with the model of the OTA given in <a href="#sec-example_large_signal" class="quarto-xref">Section&nbsp;3.3</a>. For small-signal operation (i.e.&nbsp;for a differential input voltage <span class="math inline">\(V_{id} \ll 2nU_T\)</span>), this nonlinear model reduces to a linear OTA with a transconductance equal to <span class="math inline">\(G_m\)</span>. The simulation results are presented in <a href="#fig-ng_small_step" class="quarto-xref">Figure&nbsp;10</a> and compared to the theoretical estimation. We see a perfect agreement between the theoretical model and the simulation.</p>
+<div id="cell-fig-ng_small_step" class="cell" data-execution_count="5">
+<div class="cell-output cell-output-display">
+<div id="fig-ng_small_step" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ng_small_step-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Large_signal_step_response_files/figure-html/fig-ng_small_step-output-1.png" width="592" height="321" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ng_small_step-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;10: Step response of the OTA operating as a voltage inverter for a small input step.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>In the next section we will derive the large-signal step response accounting for the OTA nonlinear behavior coming from the input differential pair.</p>
+</section>
+</section>
+<section id="large-signal-analysis" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Large-signal Analysis</h1>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This section has been largely inspired from the work of F. Krummenacher in <span class="citation" data-cites="bib:krummenacher:leg:1982"><a href="#ref-bib:krummenacher:leg:1982" role="doc-biblioref">[1]</a></span>.</p>
+</div>
+</div>
+<p>In the capacitively coupled amplifier shown in <a href="#fig-OTA_with_capacitive_feedback" class="quarto-xref">Figure&nbsp;1</a>, at <span class="math inline">\(t=0^+\)</span> the virtual ground may see a voltage that is large enough for the input differential pair to saturate. In this situation and assuming a single-stage OTA, the current delivered by the OTA is limited by the differential pair bias current <span class="math inline">\(2 I_b\)</span> and the output voltage is slewing linearly until the OTA input voltage comes back to the linear region. This phenomenon is described by the slew-rate <span class="math inline">\(SR\)</span>, which is defined as the maximum change rate of the output voltage <span class="math display">\[\begin{equation}
+  SR = \frac{dV_{out}}{dt} = \frac{2 I_b}{C_{out}}.
+\end{equation}\]</span></p>
+<p>This slewing might significantly increase the settling time compared to the value obtained from the linear analysis and given in <span class="math inline">\(\eqref{eqn:tset_linear}\)</span>. In the following section we will make a large-signal analysis and derive an expression of the settling time that includes the effect of slewing.</p>
+<section id="sec-nonlinear_step_response" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="sec-nonlinear_step_response"><span class="header-section-number">3.1</span> Step Response</h2>
+<div id="fig-Nonlinear_analysis" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-Nonlinear_analysis-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/Nonlinear_analysis.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-Nonlinear_analysis-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;11: Schematic for large-signal analysis.
+</figcaption>
+</figure>
+</div>
+<p>To perform a large-signal analysis we can reuse the schematic of <a href="#fig-OTA_with_capacitive_feedback" class="quarto-xref">Figure&nbsp;1</a> where the linear transconductor is replaced by a nonlinear transconductor as shown in <a href="#fig-Nonlinear_analysis" class="quarto-xref">Figure&nbsp;11</a>. If we assume that the OTA is a single-stage OTA like the simple 5T OTA and that the differential pair is biased in weak inversion then <span class="math display">\[\begin{equation}\label{eqn:iout}
+  I_{out} = 2 I_b \cdot \tanh\left(\frac{V_{id}}{2n\,U_T}\right),
+\end{equation}\]</span> where <span class="math inline">\(V_{id} \triangleq V_{in+} - V_{in-}\)</span> is the differential input voltage, <span class="math inline">\(n\)</span> the slope factor of the differential pair transistors and <span class="math inline">\(U_T \triangleq kT/q\)</span> the thermodynamic voltage. This differential voltage depends on the the input and output voltages according to <span class="math display">\[\begin{equation}\label{eqn:vid}
+  V_{id} = -V = -\xi \cdot V_{in} - \beta \cdot V_{out},
+\end{equation}\]</span> with <span class="math display">\[\begin{align}
+  \xi &amp;= \frac{C_S}{C_S+C_F+C_{in}},\\
+  \beta &amp;= \frac{C_F}{C_S+C_F+C_{in}}.
+\end{align}\]</span></p>
+<p>We can then write the following differential equation at the output node accounting for the total load capacitcance <span class="math inline">\(C_{out}\)</span> <span class="math display">\[\begin{equation}\label{eqn:dvoutdt}
+  \frac{dV_{out}}{dt} = \frac{I_{out}}{C_{out}} = \frac{2I_b}{C_{out}} \cdot \tanh\left(\frac{V_{id}}{2n\,U_T}\right)
+  = SR \cdot \tanh\left(\frac{V_{id}}{2n\,U_T}\right),
+\end{equation}\]</span> where <span class="math inline">\(SR\)</span> is the slew rate <span class="math display">\[\begin{equation}
+  SR = \frac{2I_b}{C_{out}}.
+\end{equation}\]</span> The output voltage can be extracted from <span class="math inline">\(\eqref{eqn:vid}\)</span> as <span class="math display">\[\begin{equation}\label{eqn:vout1}
+  V_{out}(t) = - \frac{\xi \cdot V_{in} + V_{id}}{\beta}
+\end{equation}\]</span> Let’s define <span class="math inline">\(x \triangleq V_{id}/(2 n U_T)\)</span>. Equation <span class="math inline">\(\eqref{eqn:vout1}\)</span> then becomes <span class="math display">\[\begin{equation}\label{eqn:vout2}
+  V_{out}(t) = - \frac{\xi \cdot V_{in} + 2 n U_T\,x}{\beta}
+\end{equation}\]</span> Differentiating with respect to time leads to <span class="math display">\[\begin{equation}\label{eqn:dvoutdt2}
+  \frac{dV_{out}}{dt} = -\frac{1}{\beta} \cdot \left(\xi\,\frac{dV_{in}}{dt} + 2 n U_T\,\frac{dx}{dt}\right)
+\end{equation}\]</span> Since we want to derive the step response <span class="math inline">\(V_{in}(t) = \Delta V_{in} = cte\)</span> and <span class="math inline">\(\eqref{eqn:dvoutdt2}\)</span> reduces to <span class="math display">\[\begin{equation}\label{eqn:dvoutdt3}
+  \frac{dV_{out}}{dt} = -\frac{2 n U_T}{\beta} \cdot \frac{dx}{dt}.
+\end{equation}\]</span> Replacing <span class="math inline">\(dV_{out}/dt\)</span> in <span class="math inline">\(\eqref{eqn:dvoutdt}\)</span> by <span class="math inline">\(\eqref{eqn:dvoutdt3}\)</span> results in <span class="math display">\[\begin{equation}
+  -\frac{2 n U_T}{\beta} \cdot \frac{dx}{dt} = SR \cdot \tanh(x),
+\end{equation}\]</span> which can be rewritten as <span class="math display">\[\begin{equation}\label{eqn:diffeq}
+  -\frac{\beta\,SR}{2 n U_T} \cdot dt = \coth(x) \cdot dx.
+\end{equation}\]</span> Differential equation <span class="math inline">\(\eqref{eqn:diffeq}\)</span> can easily be integrated leading to <span class="math display">\[\begin{equation}\label{eqn:lambda_sinh}
+  \Lambda \cdot e^{-\frac{\beta\,SR}{2 n U_T}\,t} = \sinh(x).
+\end{equation}\]</span> The constant <span class="math inline">\(\Lambda\)</span> depends on the initial condition on <span class="math inline">\(x\)</span> at <span class="math inline">\(t=0^+\)</span> for which <span class="math inline">\(V_{out}(t=0^+) = V_{out0}\)</span> and <span class="math display">\[\begin{equation}
+  \Lambda = \sinh\left(-\frac{\xi \cdot \Delta V_{in} + \beta \cdot V_{out0}}{2 n U_T}\right)
+\end{equation}\]</span> In steady state, assuming that the OTA has a large dc gain, we can assume that <span class="math inline">\(V_{id} \cong 0\)</span> and hence <span class="math inline">\(x=0\)</span>. The steady state value of the output voltage is then given by <span class="math display">\[\begin{equation}\label{eqn:voutinf}
+  V_{out}(t \rightarrow \infty) = V_{out\infty} \cong -\frac{\xi}{\beta} \cdot \Delta V_{in}
+\end{equation}\]</span> hence <span class="math inline">\(-\xi \cdot \Delta V_{in} = \beta \cdot V_{out\infty}\)</span> and <span class="math inline">\(\Lambda\)</span> writes <span class="math display">\[\begin{equation}\label{eqn:lambda}
+  \Lambda = \sinh\left(\beta \, \frac{V_{out\infty} - V_{out0}}{2 n U_T}\right).
+\end{equation}\]</span></p>
+<p>Recalling that in weak inversion the transconductance is given by <span class="math display">\[\begin{equation}
+  G_m = \frac{I_b}{n U_T}
+\end{equation}\]</span> we can write <span class="math display">\[\begin{equation}\label{eqn:sr_2nut}
+  \frac{SR}{2 n U_T} = \frac{2I_b/C_{out}}{2 n U_T} = \frac{G_m}{C_{out}} = \omega_u = \frac{1}{T_u}
+\end{equation}\]</span> which is the unity-gain frequency.</p>
+<p>Finally, replacing <span class="math inline">\(\eqref{eqn:lambda_sinh}\)</span>, <span class="math inline">\(\eqref{eqn:voutinf}\)</span>, <span class="math inline">\(\eqref{eqn:lambda}\)</span> and <span class="math inline">\(\eqref{eqn:sr_2nut}\)</span> in <span class="math inline">\(\eqref{eqn:vout2}\)</span> results in the normalized large-signal step function <span class="math display">\[\begin{equation}\label{eqn:vout3}
+  v_{out}(t) \triangleq \frac{V_{out}(t)}{V_{out\infty}} = 1 - \frac{2 n U_T}{\beta\,V_{out\infty}} \cdot \ln\left(y(t) + \sqrt{y^2(t)+1}\right),
+\end{equation}\]</span> where <span class="math display">\[\begin{equation}
+  y(t) = \sinh\left(\beta\,\frac{\Delta V_{out}}{2 n U_T}\right) \cdot e^{-\beta\,\frac{t}{T_u}}
+  = \sinh\left(\beta\,\frac{\Delta V_{out}}{2 n U_T}\right) \cdot e^{-\frac{t}{\tau_p}},
+\end{equation}\]</span> where <span class="math inline">\(\Delta V_{out} = V_{out\infty} - V_{out0}\)</span> is the step at the output after the output voltage has settled.</p>
+<p>In the case the initial output voltage is zero <span class="math inline">\(V_{out0}=0\)</span>, then we can rewrite <span class="math inline">\(\eqref{eqn:vout3}\)</span> as <span class="math display">\[\begin{equation}\label{eqn:vout4}
+  v_{out}(t) \triangleq \frac{V_{out}(t)}{V_{out\infty}} = 1- \frac{1}{B} \cdot \ln\left(y(t)+\sqrt{y(t)^2+1}\right)
+\end{equation}\]</span> where <span class="math display">\[\begin{equation}
+  y(t) = \sinh(B) \cdot e^{-\beta\,\frac{t}{T_u}} = \sinh(B) \cdot e^{-\frac{t}{\tau_p}}
+\end{equation}\]</span> with parameter <span class="math inline">\(B\)</span> defined as <span class="math display">\[\begin{equation}
+  B \triangleq \beta \cdot \frac{V_{out\infty}}{2 n U_T} = (1-\beta) \cdot \frac{\Delta V_{in}}{2 n U_T}
+\end{equation}\]</span> which is proportional to the steady-state output voltage <span class="math inline">\(V_{out\infty}\)</span> and to the input step amplitude <span class="math inline">\(\Delta V_{in}\)</span>.</p>
+<p>The normalized output voltage is plotted in <a href="#fig-step_response" class="quarto-xref">Figure&nbsp;12</a> versus the normalized time <span class="math inline">\(t/\tau_p\)</span> for various values of the parameter <span class="math inline">\(B\)</span> ranging from 0.001 (linear settling) to 10 (strongly nonlinear settling with slewing period dominating), assuming that <span class="math inline">\(V_{out0}=0\)</span> and hence that <span class="math inline">\(\Delta V_{out}=V_{out\infty}\)</span>. The dot on each curve shows the point at which the slewing stops and the differential pair leaves saturation and goes back into the linear settling. <a href="#fig-step_response" class="quarto-xref">Figure&nbsp;12</a> clearly illustrates that the slewing time can be much larger than the linear settling time and needs therefore to be accounted for when specifying the differential pair bias current <span class="math inline">\(I_b\)</span>.</p>
+<div id="cell-fig-step_response" class="cell" data-execution_count="6">
+<div class="cell-output cell-output-display">
+<div id="fig-step_response" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-step_response-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Large_signal_step_response_files/figure-html/fig-step_response-output-1.png" width="542" height="332" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-step_response-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;12: Step response according to <span class="math inline">\(\eqref{eqn:vout4}\)</span> including the effect of slew-rate assuming that <span class="math inline">\(V_{out0}=0\)</span> and hence <span class="math inline">\(\Delta V_{out}=V_{out\infty}\)</span>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="settling-time-1" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="settling-time-1"><span class="header-section-number">3.2</span> Settling time</h2>
+<p>The corresponding settling time including the slewing period is then given by <span class="math display">\[\begin{equation}\label{eqn:tset1}
+  t_{set} = \tau_p \cdot \ln\left[\frac{\sinh\left(\beta \cdot \frac{\Delta V_{out}}{2 n U_T}\right)}{\sinh(B \cdot \varepsilon_{set})}\right].
+\end{equation}\]</span> In case <span class="math inline">\(V_{out0}=0\)</span> then <span class="math inline">\(\Delta V_{out}=V_{out\infty}\)</span> resulting in <span class="math display">\[\begin{equation}
+  \beta \cdot \frac{\Delta V_{out}}{2 n U_T} = \beta \cdot \frac{V_{out\infty}}{2 n U_T} = B
+\end{equation}\]</span> and hence <span class="math inline">\(\eqref{eqn:tset1}\)</span> becomes <span class="math display">\[\begin{equation}\label{eqn:tset2}
+  t_{set} \cong \tau_p \cdot \ln\left[\frac{\sinh(B)}{\sinh(B \cdot \varepsilon_{set})}\right].
+\end{equation}\]</span></p>
+<p>The settling time given by <span class="math inline">\(\eqref{eqn:tset2}\)</span> is plotted in <a href="#fig-settling_time" class="quarto-xref">Figure&nbsp;13</a> versus parameter <span class="math inline">\(B\)</span> for various values of the targeted precision <span class="math inline">\(\varepsilon_{set}\)</span>. Note that for <span class="math inline">\(\beta \cdot \Delta V_{out}/(2 n U_T) \ll 1\)</span>, we find the small-signal settling time <span class="math display">\[\begin{equation}\label{eqn:tset3}
+  t_{set} \cong -\tau_p \cdot \ln(\varepsilon_{set}).
+\end{equation}\]</span></p>
+<p>For <span class="math inline">\(\beta \cdot \Delta V_{out} &gt; 10 n U_T\)</span>, the settling time increases about linearly with <span class="math inline">\(\beta \cdot \Delta V_{out}/(2 n U_T)\)</span> according to <span class="math display">\[\begin{equation}
+  \frac{t_{set}}{\tau_p} \cong 0.918 \cdot B -\ln\left(\frac{\varepsilon_{set}}{0.1}\right).
+\end{equation}\]</span> The above approximation is shown by the dashed lines in <a href="#fig-settling_time" class="quarto-xref">Figure&nbsp;13</a>.</p>
+<div id="cell-fig-settling_time" class="cell" data-execution_count="7">
+<div class="cell-output cell-output-display">
+<div id="fig-settling_time" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-settling_time-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Large_signal_step_response_files/figure-html/fig-settling_time-output-1.png" width="544" height="329" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-settling_time-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;13: Settling time including the effect of slew-rate.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>In SC filters the feedback gain <span class="math inline">\(\beta\)</span> often becomes close to one because the sampling capacitance <span class="math inline">\(C_S\)</span> needs to be much smaller than the feedback capacitance <span class="math inline">\(C_F\)</span> in order for the cut-off frequency to be sufficiently smaller than the Nyquist frequency <span class="math inline">\(f_s/2\)</span>. This makes parameter <span class="math inline">\(B\)</span> larger and hence results in a larger settling time.</p>
+</div>
+</div>
+</section>
+<section id="sec-example_large_signal" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="sec-example_large_signal"><span class="header-section-number">3.3</span> Example</h2>
+<p>In this section we will validate the results obtained by the nonlinear analysis including the slew-rate developped in <a href="#sec-nonlinear_step_response" class="quarto-xref">Section&nbsp;3.1</a>. We will use the same SC-amplifier than in the small-signal step case that are shown in <a href="#fig-SC_amplifier_phase1" class="quarto-xref">Figure&nbsp;8</a> and <a href="#fig-SC_amplifier_phase2" class="quarto-xref">Figure&nbsp;9</a>. The SC-amplifier during the amplification phase <span class="math inline">\(\Phi_2\)</span> is simulated with the circuit shown in <a href="#fig-Nonlinear_analysis" class="quarto-xref">Figure&nbsp;11</a> which includes a nonlinear transconductor modeling the nonlinear behavior coming from the input differential pair of a single-stage OTA. To simulate this circuit in ngspice we use the following netlist.</p>
+<pre><code>XOTA1 0 1 out OTAtanh Gmval={Gm} Routval={Rout} Visatval={Visat}
+CL out 0 {CL}
+CF out 1 {CF}
+CS in 1 {CS}
+Cin in 0 {Cin}
+Vin in 0 DC 0 AC 1 PULSE ({V1} {V2} {td} {tr} {tf} {pw} {per} {np})
+
+* OTA with hyperbolic tangent V/I characteristics:
+* ------------------------------------------------
+.subckt OTAtanh inp inn out Gmval=10u Routval=1MEG Visatval=80m
+Bdm 0 out I=Gmval*Visatval*tanh(V(inp,inn)/Visatval)
+Rout out 0 {Routval}
+.ends</code></pre>
+<p>The nonlinear OTA of <a href="#fig-Nonlinear_analysis" class="quarto-xref">Figure&nbsp;11</a> is described by subcircuit <code>OTAtanh</code> using a behavioral current source <code>Bdm</code> which models the differential output current of a differential pair biased in weak inversion according to <span class="math inline">\(\eqref{eqn:iout}\)</span>. This is consistent with the assumption that was used in the above nonlinear analysis. Note that the same circuit is also used for the simulation of the small-signal case since for <span class="math inline">\(V_{id} \ll V_{isat}\)</span>, the current of the behavioral source is simply equal to <span class="math inline">\(I \cong G_m \cdot V_{id}\)</span>.</p>
+<p>We now reuse the specifications already used for the small-signal case except the step size which is now much larger. The specifications are summarized in <a href="#tbl-example_large_step_specs" class="quarto-xref">Table&nbsp;3</a> and the calculated parameters are shown in <a href="#tbl-example_large_step1" class="quarto-xref">Table&nbsp;4</a>.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>In this example we need to use <span class="math inline">\(\eqref{eqn:vout3}\)</span> instead of <span class="math inline">\(\eqref{eqn:vout4}\)</span> because the initial output voltage value <span class="math inline">\(V_{out0}\)</span> is not zero.</p>
+</div>
+</div>
+<div class="cell" data-execution_count="9">
+<div id="tbl-example_large_step_specs" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="9">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-example_large_step_specs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;3: Specifications for the small-signal step response.
+</figcaption>
+<div aria-describedby="tbl-example_large_step_specs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="23">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Clock frequency</td>
+<td style="text-align: center;"><span class="math inline">\(f_{{ck}}\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Clock period</td>
+<td style="text-align: center;"><span class="math inline">\(T_s\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(\mu s\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Settling time</td>
+<td style="text-align: center;"><span class="math inline">\(t_{{set}}\)</span></td>
+<td style="text-align: center;">500</td>
+<td style="text-align: center;"><span class="math inline">\(ns\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Settling error</td>
+<td style="text-align: center;"><span class="math inline">\(\varepsilon_{{set}}\)</span></td>
+<td style="text-align: center;">0.001</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ideal DC gain</td>
+<td style="text-align: center;"><span class="math inline">\(A_{{0,ideal}}\)</span></td>
+<td style="text-align: center;">-1</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">OTA DC gain</td>
+<td style="text-align: center;"><span class="math inline">\(A_{{dc}}\)</span></td>
+<td style="text-align: center;">1000</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Feedback capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C_F\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Load capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C_L\)</span></td>
+<td style="text-align: center;">0.1</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Input capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C_{{in}}\)</span></td>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Input step</td>
+<td style="text-align: center;"><span class="math inline">\(\Delta V_{{in}}\)</span></td>
+<td style="text-align: center;">-1</td>
+<td style="text-align: center;"><span class="math inline">\(V\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div class="cell" data-execution_count="10">
+<div id="tbl-example_large_step1" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="10">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-example_large_step1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;4: Calculated parameters for the large-signal step response calculated with the small-signal settling time estimation.
+</figcaption>
+<div aria-describedby="tbl-example_large_step1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="24">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Source capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C_S\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Feedback gain</td>
+<td style="text-align: center;"><span class="math inline">\(\beta\)</span></td>
+<td style="text-align: center;">0.498</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Effective DC gain</td>
+<td style="text-align: center;"><span class="math inline">\(A_0\)</span></td>
+<td style="text-align: center;">-0.998</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Total output capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C_{{out}}\)</span></td>
+<td style="text-align: center;">0.602</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Time constant</td>
+<td style="text-align: center;"><span class="math inline">\(\tau_p\)</span></td>
+<td style="text-align: center;">68.832</td>
+<td style="text-align: center;"><span class="math inline">\(ns\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Time constant</td>
+<td style="text-align: center;"><span class="math inline">\(\tau_z\)</span></td>
+<td style="text-align: center;">56.839</td>
+<td style="text-align: center;"><span class="math inline">\(ns\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Pole</td>
+<td style="text-align: center;"><span class="math inline">\(f_p\)</span></td>
+<td style="text-align: center;">2.312</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Zero</td>
+<td style="text-align: center;"><span class="math inline">\(f_z\)</span></td>
+<td style="text-align: center;">2.8</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Initial output voltage</td>
+<td style="text-align: center;"><span class="math inline">\(V_{{out}}(t=0^+)\)</span></td>
+<td style="text-align: center;">-825.764</td>
+<td style="text-align: center;"><span class="math inline">\(mV\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Final output voltage</td>
+<td style="text-align: center;"><span class="math inline">\(V_{{out}}(t \rightarrow \infty)\)</span></td>
+<td style="text-align: center;">997.994</td>
+<td style="text-align: center;"><span class="math inline">\(mV\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Gain-bandwidth product</td>
+<td style="text-align: center;"><span class="math inline">\(f_u\)</span></td>
+<td style="text-align: center;">4.648</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">OTA Transconductance</td>
+<td style="text-align: center;"><span class="math inline">\(G_m\)</span></td>
+<td style="text-align: center;">17.594</td>
+<td style="text-align: center;"><span class="math inline">\(\mu A/V\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">OTA output resistance</td>
+<td style="text-align: center;"><span class="math inline">\(R_{{out}}\)</span></td>
+<td style="text-align: center;">56.839</td>
+<td style="text-align: center;"><span class="math inline">\(M \Omega\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div id="cell-fig-ng_large_step" class="cell" data-execution_count="11">
+<div class="cell-output cell-output-display">
+<div id="fig-ng_large_step" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ng_large_step-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Large_signal_step_response_files/figure-html/fig-ng_large_step-output-1.png" width="600" height="321" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ng_large_step-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;14: Step response of the OTA as a voltage follower for a large input step highlighting the slew-rate effect.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The simulation result is compared to the theoretical small- and large-signal step responses given by <span class="math inline">\(\eqref{eqn:vout_small}\)</span> and <span class="math inline">\(\eqref{eqn:vout3}\)</span> in <a href="#fig-ng_large_step" class="quarto-xref">Figure&nbsp;14</a>. We first can observe a perfect agreement between the simulation and the theoretical expression, which validates the analytical derivation of <a href="#sec-nonlinear_step_response" class="quarto-xref">Section&nbsp;3.1</a>. Comparing the large-signal step response to the small-signal step response (corresponding to the dashed purple curve), we observe that the signal doesn’t settle within the 500 <span class="math inline">\(ns\)</span> settling time. This is simply due to the fact that we have used the small-signal settling time expression <span class="math inline">\(\eqref{eqn:tset_linear}\)</span> to derive the required transconductance.</p>
+<p>To make sure that the output voltage settles within the desired settling time and for the given settling error, we need to calculate the required transconductance using the large-signal settling time given in <span class="math inline">\(\eqref{eqn:tset1}\)</span>. The transconductance is now <span class="math inline">\(G_m =\)</span> 43.2 <span class="math inline">\(\mu A/V\)</span> which is 2.5 times larger than the small-signal estimation <span class="math inline">\(G_m =\)</span> 17.6 <span class="math inline">\(\mu A/V\)</span>. The parameters are given in <a href="#tbl-example_large_step2" class="quarto-xref">Table&nbsp;5</a> and the simulation is compared to the theoretical step response in <a href="#fig-ng_large_step2" class="quarto-xref">Figure&nbsp;15</a>.</p>
+<div class="cell" data-execution_count="13">
+<div id="tbl-example_large_step2" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="13">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-example_large_step2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;5: Parameters for the large-signal step response calculated with the large-signal settling time estimation.
+</figcaption>
+<div aria-describedby="tbl-example_large_step2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="27">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Source capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C_S\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Feedback gain</td>
+<td style="text-align: center;"><span class="math inline">\(\beta\)</span></td>
+<td style="text-align: center;">0.498</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Effective DC gain</td>
+<td style="text-align: center;"><span class="math inline">\(A_0\)</span></td>
+<td style="text-align: center;">-0.998</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Total output capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C_{{out}}\)</span></td>
+<td style="text-align: center;">0.602</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Time constant</td>
+<td style="text-align: center;"><span class="math inline">\(\tau_p\)</span></td>
+<td style="text-align: center;">28.032</td>
+<td style="text-align: center;"><span class="math inline">\(ns\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Time constant</td>
+<td style="text-align: center;"><span class="math inline">\(\tau_z\)</span></td>
+<td style="text-align: center;">23.147</td>
+<td style="text-align: center;"><span class="math inline">\(ns\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Pole</td>
+<td style="text-align: center;"><span class="math inline">\(f_p\)</span></td>
+<td style="text-align: center;">5.678</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Zero</td>
+<td style="text-align: center;"><span class="math inline">\(f_z\)</span></td>
+<td style="text-align: center;">6.876</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Initial output voltage</td>
+<td style="text-align: center;"><span class="math inline">\(V_{{out}}(t=0^+)\)</span></td>
+<td style="text-align: center;">-825.764</td>
+<td style="text-align: center;"><span class="math inline">\(mV\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Final output voltage</td>
+<td style="text-align: center;"><span class="math inline">\(V_{{out}}(t \rightarrow \infty)\)</span></td>
+<td style="text-align: center;">997.994</td>
+<td style="text-align: center;"><span class="math inline">\(mV\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Gain-bandwidth product</td>
+<td style="text-align: center;"><span class="math inline">\(f_u\)</span></td>
+<td style="text-align: center;">11.412</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">OTA Transconductance</td>
+<td style="text-align: center;"><span class="math inline">\(G_m\)</span></td>
+<td style="text-align: center;">43.201</td>
+<td style="text-align: center;"><span class="math inline">\(\mu A/V\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">OTA output resistance</td>
+<td style="text-align: center;"><span class="math inline">\(R_{{out}}\)</span></td>
+<td style="text-align: center;">23.147</td>
+<td style="text-align: center;"><span class="math inline">\(M \Omega\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div id="cell-fig-ng_large_step2" class="cell" data-execution_count="14">
+<div class="cell-output cell-output-display">
+<div id="fig-ng_large_step2" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ng_large_step2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Large_signal_step_response_files/figure-html/fig-ng_large_step2-output-1.png" width="600" height="321" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ng_large_step2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;15: Step response of the OTA as a voltage follower (inverter) for a large input step with the transconductance calculated with the large-signal settling time estimation.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>We see in <a href="#fig-ng_large_step2" class="quarto-xref">Figure&nbsp;15</a> that the output voltage now settles as required within the 500 <span class="math inline">\(ns\)</span> settling time. We also see that the small-signal settling corresponding to the dashed purple curve is now much faster simply because the transconductance is much larger and hence the time constant <span class="math inline">\(\tau_p\)</span> much shorter.</p>
+</section>
+</section>
+<section id="conclusion" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Conclusion</h1>
+<p>In this notebook we have first derived the step response and settling time of a capacitively coupled OTA in linear operation. We then performed a nonlinear analysis that includes the effect of slewing due to the nonlinear behavior of the OTA input differential pair. The model allows to have a more accurate estimation of the large-signal settling time which might be dominant in low-power SC circuits such as amplifiers or filters. The analytical nonlinear step response has been succesfully validated with ngspice simulation.</p>
+</section>
+<section id="references" class="level1 unnumbered" data-number="5">
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">5 References</h2><div id="refs" class="references csl-bib-body" data-entry-spacing="0" role="list">
+<div id="ref-bib:krummenacher:leg:1982" class="csl-entry" role="listitem">
+<div class="csl-left-margin">[1] </div><div class="csl-right-inline">F. Krummenacher, <span>“<span class="nocase">Etude et Dimensionnement d’un OTA Cascode CMOS</span>,”</span> <span>EPFL</span>; <a href="https://github.com/chrisenz/Analog-Circuit-Design/blob/main/SC-Circuits/Large-signal%20Step%20Response/Resources/dimensionnement_OTA_fk.pdf" class="uri">https://github.com/chrisenz/Analog-Circuit-Design/blob/main/SC-Circuits/Large-signal%20Step%20Response/Resources/dimensionnement_OTA_fk.pdf</a>, Internal report, 1982.</div>
+</div>
+</div></section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -1,0 +1,13 @@
+XOTA1 0 1 out OTAtanh Gmval={Gm} Routval={Rout} Visatval={Visat}
+CL out 0 {CL}
+CF out 1 {CF}
+CS in 1 {CS}
+Cin in 0 {Cin}
+Vin in 0 DC 0 AC 1 PULSE ({V1} {V2} {td} {tr} {tf} {pw} {per} {np})
+
+* OTA with hyperbolic tangent V/I characteristics:
+* ------------------------------------------------
+.subckt OTAtanh inp inn out Gmval=10u Routval=1MEG Visatval=80m
+Bdm 0 out I=Gmval*Visatval*tanh(V(inp,inn)/Visatval)
+Rout out 0 {Routval}
+.ends
