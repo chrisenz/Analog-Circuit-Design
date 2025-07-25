@@ -1,0 +1,23 @@
+Simulation of the Folded Cascode OTA designed with the EKV 2.6 model by C. Enz
+
+.include ekv018va.par ; model file for EKV2.6
+.include size_bias.par ; Size and bias values
+.include Folded_cascode_OTA.net ; Circuit netlist
+
+.control
+ op
+ save inoise_spectrum onoise_spectrum
+ + onoise_n1a onoise_n1b onoise_n1a_thermal onoise_n1b_thermal onoise_n1a_flicker onoise_n1b_flicker
+ + onoise_n2a onoise_n2b onoise_n2c onoise_n2a_thermal onoise_n2b_thermal onoise_n2c_thermal onoise_n2a_flicker onoise_n2b_flicker onoise_n2c_flicker
+ + onoise_n3a onoise_n3b onoise_n3a_thermal onoise_n3b_thermal onoise_n3a_flicker onoise_n3b_flicker
+ + onoise_n4a onoise_n4b onoise_n4a_thermal onoise_n4b_thermal onoise_n4a_flicker onoise_n4b_flicker
+ + onoise_n5a onoise_n5b onoise_n5a_thermal onoise_n5b_thermal onoise_n5a_flicker onoise_n5b_flicker
+ + onoise_n7a onoise_n7b onoise_n7a_thermal onoise_n7b_thermal onoise_n7a_flicker onoise_n7b_flicker
+ noise V(out) Vid dec 41 1 100MEG 1
+ setplot noise1
+ write $inputdir/Folded_cascode_OTA.nz.raw
+ set wr_singlescale
+ set wr_vecnames
+ wrdata $inputdir/Folded_cascode_OTA.nz.dat inoise_spectrum onoise_spectrum
+.endc
+.end

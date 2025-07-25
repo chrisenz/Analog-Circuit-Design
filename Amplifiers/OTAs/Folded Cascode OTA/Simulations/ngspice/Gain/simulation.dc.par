@@ -1,0 +1,3 @@
+.csparam Vidmin=-1.000e-06
+.csparam Vidmax=1.000e-06
+.csparam dVid=2.000e-09
