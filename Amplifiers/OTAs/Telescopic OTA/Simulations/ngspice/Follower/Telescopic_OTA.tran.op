@@ -1,0 +1,41 @@
+Title: simulation of the telescopic ota designed with the sekv model by c. enz
+Date: Fri Jul 25 15:53:12  2025
+Plotname: Operating Point
+Flags: real
+No. Variables: 16
+No. Points: 1
+Variables:
+	0	v(3)	voltage
+	1	v(1)	voltage
+	2	v(2)	voltage
+	3	v(4)	voltage
+	4	v(5)	voltage
+	5	v(6)	voltage
+	6	v(7)	voltage
+	7	v(inp)	voltage
+	8	v(out)	voltage
+	9	v(vb1)	voltage
+	10	i(vb1)	current
+	11	v(vb2)	voltage
+	12	i(vb2)	current
+	13	v(vdd)	voltage
+	14	i(vdd)	current
+	15	i(vin)	current
+Values:
+ 0	6.288108822667360e-01
+	3.217109944857572e-01
+	9.076044062447055e-01
+	6.282716653729615e-01
+	1.263925658060199e+00
+	1.263692165464033e+00
+	8.208577201256367e-01
+	7.999999999999999e-01
+	8.000006944937610e-01
+	1.200000000000000e+00
+	0.000000000000000e+00
+	7.000000000000000e-01
+	0.000000000000000e+00
+	1.800000000000000e+00
+	-9.940119908186188e-07
+	0.000000000000000e+00
+
