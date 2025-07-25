@@ -1,0 +1,23 @@
+Simulation of the CS SC amplifier by C. Enz
+
+.include ekv018va.par ; model file for EKV2.6
+.include size_bias.par ; Size and bias values
+.include CS_CL_optimization.net ; Circuit netlist
+
+.control
+ op
+ save v(out)
+ write $inputdir/CS_CL_optimization.ac.op
+* reset all
+ ac dec 101 100 100MEG
+ let AmagdB=vdb(out)
+ let Aphdeg=180/PI*vp(out)
+ meas ac Adc max AmagdB
+ meas ac GBW when AmagdB=0
+ meas ac fc when Aphdeg=135
+ meas ac fz when Aphdeg=45
+ set wr_singlescale
+ set wr_vecnames
+ wrdata $inputdir/CS_CL_optimization.ac.dat AmagdB Aphdeg
+.endc
+.end
