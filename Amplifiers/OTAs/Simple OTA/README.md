@@ -13,4 +13,4 @@ newDesign=True
 newSim=True  
 #newSim=False  
 
-You also need to have ngspice installed (see the [ngspice installation instructions](/ngspice_installation.md)).![install ngspice](/ngspice_installation.md).
+You also need to have ngspice installed (see the [ngspice installation instructions](/ngspice_installation.md)).
