@@ -1,0 +1,41 @@
+Title: simulation of the symmetrical ota designed with the ekv 2.6 model
+Date: Fri Jul 25 15:43:06  2025
+Plotname: Operating Point
+Flags: real
+No. Variables: 16
+No. Points: 1
+Variables:
+	0	v(4)	voltage
+	1	v(1)	voltage
+	2	v(3)	voltage
+	3	v(5)	voltage
+	4	v(6)	voltage
+	5	i(einn)	current
+	6	i(einp)	current
+	7	v(ic)	voltage
+	8	v(id)	voltage
+	9	v(inn)	voltage
+	10	v(inp)	voltage
+	11	v(out)	voltage
+	12	v(vdd)	voltage
+	13	i(vdd)	current
+	14	i(vic)	current
+	15	i(vid)	current
+Values:
+ 0	9.998104219513985e-01
+	1.264380593145503e+00
+	3.941780164525798e-01
+	8.297504693002834e-01
+	8.282339056079714e-01
+	0.000000000000000e+00
+	0.000000000000000e+00
+	9.000000000000000e-01
+	-4.459050000000000e-04
+	9.002229525000001e-01
+	8.997770475000000e-01
+	8.997743828904277e-01
+	1.800000000000000e+00
+	-4.521194761134512e-06
+	0.000000000000000e+00
+	0.000000000000000e+00
+

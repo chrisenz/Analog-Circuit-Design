@@ -1,0 +1,12 @@
+Netlist line no. 1:
+Undefined parameter [v1]
+Netlist line no. 1:
+Cannot compute substitute
+
+ERROR: fatal error in ngspice, exit(1)
+
+Note: No compatibility mode selected!
+
+
+Circuit: simulation of the miller ota designed with the ekv 2.6 model by c. enz
+

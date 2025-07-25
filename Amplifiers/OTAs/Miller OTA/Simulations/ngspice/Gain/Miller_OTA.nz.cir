@@ -1,0 +1,24 @@
+Simulation of the Miller OTA designed with the sEKV model by C. Enz
+
+.include ekv018va.par ; model file for EKV2.6
+.include size_bias.par ; Size and bias values
+.include Miller_OTA.net ; Circuit netlist
+
+.control
+ op
+ save inoise_spectrum onoise_spectrum
+ + onoise_n1a onoise_n1b onoise_n1a_thermal onoise_n1b_thermal onoise_n1a_flicker onoise_n1b_flicker
+ + onoise_n2 onoise_n2_thermal onoise_n2_flicker
+ + onoise_n3a onoise_n3b onoise_n3a_thermal onoise_n3b_thermal onoise_n3a_flicker onoise_n3b_flicker
+ + onoise_n4a onoise_n4b onoise_n4a_thermal onoise_n4b_thermal onoise_n4a_flicker onoise_n4b_flicker
+ + onoise_n5a onoise_n5b onoise_n5a_thermal onoise_n5b_thermal onoise_n5a_flicker onoise_n5b_flicker
+ + onoise_n4 onoise_n4_thermal onoise_n4_flicker
+ + onoise_n7 onoise_n7_thermal onoise_n7_flicker
+ noise V(out) Vid dec 41 1 100MEG 1
+ setplot noise1
+ write $inputdir/Miller_OTA.nz.raw
+ set wr_singlescale
+ set wr_vecnames
+ wrdata $inputdir/Miller_OTA.nz.dat inoise_spectrum onoise_spectrum
+.endc
+.end

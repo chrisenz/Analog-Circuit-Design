@@ -1,0 +1,29 @@
+Title: simulation of the symmetrical ota designed with the sekv model by c. enz
+Date: Fri Jul 25 15:43:19  2025
+Plotname: Operating Point
+Flags: real
+No. Variables: 10
+No. Points: 1
+Variables:
+	0	v(4)	voltage
+	1	v(1)	voltage
+	2	v(3)	voltage
+	3	v(5)	voltage
+	4	v(6)	voltage
+	5	v(inp)	voltage
+	6	v(out)	voltage
+	7	v(vdd)	voltage
+	8	i(vdd)	current
+	9	i(vin)	current
+Values:
+ 0	9.998090961711332e-01
+	1.264379761689034e+00
+	3.943574297629766e-01
+	8.297504693002837e-01
+	8.282339056079716e-01
+	9.000000000000000e-01
+	9.004459529163569e-01
+	1.800000000000000e+00
+	-4.521201761376100e-06
+	0.000000000000000e+00
+
