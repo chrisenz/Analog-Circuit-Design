@@ -1,0 +1,24 @@
+Using SPARSE 1.3 as Direct Linear Solver
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Using SPARSE 1.3 as Direct Linear Solver
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+
+Note: No compatibility mode selected!
+
+
+Circuit: simulation of the symmetrical ota designed with the ekv 2.6 model by c. enz
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+
+No. of Data Rows : 1
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+
+No. of Data Rows : 1001
+vos                 =  7.376839e-05
+voutmax             =  1.383518e+00 at=  8.500000e-05
+voutmin             =  3.778491e-01 at=  6.000000e-05
+Note: Simulation executed from .control section 

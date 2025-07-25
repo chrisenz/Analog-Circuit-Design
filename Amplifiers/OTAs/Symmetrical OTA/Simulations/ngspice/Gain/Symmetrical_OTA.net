@@ -1,0 +1,21 @@
+N1a 2 inn 1 1 ekvn_va W={W1} L={L1}
+N1b 4 inp 1 1 ekvn_va W={W1} L={L1}
+N2a 2 2 vdd vdd ekvp_va W={W2} L={L2}
+N2b 4 4 vdd vdd ekvp_va W={W2} L={L2}
+N2c 3 2 vdd vdd ekvp_va W={W2} L={L2}
+N2d 6 4 vdd vdd ekvp_va W={W2} L={L2}
+N3a 3 3 0 0 ekvn_va W={W3} L={L3}
+N3b 5 3 0 0 ekvn_va W={W3} L={L3}
+N4 out vb1 6 vdd ekvp_va W={W4} L={L4}
+N5a 8 8 0 0 ekvn_va W={W5} L={L5}
+N5b 1 8 0 0 ekvn_va W={W5} L={L5}
+N7 out vb2 5 0 ekvn_va W={W7} L={L7}
+CL out 0 {CL}
+Ib vdd 8 {2*Ib}
+Vb1 vb1 0 {Vb1}
+Vb2 vb2 0 {Vb2}
+VDD vdd 0 {VDD}
+Vic ic 0 {Vic}
+Vid id 0 DC={Vos} AC=1
+Einp inp ic id 0 0.5
+Einn inn ic id 0 -0.5

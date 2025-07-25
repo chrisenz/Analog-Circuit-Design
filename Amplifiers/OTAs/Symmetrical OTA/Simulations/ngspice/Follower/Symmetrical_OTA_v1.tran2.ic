@@ -1,0 +1,15 @@
+* Intermediate Transient Solution
+* Circuit: simulation of the symmetrical ota designed with the ekv 2.6 model by c. enz
+* Recorded at simulation time: 0
+.ic v(2) = 1.17329
+.ic v(out) = 0.399914
+.ic v(1) = 0.0346697
+.ic v(4) = 1.17301
+.ic v(inp) = 0.4
+.ic v(vdd) = 1.8
+.ic v(3) = 0.58274
+.ic v(6) = 1.3814
+.ic v(5) = 0.387591
+.ic v(vb1) = 0.9
+.ic v(8) = 0.69466
+.ic v(vb2) = 0.9
