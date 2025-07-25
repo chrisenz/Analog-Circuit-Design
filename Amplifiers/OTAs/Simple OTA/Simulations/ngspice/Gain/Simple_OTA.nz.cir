@@ -1,0 +1,21 @@
+Simulation of the simple OTA designed with the EKV 2.6 model by C. Enz
+
+.include ekv018va.par ; model file for EKV2.6
+.include size_bias.par ; Size and bias values
+.include Simple_OTA.net ; Circuit netlist
+
+.control
+ op
+ save inoise_spectrum onoise_spectrum
+ + onoise_n1a onoise_n1b onoise_n2a onoise_n2b
+ + onoise_n1a_flicker onoise_n1b_flicker onoise_n2a_flicker onoise_n2b_flicker
+ + onoise_n1a_thermal onoise_n1b_thermal onoise_n2a_thermal onoise_n2b_thermal
+ noise V(out) Vid dec 41 1 100MEG 1
+ setplot noise1
+ write $inputdir/Simple_OTA.nz.raw
+ set wr_singlescale
+ set wr_vecnames
+ wrdata $inputdir/Simple_OTA.nz.dat inoise_spectrum onoise_spectrum
+.endc
+.end
+

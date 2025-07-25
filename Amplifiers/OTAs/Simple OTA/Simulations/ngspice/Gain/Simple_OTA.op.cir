@@ -1,0 +1,27 @@
+Simulation of the simple OTA designed with the EKV 2.6 model by C. Enz
+
+.include ekv018va.par ; model file for EKV2.6
+.include size_bias.par ; Size and bias values
+.include Simple_OTA.net ; Circuit netlist
+
+.control
+ save @N1a[Id] @N1a[Ispec] @N1a[IC] @N1a[n0] @N1a[gm] @N1a[gms] @N1a[gds] @N1a[gmbs] @N1a[Rn] @N1a[Vnth] @N1a[gamman] @N1a[Vnfl] @N1a[Vdsat]
+ save @N1b[Id] @N1b[Ispec] @N1b[IC] @N1b[n0] @N1b[gm] @N1b[gms] @N1b[gds] @N1b[gmbs] @N1b[Rn] @N1b[Vnth] @N1b[gamman] @N1b[Vnfl] @N1b[Vdsat]
+ save @N2a[Id] @N2a[Ispec] @N2a[IC] @N2a[n0] @N2a[gm] @N2a[gms] @N2a[gds] @N2a[gmbs] @N2a[Rn] @N2a[Vnth] @N2a[gamman] @N2a[Vnfl] @N2a[Vdsat]
+ save @N2b[Id] @N2b[Ispec] @N2b[IC] @N2b[n0] @N2b[gm] @N2b[gms] @N2b[gds] @N2b[gmbs] @N2b[Rn] @N2b[Vnth] @N2b[gamman] @N2b[Vnfl] @N2b[Vdsat]
+ save @N3a[Id] @N3a[Ispec] @N3a[IC] @N3a[n0] @N3a[gm] @N3a[gms] @N3a[gds] @N3a[gmbs] @N3a[Rn] @N3a[Vnth] @N3a[gamman] @N3a[Vnfl] @N3a[Vdsat]
+ save @N3b[Id] @N3b[Ispec] @N3b[IC] @N3b[n0] @N3b[gm] @N3b[gms] @N3b[gds] @N3b[gmbs] @N3b[Rn] @N3b[Vnth] @N3b[gamman] @N3b[Vnfl] @N3b[Vdsat]
+ op
+ wrnodev $inputdir/Simple_OTA.op.ic
+ set wr_singlescale
+ set wr_vecnames
+ wrdata $inputdir/Simple_OTA.op.dat
+ wrdata $inputdir/Simple_OTA.op.dat @N1a[Id] @N1a[Ispec] @N1a[IC] @N1a[Vdsat] @N1a[n0] @N1a[gm] @N1a[gms] @N1a[gds] @N1a[gmbs] @N1a[Rn] @N1a[Vnth] @N1a[gamman] @N1a[Vnfl]
+ set appendwrite
+ wrdata $inputdir/Simple_OTA.op.dat @N1b[Id] @N1b[Ispec] @N1b[IC] @N1b[Vdsat] @N1b[n0] @N1b[gm] @N1b[gms] @N1b[gds] @N1b[gmbs] @N1b[Rn] @N1b[Vnth] @N1b[gamman] @N1b[Vnfl]
+ wrdata $inputdir/Simple_OTA.op.dat @N2a[Id] @N2a[Ispec] @N2a[IC] @N2a[Vdsat] @N2a[n0] @N2a[gm] @N2a[gms] @N2a[gds] @N2a[gmbs] @N2a[Rn] @N2a[Vnth] @N2a[gamman] @N2a[Vnfl] 
+ wrdata $inputdir/Simple_OTA.op.dat @N2b[Id] @N2b[Ispec] @N2b[IC] @N2b[Vdsat] @N2b[n0] @N2b[gm] @N2b[gms] @N2b[gds] @N2b[gmbs] @N2b[Rn] @N2b[Vnth] @N2b[gamman] @N2b[Vnfl]
+ wrdata $inputdir/Simple_OTA.op.dat @N3a[Id] @N3a[Ispec] @N3a[IC] @N3a[Vdsat] @N3a[n0] @N3a[gm] @N3a[gms] @N3a[gds] @N3a[gmbs] @N3a[Rn] @N3a[Vnth] @N3a[gamman] @N3a[Vnfl]
+ wrdata $inputdir/Simple_OTA.op.dat @N3b[Id] @N3b[Ispec] @N3b[IC] @N3b[Vdsat] @N3b[n0] @N3b[gm] @N3b[gms] @N3b[gds] @N3b[gmbs] @N3b[Rn] @N3b[Vnth] @N3b[gamman] @N3b[Vnfl]
+.endc
+.end

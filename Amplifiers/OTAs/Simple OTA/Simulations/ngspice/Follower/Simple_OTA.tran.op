@@ -1,0 +1,25 @@
+Title: simulation of the simple ota designed with the ekv 2.6 model
+Date: Fri Jul 25 15:24:48  2025
+Plotname: Operating Point
+Flags: real
+No. Variables: 8
+No. Points: 1
+Variables:
+	0	v(2)	voltage
+	1	v(1)	voltage
+	2	v(3)	voltage
+	3	v(inp)	voltage
+	4	v(out)	voltage
+	5	v(vdd)	voltage
+	6	i(vdd)	current
+	7	i(vin)	current
+Values:
+ 0	1.266853230384312e+00
+	8.885855218016214e-03
+	7.502708297742292e-01
+	3.000000000000000e-01
+	3.005430175438379e-01
+	1.800000000000000e+00
+	-5.341161882453442e-07
+	0.000000000000000e+00
+
