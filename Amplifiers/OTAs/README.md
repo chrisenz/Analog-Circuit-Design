@@ -5,5 +5,7 @@ This repository presents the design of various operational transconductance ampl
 The folder currently includes:
 * [The simple 5 transistors OTA.](/Amplifiers/OTAs/Simple%20OTA/) ([pdf](/Amplifiers/OTAs/Simple%20OTA/Simple_OTA.pdf))
 * [The symmetrical OTA.](/Amplifiers/OTAs/Symmetrical%20OTA/) ([pdf](/Amplifiers/OTAs/Symmetrical%20OTA/Symmetrical_OTA.pdf))
+* [The Miller OTA.](/Amplifiers/OTAs/Miller%20OTA/) ([pdf](/Amplifiers/OTAs/Miller%20OTA/Miller_OTA.pdf))
+* [The telescopic OTA.](/Amplifiers/OTAs/Telescopic%20OTA/) ([pdf](/Amplifiers/OTAs/Telescopic%20OTA/Telescopic_OTA.pdf))
 
 To run the ngspice simulations you need to ![install ngspice](/ngspice_installation.md).
