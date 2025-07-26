@@ -12,11 +12,11 @@ This repository presents various examples of analog CMOS circuit design. It is f
 ### OTAs
 
 In this directory you will find the systematic design of various single-ended OTAs for a generic 180nm bulk CMOS process. The OTAs are designed using the EKV approach with the inversion coefficient. They are then simulated with ngspice using the EKV 2.6 compact model. The designs currently include:
-* [The simple 5 transistors OTA](Amplifiers/OTAs/Simple%20OTA/)
-* The symmetrical OTA
-* The Miller OTA
-* The telescopic OTA
-* The folded-cascode OTA
+* [The simple 5 transistors OTA](Amplifiers/OTAs/Simple%20OTA/) ([pdf](Amplifiers/OTAs/Simple%20OTA/Simple_OTA.pdf)).
+* [The symmetrical OTA](Amplifiers/OTAs/Symmetrical%20OTA/) ([pdf](Amplifiers/OTAs/Symmetrical%20OTA/Symmetrical_OTA.pdf)).
+* [The Miller OTA](Amplifiers/OTAs/Miller%20OTA/) ([pdf](Amplifiers/OTAs/Miller%20OTA/Miller_OTA.pdf)).
+* [The telescopic OTA](Amplifiers/OTAs/Telescopic%20OTA/) ([pdf](Amplifiers/OTAs/Telescopic%20OTA/Telescopic_OTA.pdf)).
+* [The folded-cascode OTA](Amplifiers/OTAs/Folded%20Cacsode%20OTA/) ([pdf](Amplifiers/OTAs/Folded%20Cascode%20OTA/Folded_cascode_OTA.pdf)).
 
 ## SC-Circuits
 
