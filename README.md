@@ -4,7 +4,7 @@ This repository presents various examples of analog CMOS circuit design. It is f
 
 ## Amplifiers
 
-### Basic
+### [Single transistor gain stage (Basic)](Amplifiers/Basic/)
 
 In this directory you will find the design of various single transistor gain stages.
 
@@ -12,7 +12,7 @@ It currently includes:
 * [Common-source stage with capacitive feedback](Amplifiers/Basic/CS%20CL%20Optimization/) ([pdf](Amplifiers/Basic/CS%20CL%20Optimization/CS_CL_optimization.pdf)).
 
 
-### OTAs
+### Operational Transconductance Amplifiers (OTAs)
 
 In this directory you will find the systematic design of various single-ended OTAs for a generic 180nm bulk CMOS process. The OTAs are designed using the EKV approach with the inversion coefficient. They are then simulated with ngspice using the EKV 2.6 compact model. The design and simulation are performed ina Quarto notebook. The latter includes the complete design flow and simuations. It is used to generate a design report in pdf format.
 
