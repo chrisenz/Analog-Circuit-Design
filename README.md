@@ -20,7 +20,7 @@ The directory currently includes:
 * [The telescopic OTA](Amplifiers/OTAs/Telescopic%20OTA/) ([pdf](Amplifiers/OTAs/Telescopic%20OTA/Telescopic_OTA.pdf)).
 * [The folded-cascode OTA](Amplifiers/OTAs/Folded%20Cascode%20OTA/) ([pdf](Amplifiers/OTAs/Folded%20Cascode%20OTA/Folded_cascode_OTA.pdf)).
 
-You can either just read the pdf file to understand how the OTA was designed. You can also download the folder and perform the design on you own computer either withe same specifications which does not need the simulations to be re-ran. You can also redesign the OTA for a different set of specification but for the same 180nm technology. In order to do this you neeed to enable the follwoingin variables  
+You can either just read the pdf file to understand how the OTA was designed. You can also download the folder and perform the design on you own computer either withe same specifications which does not need the simulations to be re-ran. You can also redesign the OTA for a different set of specification but for the same 180nm technology. In order to do this you neeed to enable the following variables  
 ```
 newDesign=True  
 #newDesign=False  
@@ -29,6 +29,7 @@ newSim=True
 ```
 in the first cell of the notebook.
 
+Of course to run the notebook you need to have Quarto and Python installed on your computer.
 ## SC-Circuits
 
 * [AC simulation of switched-capacitor circuits using a standard Spice simulator such as LTSpice or ngspice.](/Simulation%20of%20SC%20Circuits/) ([pdf](/Simulation%20of%20SC%20Circuits/SCC_simulation.pdf))
