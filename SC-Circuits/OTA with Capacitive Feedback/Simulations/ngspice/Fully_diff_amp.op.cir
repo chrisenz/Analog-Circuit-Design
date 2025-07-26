@@ -1,0 +1,18 @@
+Simulation of the fully differential SC amplifier by C. Enz
+
+.include ekv018va.par ; model file for EKV2.6
+.include size_bias.par ; Size and bias values
+.include Fully_diff_amp.net ; Circuit netlist
+
+.control
+ save @N1a[Id] @N1a[Ispec] @N1a[IC] @N1a[n0] @N1a[gm] @N1a[gms] @N1a[gds] @N1a[gmbs] @N1a[Rn] @N1a[Vnth] @N1a[gamman] @N1a[Vnfl] @N1a[Vdsat]
+ save @N1b[Id] @N1b[Ispec] @N1b[IC] @N1b[n0] @N1b[gm] @N1b[gms] @N1b[gds] @N1b[gmbs] @N1b[Rn] @N1b[Vnth] @N1b[gamman] @N1b[Vnfl] @N1b[Vdsat]
+ op
+ wrnodev $inputdir/Fully_diff_amp.op.ic
+ set wr_singlescale
+ set wr_vecnames
+ wrdata $inputdir/Fully_diff_amp.op.dat @N1a[Id] @N1a[Ispec] @N1a[IC] @N1a[Vdsat] @N1a[n0] @N1a[gm] @N1a[gms] @N1a[gds] @N1a[gmbs] @N1a[Rn] @N1a[Vnth] @N1a[gamman] @N1a[Vnfl]
+ set appendwrite
+ wrdata $inputdir/Fully_diff_amp.op.dat @N1b[Id] @N1b[Ispec] @N1b[IC] @N1b[Vdsat] @N1b[n0] @N1b[gm] @N1b[gms] @N1b[gds] @N1b[gmbs] @N1b[Rn] @N1b[Vnth] @N1b[gamman] @N1b[Vnfl]
+.endc
+.end

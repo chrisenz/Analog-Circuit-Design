@@ -1,0 +1,1069 @@
+---
+title: OTA with Capacitive Feedback
+subtitle: Small-signal Closed-loop Transfer Function (Version 1)
+author: Christian Enz (christian.enz@epfl.ch)
+affiliation: EPFL
+date: today
+execute:
+  echo: false
+  warning: false
+toc: true
+number-sections: true
+number-depth: 3
+highlight-style: pygments
+bibliography: references.bib
+csl: ieee.csl
+format: 
+  html:
+    include-in-header: mathjax.html
+    code-fold: true
+    html-math-method: mathjax
+    css: styles.css
+  pdf:
+    keep-tex: true
+    link-citations: true
+    pdf-engine: pdflatex
+    documentclass: scrreprt
+    papersize: a4
+    geometry: 
+      - top=20mm
+      - bottom=20mm
+      - left=20mm
+      - right=20mm
+---
+
+```{python}
+#| init_cell: true
+
+from ekv_functions import *
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import subprocess
+import shutil
+import os
+import os.path as op
+import sys
+sys.path.append(".")
+import re
+
+from IPython.display import Markdown
+from tabulate import tabulate
+
+plt.rcParams['pdf.fonttype'] = 42
+plt.rcParams['font.family'] = 'Arial'
+plt.rcParams['mathtext.fontset'] = 'custom'
+plt.rcParams['mathtext.rm'] = 'Arial'
+plt.rcParams['mathtext.it'] = 'Arial:italic'
+plt.rcParams['mathtext.bf'] = 'Arial:bold'
+#plt.style.use('plt_style.mplstyle')
+plt.style.use('plt_style_small.mplstyle')
+#plt.style.use('plt_style_medium.mplstyle')
+lw=1
+msize=5
+
+circuitName="Fully_diff_amp"
+version = "_v1" # Allows you to save different versions
+#newSim=True
+newSim=False
+refloat=r'.*?([+-]?\d+([.]\d*)?([eE][+-]?\d+)?|[.]\d+([eE][+-]?\d+)?)'
+```
+
+# Introduction
+
+![Schematic of a fully differential OTA with capacitive feedback.](Figures/OTA_cap_feedback_fully_diff.png){#fig-OTA_cap_feedback_fully_diff}
+
+![Equivalent circuit of the fully differential OTA of @fig-OTA_cap_feedback_fully_diff operating in differential mode.](Figures/OTA_cap_feedback_single_ended.png){#fig-OTA_cap_feedback_single_ended}
+
+In this notebook, we want to minimize the bias current of the fully differential OTA amplifier shown in @fig-OTA_cap_feedback_fully_diff for achieving a given gain and bandwidth. When the fully differential amplifier of @fig-OTA_cap_feedback_fully_diff is used in differential mode operation (assuming a perfect internal matching) it simplfies to the equivalent circuit shown in @fig-OTA_cap_feedback_single_ended.
+
+Note that capacitance $C_{in}$ represents the parasitic input capacitance of the fully differential OTA. Since the OTA input stage is a differential pair, when operated in differential mode, this input capacitance corresponds to the gate-to-source $C_{GS}$ and gate-to-bulk $C_{GB}$ capacitances of the input differential pair transistors.
+
+::: {.callout-note}
+Of course the circuits of @fig-OTA_cap_feedback_fully_diff or @fig-OTA_cap_feedback_single_ended cannot be used without periodically resetting the feedback capacitor $C_F$. They are usually implemented as switched-capacitor (SC) circuits as shown in @fig-SC_amplifier which operate with two non-overlapping phases. During phase $\Phi_1$, the sampling and feedback capacitors are reset. The amplification occurs during phase $\Phi_2$
+:::
+
+![SC implementation of the amplifier (single-ended).](Figures/SC_amplifier.png){#fig-SC_amplifier}
+
+# Linear Analysis
+
+![Equivalent linear circuit of the fully-differential circuit of @fig-OTA_cap_feedback_fully_diff operating in differential mode.](Figures/OTA_cap_feedback_small-signal.png){#fig-OTA_cap_feedback_small-signal.png}
+
+When operating in differential mode, the circuit of @fig-OTA_cap_feedback_fully_diff simplifies to the equivalent circuit shown in @fig-OTA_cap_feedback_small-signal.png. From @fig-OTA_cap_feedback_small-signal.png, it is then easy to show that the transfer function is given by
+\begin{equation}
+  A(s) \triangleq \frac{\Delta V_{out}}{\Delta V_{in}} = A_0 \cdot \frac{1-s/\omega_z}{1+s/\omega_p}
+\end{equation}
+where $A_0$ is the amplifier DC gain, $\omega_p$ the cut-off frequency and $\omega_z$ the zero given by
+\begin{align}
+  A_0 &= A_{0,ideal} \cdot \frac{\beta\,A_{dc}}{1 + \beta\,A_{dc}},\\
+  A_{0,ideal} &= -\frac{C_S}{C_F},\\
+  \omega_p &= \frac{1+\beta\,A_{dc}}{R_{out}\,C_{out}},\\
+  \omega_z &= \frac{G_m}{C_F}.
+\end{align}
+$A_{dc} = G_m \cdot R_{out}$ is the OTA DC voltage gain, $\beta\,A_{dc}$ the DC loop gain, $\beta$ the feedback gain and $C_{out}$ the total capacitance seen at the output. If the loop-gain $\beta\,A_{dc} \gg 1$, the amplifier DC gain and cut-off frequency simplify to
+\begin{align}
+  A_0 &\cong A_{0,ideal} = -\frac{C_S}{C_F},\\
+  \omega_p &\cong \frac{\beta\,A_{dc}}{R_{out}\,C_{out}} = \frac{\beta\,G_m}{C_{out}}.
+\end{align}
+
+![Small-signal circuit to evaluate the feedback gain $\beta$.](Figures/Feedback_gain.png){#fig-feedback_gain}
+
+The feedback gain $\beta$ can be calculated from the schematic shown in @fig-feedback_gain as
+\begin{equation}
+  \beta \triangleq \frac{V}{V_{out}} = \frac{C_F}{C_F + C_S + C_{in}}.
+\end{equation}
+
+The amplifier bandwidth is given by $\omega_c = \omega_p \cong \beta \cdot G_m/C_{out}$ where the total capacitance seen at the output $C_{out}$ can be expressed as
+\begin{equation}
+  C_{out} = C_L + \frac{C_S + C_{in}}{C_F + C_S + C_{in}} \cdot C_F,
+\end{equation}
+which can also be written in terms of the feedback factor $\beta$ as
+\begin{equation}
+  C_{out} = C_L + \beta \cdot (C_S + C_{in}) = C_L + (1-\beta) \cdot C_F.
+\end{equation}
+
+![Small-signal transfer function of the amplifier.](Figures/Transfer_function.png){#fig-transfer_function}
+
+In order to achieve some DC gain, $C_F$ is smaller than $C_S$ and usually also smaller than $C_L$. This means that the right-hand side (RHS) zero is located higher than the unity gain frequency which is then simply given by $\omega_u \cong G_m/C_{out}$. For frequencies below $\omega_u$, the magnitude of the transfer function is shown in @fig-transfer_function.
+
+At high-frequency (i.e. for $\omega_u < \omega_z \ll \omega$), the gain saturates to
+\begin{equation}
+  A(s) \cong - A_0 \cdot \frac{\omega_p}{\omega_z}
+  = \frac{C_F\,C_S}{C_L\,(C_{in}+C_S)+C_F\,(C_{in}+C_L+C_S)}
+\end{equation}
+
+# Minimum current for a given bandwidth (long-channel)
+When optimizing the amplifier for low current consumption, the transistors of the differential pair are often biased in moderate or even weak inversion leading to large transistors and therefore an increased input capacitance. As mentioned above, in differential mode operation, this input capacitance is the sum of the gate-to-source and gate-to-bulk capacitances of the differential pair transistor
+\begin{equation}
+  C_{in} = C_{GS} + C_{GB}.
+\end{equation}
+Assuming the transistors of the differential pair are biased in saturation, we have
+\begin{equation}
+  C_{GS} \cong W\,L\,C_{ox} \cdot c_{gsi} + C_{GSo} \cdot W
+\end{equation}
+where $c_{gsi}$ is the intrinsic gate-to-source capacitance normalized to the total oxide capacitance $W\,L\,C_{ox}$. $c_{gsi}$ is typically equal to $2/3$ in strong inversion and proportional to $IC$ in weak inversion. $C_{GSo}$ is the gate-to-source overlap capacitance per unit width.
+
+The gate-to-bulk capacitance $C_{GB}$ is given by
+\begin{equation}
+  C_{GB} \cong \,W\,L\,C_{ox} \cdot c_{gbi} + C_{GBo} \cdot W,
+\end{equation}
+where $c_{gbi}$ is the gate-to-bulk intrinsic capacitance normalized to the total oxide capacitance $W\,L\,C_{ox}$. In strong inversion it is given by
+\begin{equation}
+  c_{gbi} = \frac{n-1}{3n}.
+\end{equation}
+$C_{GBo}$ is the gate-to-bulk overlap capacitance per unit width.
+
+For a given transistor length $L$, the input capacitance $C_{in}$ scales with the transistor width $W$ according to
+\begin{equation}
+  C_{in} = C_{GW} \cdot W,
+\end{equation}
+where $C_{GW}$ is the gate-to-source and gate-to-bulk capacitance per unit width given by
+\begin{equation}
+  C_{GW} = L\,C_{ox} \cdot (c_{gsi} + c_{gbi}) + C_{GSo}  + C_{GBo}.
+\end{equation}
+
+To achieve a certain bandwidth we need to have a certain transconductance for a given load capacitance. In order to maximize the current efficiency, we should bias the transistors of the differential pair in weak inversion. This leads to large transistors and therefore large parasitic capacitances which will impact the bandwidth. Imposing the bandwidth, at some point the capacitance becomes so large that it is no more possible to achieve the required transconductance in weak inversion for the desired bandwidth. Does this mean that there is a minimum current for the amplifier to achieve a certain bandwidth?
+
+To answer this question we need to solve the following set of equations for $I_b$ and $W$ assuming a given length $L$
+\begin{align}
+  \omega_c &= \beta \cdot \frac{G_m}{C_{out}},\\
+  C_{out} &= C_L + (1-\beta) \cdot C_F,\\
+  \beta &= \frac{C_F}{C_F + C_S + C_{in}},\\
+  C_{in} &= W \cdot C_{GW},\\
+  I_b &= I_{spec\Box} \cdot \frac{W}{L} \cdot IC,\\
+  G_m &= \frac{I_{spec\Box}}{n U_T} \cdot \frac{W}{L} \cdot g_{ms}(IC),
+\end{align}
+where $g_{ms}(IC)$ is the long-channel normalized source transconductance given by
+\begin{equation}
+  g_{ms} = \frac{\sqrt{4 IC + 1} - 1}{2} = \frac{2 IC}{\sqrt{4 IC + 1} + 1}.
+\end{equation}
+Solving for $I_b$ and $W/L$ leads to the following normalized solutions
+\begin{align}\label{eq:ib_AR}
+  i_b &\triangleq \frac{I_b}{I_{pec\Box} \cdot \Omega} = \frac{IC}{g_{ms}(IC) - \Theta},\\
+  AR &\triangleq \frac{W/L}{\Omega} =\frac{1}{g_{ms} - \Theta},
+\end{align}
+where $i_b$ is the bias current normalized to $I_{pec\Box} \cdot \Omega$ and $AR$ is the $W/L$ ratio normalized to $\Omega$ with
+\begin{align}
+  \Omega &\triangleq \frac{\omega_c}{\omega_L},\\
+  \omega_L &\triangleq \frac{I_{spec\Box}}{n U_T} \cdot \frac{1}{(1+C_S/C_L+C_S/C_F) \cdot C_L},\\
+  \Theta &\triangleq \frac{\omega_c}{\omega_W},\\
+  \omega_W &\triangleq \frac{I_{spec\Box}}{n U_T} \cdot \frac{1}{(1+C_L/C_F) \cdot C_{GW} \cdot L}.
+\end{align}
+Parameters $\Omega$ and $\Theta$ are proportionnal to the desired bandwidth $\omega_c$ and depend on the parameters $\omega_L$ and $\omega_W$. 
+
+The normalized current $i_b$ is plotted versus the inversion coefficient $IC$ in @fig-ib_vs_ic for different values of $\Theta$. Note that the curve for $\Theta = 0$ corresponds to the case where the input capacitance can be ignored ($C_{GW} = 0$).
+
+```{python}
+#| label: fig-ib_vs_ic
+#| fig-cap: Normalized bias current $i_b$ versus inversion coefficient $IC$.
+
+def ICopt_theta(theta):
+    return (sqrt(theta*(1+theta))+theta+0.5)**2-0.25
+
+def ibopt_theta(theta):
+    return 1+2*theta+2*sqrt(theta*(1+theta))
+
+Npts=1001
+thetaopt=np.logspace(-4,1,Npts,endpoint=True,base=10.0)
+ICopt=np.zeros(Npts)
+ibopt=np.zeros(Npts)
+
+for k in range(0,Npts):
+    ICopt[k]=ICopt_theta(thetaopt[k])
+    ibopt[k]=ibopt_theta(thetaopt[k])
+
+plt.loglog(ICopt,ibopt,'r--')
+
+theta=[0,0.01,0.03,0.1,0.3,1]
+
+Ncurves=len(theta)
+IClim=np.zeros(Ncurves)
+colors=plt.cm.rainbow(np.linspace(0, 1, Ncurves))
+logICmin=-2
+logICmax=2
+ICmin=pow(10,logICmin)
+ICmax=pow(10,logICmax)
+IC=np.logspace(logICmin,logICmax,Npts,endpoint=True,base=10.0)
+
+ib=np.zeros(Npts)
+
+for m in range(0,Ncurves):
+    IClim[m]=theta[m]*(1+theta[m])
+    ICop=ICopt_theta(theta[m])
+    ibop=ibopt_theta(theta[m])
+    for k in range(0,Npts):
+        if IC[k]<IClim[m]:
+            ib[k]=float("nan")
+        else:
+            ib[k]=IC[k]/(gms_ic(IC[k])-theta[m])
+    plt.loglog([IClim[m],IClim[m]],[1,1e2],'k--', linewidth=lw)
+    plt.loglog(IC, ib, color=colors[m], label='$\\Theta =$' + f'{theta[m]:.2f}')
+    plt.loglog(ICop,ibop,'ro', markersize=msize)
+
+plt.loglog([1,1e2],[1,1e1],'k--', linewidth=lw)
+plt.xlim(ICmin,ICmax)
+#plt.xticks(np.arange(0,11,1))
+plt.xlabel('$IC$')
+plt.ylim(1,1e2)
+#plt.yticks(np.arange(0,1.1,0.1))
+plt.ylabel('Normalized bias current $i_b$')
+#plt.legend(loc='lower right')
+plt.legend(loc='center left', fontsize=9, bbox_to_anchor=(1, 0.5))
+plt.text(0.7, 0.95, 'No VS ($\\lambda_c = 0$)', ha='left', va='top', size=9, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+plt.show()
+```
+
+From @fig-ib_vs_ic, we clearly see that there is a minimum current for a given value of parameter $\Theta$. We can find the optimum inversion coefficient $IC_{opt}$ corresponding to this minimum which is given by
+\begin{align}
+  IC_{opt} &= \left(\sqrt{\Theta \cdot (1+\Theta)} + \Theta + \frac{1}{2}\right)^2 - \frac{1}{4}\\
+  &= 2 \Theta \cdot (1+\Theta) + (1+2\Theta) \cdot \sqrt{\Theta \cdot (1+\Theta)}\\
+  &\cong 2 \Theta + \sqrt{\Theta} \quad \textsf{for $\Theta \ll 1$}.
+\end{align}
+We see that $IC_{opt}$ only depends on the parameter $\Theta$. We also see that there is a minimum inversion coefficient $IC_{lim}$ below which the desired bandwidth $\omega_c$ can no more be achieved
+\begin{equation}
+  IC_{lim} = \Theta \cdot (1+\Theta) \cong \Theta  \quad \textsf{for $\Theta \ll 1$},
+\end{equation}
+which is about equal to $\Theta$ for small values of $\Theta$. The optimum normalized current is given by
+\begin{equation}
+  i_{bopt} \triangleq i_b(IC_{opt}) = 1 + 2\Theta +2\sqrt{\Theta \cdot (1+\Theta)}.
+\end{equation}
+
+The normalized $W/L$ is plotted versus $IC$ in @fig-woverl_vs_ic for the same values of $\Theta$.
+
+```{python}
+#| label: fig-woverl_vs_ic
+#| fig-cap: Normalized aspect ratio $W/L$ versus inversion coefficient $IC$.
+
+def ARopt_theta(theta):
+    if theta==0:
+        ARopt=float("nan")
+    else:
+        ARopt=1/sqrt(theta*(1+theta))
+    return ARopt
+
+Npts=1001
+thetaopt=np.logspace(-4,1,Npts,endpoint=True,base=10.0)
+ICopt=np.zeros(Npts)
+ARopt=np.zeros(Npts)
+
+for k in range(0,Npts):
+    ICopt[k]=ICopt_theta(thetaopt[k])
+    ARopt[k]=ARopt_theta(thetaopt[k])
+
+plt.loglog(ICopt,ARopt,'r--')
+
+theta=[0,0.01,0.03,0.1,0.3,1]
+
+Ncurves=len(theta)
+IClim=np.zeros(Ncurves)
+colors=plt.cm.rainbow(np.linspace(0, 1, Ncurves))
+logICmin=-2
+logICmax=2
+ICmin=pow(10,logICmin)
+ICmax=pow(10,logICmax)
+IC=np.logspace(logICmin,logICmax,Npts,endpoint=True,base=10.0)
+
+AR=np.zeros(Npts)
+
+for m in range(0,Ncurves):
+    IClim[m]=theta[m]*(1+theta[m])
+    ICop=ICopt_theta(theta[m])
+    ARop=ARopt_theta(theta[m])
+    for k in range(0,Npts):
+        if IC[k]<IClim[m]:
+            AR[k]=float("nan")
+        else:
+            AR[k]=1/(gms_ic(IC[k])-theta[m])
+    plt.loglog([IClim[m],IClim[m]],[1e-1,1e2],'k--', linewidth=lw)
+    plt.loglog(IC, AR, color=colors[m], label='$\\Theta =$' + f'{theta[m]:.2f}')
+    plt.loglog(ICop,ARop,'ro', markersize=msize)
+
+plt.loglog([1e-2,1],[1e2,1],'k--', linewidth=lw)
+plt.loglog([1,1e2],[1,1e-1],'k--', linewidth=lw)
+plt.xlim(ICmin,ICmax)
+#plt.xticks(np.arange(0,11,1))
+plt.xlabel('$IC$')
+plt.ylim(1e-1,1e2)
+#plt.yticks(np.arange(0,1.1,0.1))
+plt.ylabel('Normalized $W/L$')
+#plt.legend(loc='lower right')
+plt.legend(loc='center left', fontsize=9, bbox_to_anchor=(1, 0.5))
+plt.text(0.7, 0.95, 'No VS ($\\lambda_c = 0$)', ha='left', va='top', size=9, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+plt.show()
+```
+
+We see from @fig-woverl_vs_ic that the transistor width increases first as $1/\sqrt{IC}$ in strong inversion and then faster as $1/IC$ in weak inversion making the transistor quickly very large until $IC$ reaches $IC_{lim}$ where the width becomes infinity. The optimum current also corresponds to an optimum transistor width $W$ and hence and optimum normalized $W/L$ given by
+\begin{equation}
+  AR_{opt} \triangleq AR(IC_{opt}) = \frac{1}{\sqrt{\Theta \cdot (1+\Theta)}}.
+\end{equation}
+The dots in @fig-woverl_vs_ic correspond to the normalized aspect ratio $AR$ obtained for $IC_{opt}$.
+
+We now will illustrate the design of the fully differential capacitively coupled OTA for a given bandwidth with an example.
+
+# Design Example
+
+![Schematic of the fully differential amplifier used for simulations.](Figures/Example_schematic.png){#fig-example_schematic}
+
+For this example we have chosen the simplest fully differential OTA shown in @fig-example_schematic, namely a simple differential pair. Note that in reality the circuit of  @fig-example_schematic requires an additional common-mode feedback (CMFB) circuit to set and stabilize the common-mode output voltage. However, in simulation, the circuit is perfectly symmetrical and therefore the output common-mode voltage is well defined (by the input common-mode, the $V_{GS}$ voltage and output conductance of M~1a~-M~1b~). In differential operation, the sources of M~1a~-M~1b~ remain an AC ground and the circuit reduces to a common-source amplifier corresponding to a single current branch as shown in @fig-example_half_schematic. We can therefore use the above analysis to design the amplifier.
+
+![Equivalent schematic of the fully differential amplifier in differential operation.](Figures/OTA_cap_feedback_half.png){#fig-example_half_schematic}
+
+We want to size the fully differential amplifier for the specifications given in @tbl-specs. We need to find the minimum current and size the transistor to achieve these specs. We will design the amplifier for a generic 180nm bulk CMOS process. The physical parameters are given in @tbl-physics_param, the global process parameters in @tbl-process_param and finally the MOSFET parameters in @tbl-mos_param. 
+
+```{python}
+#| label: tbl-specs
+#| tbl-cap: Fully-differential SC amplifier specifications.
+
+from specs import *
+
+A0=10**(A0dB/20)
+wc=2*pi*BW
+
+table = [["DC gain","$A_0$",f'{A0dB:.0f}',"$dB$"],
+         ["Bandwidth","$BW$",f'{BW/1e6:.0f}',"$MHz$"],
+         ["Load capacitance","$C_L$",f'{CL/1e-12:.0f}',"$pF$"],
+         ["Feedback capacitance","$C_F$",f'{CF/1e-15:.0f}',"$fF$"],
+         ["Transistor length","$L$",f'{L/1e-6:.0f}',"$\\mu m$"]
+         ]
+Markdown(tabulate(
+  table,
+  headers=["Specification","Symbol","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("left","center","center","center")
+))
+```
+
+## Process
+We will design the fully-differential SC amplifier for a generic 180 nm bulk CMOS process. The physical parameters are given in @tbl-physics_param, the global process parameters in @tbl-process_param and finally the MOSFET parameters in @tbl-mos_param. 
+
+```{python}
+#| label: tbl-physics_param
+#| tbl-cap: Physical parameters
+
+from tsmc018_sekv_ekv2p6 import *
+
+table = [["$T$",f'{T:.0f}',"$K$"],
+         ["$U_T$",f'{UT/1e-3:.3f}',"$mV$"]
+         ]
+Markdown(tabulate(
+  table,
+  headers=["Parameter","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("center", "center", "center")
+))
+```
+
+```{python}
+#| label: tbl-process_param
+#| tbl-cap: Global process parameters
+
+from tsmc018_sekv_ekv2p6 import *
+
+table = [["$V_{DD}$",f'{VDD:.1f}',"$V$"],
+         ["$C_{ox}$",f'{Cox*1e3:.3f}',"$\\frac{fF}{\\mu m^2}$"],
+         ["$W_{min}$",f'{Wmin/1e-9:.0f}',"$nm$"],
+         ["$L_{min}$",f'{Lmin/1e-9:.0f}',"$nm$"]
+         ]
+Markdown(tabulate(
+  table,
+  headers=["Parameter","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("center", "center", "center")
+))
+```
+
+```{python}
+#| label: tbl-mos_param
+#| tbl-cap: Transistor process parameters
+
+from tsmc018_sekv_ekv2p6 import *
+
+table = [["sEKV parameters"],
+         ["$n$",f'{n0n:.2f}',f'{n0p:.2f}',"-"],
+         ["$I_{{spec\\Box}}$",f'{Ispecsqn/1e-9:.0f}',f'{Ispecsqp/1e-9:.0f}',"$nA$"],
+         ["$V_{{T0}}$",f'{VT0n:.3f}',f'{VT0p:.3f}',"$V$"],
+         ["$L_{{sat}}$",f'{Lsatn/1e-9:.0f}',f'{Lsatp/1e-9:.0f}',"$nm$"],
+         ["$\\lambda$",f'{lambdan*1e-6:.0f}',f'{lambdap*1e-6:.0f}',"$\\frac{{V}}{{\\mu m}}$"],
+         ["Overlap capacitances parameters"],
+         ["$C_{{GDo}}$",f'{CGDOn*1e9:.3f}',f'{CGDOp*1e9:.3f}','$\\frac{{fF}}{{\\mu m}}$'],
+         ["$C_{{GSo}}$",f'{CGSOn*1e9:.3f}',f'{CGSOp*1e9:.3f}','$\\frac{{fF}}{{\\mu m}}$'],
+         ["$C_{{GBo}}$",f'{CGBOn*1e9:.3f}',f'{CGBOp*1e9:.3f}','$\\frac{{fF}}{{\\mu m}}$'],
+         ["Junction capacitances parameters"],
+         ["$C_J$",f'{CJn*1e3:.3f}',f'{CJp*1e3:.3f}','$\\frac{{fF}}{{\\mu m^2}}$'],
+         ["$C_{{JSW}}$",f'{CJSWn*1e9:.3f}',f'{CJSWp*1e9:.3f}','$\\frac{{fF}}{{\\mu m}}$'],
+         ["Flicker noise parameters"],
+         ["$K_F$",f'{KFn:.1e}',f'{KFn:.1e}',"$J$"],
+         ["$AF$",f'{AFn:.1f}',f'{AFp:.1f}',"-"],
+         ["$\\rho$",f'{rhon:.3e}',f'{rhop:.3e}','$\\frac{{V \\cdot m^2}}{{A \\cdot s}}$'],
+         ["Matching parameters"],
+         ["$A_{{VT}}$",f'{AVTn*1e9:.0f}',f'{AVTp*1e9:.0f}',"$mV \\cdot \\mu m$"],
+         ["$A_{{\\beta}}$",f'{Abetan*1e8:.0f}',f'{Abetap*1e8:.0f}',"$\\% \\cdot \\mu m$"],
+         ["Source and drain sheet resistance parameter"],
+         ["$R_{{sh}}$",f'{RSHn:.0f}',f'{RSHp:.0f}',"$\\frac{{\\Omega}}{{\\mu m}}$"],
+         ["Width and length parameters"],
+         ["$\\Delta W$",f'{DWn/1e-9:.0f}',f'{DWp/1e-9:.0f}',"$\\,nm$"],
+         ["$\\Delta L$",f'{DLn/1e-9:.0f}',f'{DLp/1e-9:.0f}',"$\\,nm$"]
+         ]
+Markdown(tabulate(
+  table,
+  headers=["Parameter","NMOS","PMOS","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("center", "center", "center")
+))
+```
+
+We first need to estimate the parameter $C_{GW}$ which is related to the transistor input capacitance $C_{in}$. Since we don't know the inversion coefficient we cannot estimate $c_{gsi}$ and $c_{gbi}$. We therefore will take their values in strong inversion for the estimation of the input capacitance per width $C_{GW}$
+\begin{equation}
+  C_{GW} \cong \left(1-\frac{1}{3 n}\right) \cdot C_{ox} \cdot L + C_{GSo} + C_{GBo},
+\end{equation}
+which depends on transistor length $L$. Since the above theory was developed for a long-channel device, we will choose $L =$ `{python} f'{L/1e-6:.0f}'` $\mu m$.. We can now estimate the total gate capacitance per unit width for an n-channel transistor. 
+
+```{python}
+CGW=(1-1/(3*n0n))*Cox*L+CGSOn+CGBOn
+A0=pow(10,A0dB/20)
+CS=A0*CF
+```
+
+For the selected technology, we get $C_{GW} =$ `{python} f'{CGW/1e-9:.3f}'` $fF/\mu m$.
+
+From the DC gain specification $A_0 =$ `{python} f'{A0:.0f}'` and the chosen feedback capacitance $C_F =$ `{python} f'{CF/1e-15:.0f}'` $fF$, we get $C_S =$ `{python} f'{CS/1e-12:.0f}'` $pF$. We can compute the optimum inversion coefficient $IC_{opt}$, optimum width $W_{opt}$, optimum current $I_{b,opt}$ and aspect ratio $\left.W/L\right|_{opt}$ which are given in @tbl-optimum_parameters.
+
+```{python}
+#| label: tbl-optimum_parameters
+#| tbl-cap: Fully differential OTA optimum parameters.
+
+def ICopt_theta(theta):
+    return (sqrt(theta*(1+theta))+theta+0.5)**2-0.25
+
+def ibopt_theta(theta):
+    return 1+2*theta+2*sqrt(theta*(1+theta))
+
+def ARopt_theta(theta):
+    return 1/sqrt(theta*(1+theta))
+
+nUT=n0n*UT
+fc=BW
+wc=2*pi*fc
+GBW=A0*fc
+wL=Ispecsqn/((1+CS/CL+CS/CF)*CL*nUT)
+wW=Ispecsqn/((1+CL/CF)*CGW*L*nUT)
+Omega=wc/wL
+theta=wc/wW
+ICopt=ICopt_theta(theta)
+ibopt=ibopt_theta(theta)
+ARopt=ARopt_theta(theta)
+Ibopt=ibopt*Ispecsqn*Omega
+Gmopt=Ibopt/nUT*gmsid_ic(ICopt)
+WoverLopt=ARopt*Omega
+Wopt=WoverLopt*L
+Cin=CGW*Wopt
+CGD=Wopt*CGDOn
+CF0=CF-CGD
+Ainfthe=CF*CS/(CL*(Cin+CS)+CF*(Cin+CL+CS))
+AindBthe=20*log(abs(Ainfthe))
+
+table = [["$A_0$",f'{A0:.3f}',"-"],
+         ["$C_S$",f'{CS/1e-12:.3f}',"$pF$"],
+         ["$f_L$",f'{wL/(2*pi*1e3):.3f}',"$kHz$"],
+         ["$f_W$",f'{wW/(2*pi*1e6):.3f}',"$MHz$"],
+         ["$\\Omega$",f'{Omega:.3f}',"-"],
+         ["$\\theta$",f'{theta:.3e}',"-"],
+         ["$IC_{opt}$",f'{ICopt:.3f}',"-"],
+         ["$i_{b,opt}$",f'{ibopt:.3f}',"-"],
+         ["$AR_{opt}$",f'{ARopt:.3f}',"-"],
+         ["$(W/L)_{opt}$",f'{WoverLopt:.3f}',"-"],
+         ["$I_{b,opt}$",f'{Ibopt/1e-9:.0f}',"$nA$"],
+         ["$G_{m,opt}$",f'{Gmopt/1e-6:.3f}',"$\mu A$"],
+         ["$W_{opt}$",f'{Wopt/1e-6:.2f}',"$\\frac{{\\mu A}}{{V}}$"],
+         ["$C_{in}$",f'{Cin/1e-15:.3f}',"$fF$"],
+         ["$C_{GD}$",f'{CGD/1e-15:.3f}',"$fF$"],
+         ["$C_F$",f'{CF/1e-15:.3f}',"$fF$"],
+         ["$C_{F0}$",f'{CF0/1e-15:.3f}',"$fF$"]
+        ]
+
+Markdown(tabulate(
+  table,
+  headers=["Parameter","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("center", "center", "center")
+))
+```
+
+```{python}
+#| label: tbl-transistor_info1
+#| tbl-cap: Transistor size and bias information.
+
+transistor_info={
+    "Type": ["n"],
+    "W": [Wopt],
+    "L": [L],
+    "ID": [Ibopt]
+}
+transistor_list=["M1a","M1b"]
+ekvmos_df=pd.DataFrame(transistor_info, index=transistor_list)
+
+ekvmos_df["W/L"]=ekvmos_df["W"]/ekvmos_df["L"]
+ekvmos_df["Ispec"]=np.where(ekvmos_df["Type"]=="n",
+                                     ekvmos_df["W/L"]*Ispecsqn,
+                                     ekvmos_df["W/L"]*Ispecsqp)
+ekvmos_df["IC"]=ekvmos_df["ID"]/ekvmos_df["Ispec"]
+ekvmos_df["VP-VS"]=UT*vps_ic(ekvmos_df["IC"])
+ekvmos_df["n"]=np.where(ekvmos_df["Type"]=="n",
+                                     n0n,
+                                     n0p)
+ekvmos_df["VG-VT0"]=np.where(ekvmos_df["Type"]=="n",
+                                     ekvmos_df["VP-VS"]/n0n,
+                                     ekvmos_df["VP-VS"]/n0p)
+ekvmos_df["VDSsat"]=UT*vdssat_ic(ekvmos_df["IC"])
+ekvmos_df["Gspec"]=ekvmos_df["Ispec"]/UT
+ekvmos_df["Gms"]=ekvmos_df["Gspec"]*gms_ic(ekvmos_df["IC"])
+ekvmos_df["Gm"]=np.where(ekvmos_df["Type"]=="n",
+                                     ekvmos_df["Gms"]/n0n,
+                                     ekvmos_df["Gms"]/n0p)
+ekvmos_df["Gds"]=np.where(ekvmos_df["Type"]=="n",
+                                     ekvmos_df["ID"]/(lambdan*ekvmos_df["L"]),
+                                     ekvmos_df["ID"]/(lambdap*ekvmos_df["L"]))
+ekvmos_df["gamman"]=np.where(ekvmos_df["Type"]=="n",
+                                     gamman_ic(ekvmos_df["IC"],n0n),
+                                     gamman_ic(ekvmos_df["IC"],n0p))
+ekvmos_df["COX"]=Cox*ekvmos_df["W"]*ekvmos_df["L"]
+ekvmos_df["CGSi"]=ekvmos_df["COX"]*cgsi_ic(ekvmos_df["IC"])
+ekvmos_df["CGDi"]=0
+ekvmos_df["CGBi"]=np.where(ekvmos_df["Type"]=="n",
+                                     ekvmos_df["COX"]*cgbi_ic(ekvmos_df["IC"],n0n),
+                                     ekvmos_df["COX"]*cgbi_ic(ekvmos_df["IC"],n0p))
+ekvmos_df["CBSi"]=np.where(ekvmos_df["Type"]=="n",
+                                     ekvmos_df["COX"]*cbsi_ic(ekvmos_df["IC"],n0n),
+                                     ekvmos_df["COX"]*cbsi_ic(ekvmos_df["IC"],n0p))
+ekvmos_df["CBDi"]=np.where(ekvmos_df["Type"]=="n",
+                                     ekvmos_df["CGDi"]*(n0n-1),
+                                     ekvmos_df["CGDi"]*(n0p-1))
+ekvmos_df["CGSe"]=np.where(ekvmos_df["Type"]=="n",
+                                     ekvmos_df["W"]*CGSOn,
+                                     ekvmos_df["W"]*CGSOp)
+ekvmos_df["CGDe"]=np.where(ekvmos_df["Type"]=="n",
+                                     ekvmos_df["W"]*CGDOn,
+                                     ekvmos_df["W"]*CGDOp)
+ekvmos_df["CGBe"]=np.where(ekvmos_df["Type"]=="n",
+                                    ekvmos_df["W"]*CGBOn,
+                                    ekvmos_df["W"]*CGBOp)
+ekvmos_df["CBSe"]=np.where(ekvmos_df["Type"]=="n",
+                                    ekvmos_df["W"]*ekvmos_df["L"]*CJn+2*(ekvmos_df["W"]+ekvmos_df["L"])*CJSWn,
+                                    ekvmos_df["W"]*ekvmos_df["L"]*CJp+2*(ekvmos_df["W"]+ekvmos_df["L"])*CJSWp)
+ekvmos_df["CBDe"]=np.where(ekvmos_df["Type"]=="n",
+                                    ekvmos_df["W"]*ekvmos_df["L"]*CJn+2*(ekvmos_df["W"]+ekvmos_df["L"])*CJSWn,
+                                    ekvmos_df["W"]*ekvmos_df["L"]*CJp+2*(ekvmos_df["W"]+ekvmos_df["L"])*CJSWp)
+ekvmos_df["CGS"]=ekvmos_df["CGSi"]+ekvmos_df["CGSe"]
+ekvmos_df["CGD"]=ekvmos_df["CGDi"]+ekvmos_df["CGDe"]
+ekvmos_df["CGB"]=ekvmos_df["CGBi"]+ekvmos_df["CGBe"]
+ekvmos_df["CBS"]=ekvmos_df["CBSi"]+ekvmos_df["CBSe"]
+ekvmos_df["CBD"]=ekvmos_df["CBDi"]+ekvmos_df["CBDe"]
+#pd.set_option('display.float_format', '{:.2E}'.format)
+#ekvmos_df
+
+# Generate the table from dataframe
+feature_list=["W","L","ID","Ispec","IC","VG-VT0","VDSsat"]
+Nmos=len(transistor_list)
+Nfeature=len(feature_list)
+table=[]
+for mos in transistor_list:
+  row=[mos]
+  for feature in feature_list:
+    row.append(ekvmos_df.at[mos,feature])
+  table.append(row)
+
+# Scale data for proper units
+for i in range(Nmos):
+  for j in [1,2,4]:
+    table[i][j]=table[i][j]/1e-6
+  for j in [3]:
+    table[i][j]=table[i][j]/1e-9
+  for j in [6,7]:
+    table[i][j]=table[i][j]/1e-3
+
+Markdown(tabulate(
+  table,
+  headers=["Transistor","$W\\;[\\mu m]$","$L\\;[\\mu m]$","$I_D\\;[nA]$","$I_{{spec}}\\;[nA]$","$IC$","$V_G-V_{{T0}}\\;[mV]$","$V_{{DSsat}}\\;[mV]$"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center","center","center","center","center","center","center"),
+  floatfmt=(".3f",".2f",".2f",".0f",".3f",".3f",".0f",".0f")
+))
+```
+
+
+```{python}
+#| label: tbl-transistor_info2
+#| tbl-cap: Transistor small-signal and thermal noise parameters.
+
+# Generate the table from dataframe
+feature_list=["Gspec","Gms","Gm","Gds","gamman"]
+Nmos=len(transistor_list)
+Nfeature=len(feature_list)
+table=[]
+for mos in transistor_list:
+  row=[mos]
+  for feature in feature_list:
+    row.append(ekvmos_df.at[mos,feature])
+  table.append(row)
+
+# Scale data for proper units
+for i in range(Nmos):
+  for j in [1,2,3]:
+    table[i][j]=table[i][j]/1e-6
+  for j in [4]:
+    table[i][j]=table[i][j]/1e-9
+
+Markdown(tabulate(
+  table,
+  headers=["Transistor","$G_{{spec}}\\;[\\mu A/V]$","$G_{{ms}}\\;[\\mu A/V]$","$G_m\\;[\\mu A/V]$","$G_{{ds}}\\;[nA/V]$","$\\gamma_n$"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center","center","center","center","center"),
+  floatfmt=(".3f",".3f",".3f",".3f",".3f",".3f")
+))
+```
+
+The transistor size and bias information are given in @tbl-transistor_info1, while @tbl-transistor_info2 gives the small-signal parameters.
+
+The theoretical transfer function for this design is plotted in @fig-theoretical_tf.
+
+```{python}
+#| label: fig-theoretical_tf
+#| fig-cap: Theoretical transfer function.
+
+def Av(s,Adc,wp,wz):
+    num=Adc*(1-s/wz)
+    den=1+s/wp
+    return num/den
+
+Gm1the=ekvmos_df.at['M1a','Gm']
+Gds1the=ekvmos_df.at['M1a','Gds']
+Adcthe=Gm1the/Gds1the
+A0ide=CS/CF
+A0dBide=20*log(abs(A0ide))
+beta=CF/(CF+CS+Cin)
+A0the=A0ide*beta*Adcthe/(1+beta*Adcthe)
+A0dBthe=20*log(abs(A0the))
+Cout=CL+(1-beta)*CF
+wcide=beta*Gm1the/Cout
+fcide=wcide/(2*pi)
+GBWide=A0ide*fcide
+wzide=Gm1the/CF
+fzide=wzide/(2*pi)
+wcthe=(1+beta*Adcthe)*Gds1the/Cout
+fcthe=wcthe/(2*pi)
+GBWthe=A0the*fcthe
+wzthe=Gm1the/CF
+fzthe=wzthe/(2*pi)
+
+#print(f'Adc = {Adcthe:.3f}')
+#print(f'A0ideal = {A0ide:.3f}')
+#print(f'beta = {beta:.3f}')
+#print(f'A0 = {A0the:.3f}')
+#print(f'Cout = {Cout/1e-12:.3f} pF')
+#print(f'fc = {fcide/1e3:.3f} kHz (ideal)')
+#print(f'fc = {fcthe/1e3:.3f} kHz')
+#print(f'fz = {fzide/1e6:.3f} MHz')
+#print(f'fz = {fzthe/1e6:.3f} MHz')
+
+Npts=101
+logfmin=2
+logfmax=8
+fmin=pow(10,logfmin)
+fmax=pow(10,logfmax)
+fthe=np.logspace(logfmin,logfmax,Npts,endpoint=True,base=10.0)
+
+Avide=np.zeros(Npts,dtype=complex)
+AvmagdBide=np.zeros(Npts)
+Avphidegide=np.zeros(Npts)
+Avthe=np.zeros(Npts,dtype=complex)
+AvmagdBthe=np.zeros(Npts)
+Avphidegthe=np.zeros(Npts)
+for k in range(0,Npts):
+    jw=1j*2*pi*fthe[k]
+    Avide[k]=Av(jw,A0ide,wcide,wzide)
+    AvmagdBide[k]=20*log(abs(Avide[k]))
+    Avphidegide[k]=np.angle(Avide[k],deg=True)
+    Avthe[k]=Av(jw,A0the,wcthe,wzthe)
+    AvmagdBthe[k]=20*log(abs(Avthe[k]))
+    Avphidegthe[k]=np.angle(Avthe[k],deg=True)
+
+params = {'figure.figsize': (5,5)}
+plt.rcParams.update(params)
+
+fig, axs = plt.subplots(2, sharex=True)
+
+axs[0].semilogx([fmin,fcthe],[A0dBide-3,A0dBide-3],'k--', linewidth=lw)
+axs[0].semilogx([fcide,fcide],[-25,A0dBthe-3],'k--', linewidth=lw)
+axs[0].semilogx([fmin,GBWthe],[0,0],'k--', linewidth=lw)
+axs[0].semilogx([GBWthe,GBWthe],[-25,0],'k--', linewidth=lw)
+axs[0].semilogx([fmin,fmax],[AindBthe,AindBthe],'k--', linewidth=lw)
+axs[0].semilogx(fthe,AvmagdBide,'r-',label='Ideal')
+axs[0].semilogx(fthe,AvmagdBthe,'r--',label='Incl. finite gain')
+axs[0].set(xlim=(fmin,fmax), ylim=(-25,25), ylabel='$|A_v|$ [dB]')
+axs[0].set_yticks([-25,-20,-15,-10,-5,0,5,10,15,20,25])
+axs[0].legend(loc='best')
+textstr1 = '\n'.join((
+    f'$A_{{0,ideal}} =$ {A0ide:.1f}',
+    f'$A_{{dc}} =$ {Adcthe:.1f}',
+    f'$A_0 =$ {A0dBthe:.1f} dB',
+    f'$A_{{\\infty}} =$ {AindBthe:.1f} dB',
+    f'$f_c =$ {fcide/1e3:.0f} kHz',
+    f'$f_c =$ {fcthe/1e3:.0f} kHz',
+    f'$GBW =$ {GBWide/1e6:.1f} MHz',
+    f'$GBW =$ {GBWthe/1e6:.1f} MHz'))
+axs[0].text(1.05, 0.5, textstr1, ha='left', va='center', transform=axs[0].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+axs[0].text(0.74, 0.95, 'No VS ($\\lambda_c = 0$)', ha='left', va='top', transform=axs[0].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+
+axs[1].semilogx([fmin,fcide],[-45,-45],'k--', linewidth=lw)
+axs[1].semilogx([fcide,fcide],[-45,0],'k--', linewidth=lw)
+axs[1].semilogx([fmin,GBWthe],[-90,-90],'k--', linewidth=lw)
+axs[1].semilogx([GBWthe,GBWthe],[-90,0],'k--', linewidth=lw)
+axs[1].semilogx(fthe,Avphidegide,'b-',label='Ideal')
+axs[1].semilogx(fthe,Avphidegthe,'b--',label='Incl. finite gain')
+axs[1].set(xlim=(fmin,fmax), ylim=(-180,0), xlabel='Frequency [Hz]', ylabel='$arg\\{A_v\\}$ [degree]')
+axs[1].set_yticks([-180,-135,-90,-45,0])
+axs[1].legend(loc='best')
+textstr2 = '\n'.join((
+    f'$L =$ {L/1e-6:.0f} $\\mu m$',
+    f'$C_L =$ {CL/1e-12:.0f} pF',
+    f'$C_S =$ {CS/1e-12:.0f} pF',
+    f'$C_F =$ {CF/1e-15:.3f} fF',
+    f'$C_{{GD}} =$ {CGD/1e-15:.3f} fF',
+    f'$C_{{in}} =$ {Cin/1e-15:.3f} fF',
+    f'$\\beta =$ {beta:.3f}',
+    f'$IC_{{opt}} =$ {ICopt:.2f}',
+    f'$I_{{b,opt}} =$ {Ibopt/1e-9:.0f} nA',
+    f'$W_{{opt}} =$ {Wopt/1e-6:.2f} $\\mu m$'))
+axs[1].text(1.05, 0.5, textstr2, ha='left', va='center', transform=axs[1].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+plt.subplots_adjust(hspace=0.1)
+plt.show()
+```
+
+We now will check the design with simulations.
+
+## Simulation results from ngspice
+The theoretical results can be validated by comparing them to the results obtained from simulations performed with ngspice. In order to run the simulations you need to have ngspice installed. Please refer to the ngspice instructions.
+
+::: {.callout-note}
+The simulations are performed with ngspice @bib:ngspice:2024 using the EKV 2.6 compact model @bib:ekv2p6:doc:rev2:1998. For ngspice, we use the original Verilog-A implementation of EKV 2.6 @bib:grabinski:ekv2p6veriloga:essderc:2019 modified by C. Enz to get the operating point informations and available on the Gitub va-models site provided by D. Warning at @bib:dwarning:2024. The parameters correspond to a generic 180 nm bulk CMOS process @bib:grabinski:ekv2p6_param_extraction:mixdes:2015.
+:::
+
+### Operating point
+Before running the AC simulation, we first need to check the quiescent voltages and currents and the operating point by running an .OP simulation. The node voltages are extracted from the .ic file and presented in @tbl-op_voltages.
+
+```{python}
+#| label: tbl-op_voltages
+#| tbl-cap: OTA node voltages with the OTA in open-loop without offset correction.
+
+simtype = ".op"
+fileName = circuitName + simtype
+simulationPath = "./Simulations/ngspice/"
+simulationFile = simulationPath + fileName + ".cir"
+simulationLog = simulationPath + fileName + ".log"
+simulationVoltages = simulationPath + fileName + ".ic"
+simulationData = simulationPath + fileName + ".dat"
+ngspiceNodeVoltageFile = simulationPath + circuitName + version + simtype + ".ic"
+ngspiceDataFile = simulationPath + circuitName + version + simtype + ".dat"
+
+Vic=VDD/2
+Ib=Ibopt
+W1=ekvmos_df.at['M1a','W']
+L1=ekvmos_df.at['M1a','L']
+Gm1=ekvmos_df.at['M1a','Gm']
+Gmcm=Gm1
+CGD=ekvmos_df.at['M1a','CGD']
+CGS=ekvmos_df.at['M1a','CGS']
+CGB=ekvmos_df.at['M1a','CGB']
+CF0=CF-CGD
+Cin=CGS+CGB
+
+if newSim:
+  paramstr = '\n'.join((
+    f'.param VDD={VDD:.1f} Vic={Vic:.1f} Ib={Ib/1e-9:.0f}n',
+    f'.param CL={CL/1e-12:.3f}p CS={CS/1e-12:.3f}p CF={CF0/1e-15:.3f}f',
+    f'.param W1={W1/1e-6:.2f}u L1={L1/1e-6:.2f}u'
+  ))
+  #print(paramstr)
+  with open(simulationPath+'size_bias.par', 'w') as f:
+    f.write(paramstr)
+  #print('Starting ngspice simulation...\n')
+  result = subprocess.run(f"""ngspice_con -b -o "{simulationLog}" "{simulationFile}" """, shell=True, capture_output=True, text=True)
+  # We need to copy the resulting operating point information file because it will be overwritten by subsequent simulations
+  shutil.copy2(simulationVoltages, ngspiceNodeVoltageFile)
+  shutil.copy2(simulationData, ngspiceDataFile)
+
+nodeList=["vdd","ic","inp","inn","outp","outn","g1a","g1b","1"]
+v_df=pd.DataFrame(index=nodeList)
+Nnodes=len(nodeList)
+for k in range(0,Nnodes):
+  nodeName=nodeList[k]
+  regexp = re.compile(r'v\(' + nodeName + r'\)' + refloat)
+  with open(ngspiceNodeVoltageFile) as f:
+    for line in f:
+      match = re.search(regexp, line)
+      if match:
+        v_df.at[nodeName, 'Voltage']=float(match.group(1))
+
+Voutq=v_df.loc['outp','Voltage']
+#pd.set_option('display.float_format', '{:.2f}'.format)
+#v_df
+
+Markdown( 
+  tabulate(v_df,
+  showindex=True,
+  headers=["Node","Voltage"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center")
+))
+```
+
+```{python}
+#| label: tbl-op1
+#| tbl-cap: EKV 2.6 operating point information extracted from ngspice .op file for each transistor.
+
+mos_df=pd.read_table(ngspiceDataFile, sep=r'\s+', skiprows=[2], dtype=np.float64, engine='python')
+mos_df=mos_df.rename(columns={'@n1a[id]': 'Transistor', '@N1a[Id]': 'ID', '@N1a[Ispec]': 'Ispec', '@N1a[IC]': 'IC', '@N1a[n0]': 'n', '@N1a[Vdsat]': 'VDsat',
+                            '@N1a[gm]': 'Gm', '@N1a[gms]': 'Gms', '@N1a[gds]': 'Gds', '@N1a[gmbs]': 'Gmb',
+                            '@N1a[Rn]': 'Rn', '@N1a[Vnth]': 'Vnth', '@N1a[gamman]': 'gamman', '@N1a[Vnfl]': 'Vnfl at 1Hz'})
+mos_df['Transistor'] = mos_df['Transistor'].astype(str)
+
+transistor_list=["M1a","M1b"]
+Nmos=len(transistor_list)
+for k in range(Nmos):
+  mos_df.at[k, 'Transistor'] = transistor_list[k]
+
+mos_df.set_index('Transistor', inplace=True)
+mos_df.rename_axis(index=None, inplace=True)
+pd.set_option('display.float_format', '{:.2E}'.format)
+#mos_df
+
+feature_list=["ID","Ispec","IC","n","VDsat"]
+
+Nfeature=len(feature_list)
+table=[]
+for mos in transistor_list:
+  row=[mos]
+  for feature in feature_list:
+    row.append(mos_df.at[mos,feature])
+  table.append(row)
+
+for i in range(Nmos):
+  for j in [1,2]:
+    table[i][j]=table[i][j]/1e-9
+  for j in [5]:
+    table[i][j]=table[i][j]/1e-3
+
+Markdown(tabulate(
+  table,
+  headers=["Transistor","$I_D\\;[nA]$","$I_{spec}\\;[nA]$","$IC$","$n$","$V_{Dsat}\\;[mV]$"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center","center","center","center"),
+  floatfmt=(".3f",".0f",".0f",".3f",".2f",".0f")
+))
+```
+
+```{python}
+#| label: tbl-op2
+#| tbl-cap: EKV 2.6 small-signal operating point information extracted from ngspice .op file for each transistor.
+
+feature_list=["n","Gms","Gm","Gmb","Gds"]
+
+Nfeature=len(feature_list)
+table=[]
+for mos in transistor_list:
+  row=[mos]
+  for feature in feature_list:
+    row.append(mos_df.at[mos,feature])
+  table.append(row)
+
+for i in range(Nmos):
+  for j in [2,3,4]:
+    table[i][j]=table[i][j]/1e-6
+  for j in [5]:
+    table[i][j]=table[i][j]/1e-9
+
+Markdown(tabulate(
+  table,
+  headers=["Transistor","$n$","$G_{ms}\\;[\\mu A/V]$","$G_m\\;[\\mu A/V]$","$G_{mb}\\;[\\mu A/V]$","$G_{ds}\\;[nA/V]$"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center","center","center","center","center"),
+  floatfmt=(".3f",".2f",".3f",".3f",".3f",".3f")
+))
+```
+
+The EKV 2.6 large- and small-signal transistor bias information extracted from the simulation are given in @tbl-op1 and @tbl-op2, respectively. We see that their values are close to the theoretical values given in @tbl-transistor_info1 and @tbl-transistor_info2.
+
+### Transfer function
+The simulated transfer function is shown in @fig-simulated_tf and compared to the theoretical transfer function of @fig-transfer_function. We see a perfect match between theory and simulation.
+
+```{python}
+#| label: fig-simulated_tf
+#| fig-cap: "Simulated gain response compared to theoretical estimation."
+
+simtype = ".ac"
+fileName = circuitName + simtype
+simulationPath = "./Simulations/ngspice/"
+simulationFile = simulationPath + fileName + ".cir"
+simulationLog = simulationPath + fileName + ".log"
+simulationData = simulationPath + fileName + ".dat"
+ngspiceDataFile = simulationPath + circuitName + version + simtype + ".dat"
+ngspiceLogFile = simulationPath + circuitName + version + simtype + ".log"
+
+if newSim:
+  #print('Starting NGSpice simulation...\n')
+  result = subprocess.run(f"""ngspice_con -b -o "{simulationLog}" "{simulationFile}" """, shell=True, capture_output=True, text=True)
+  # We need to copy the resulting dc simulation data file because it will be overwritten by the next dc simulation
+  shutil.copy2(simulationData, ngspiceDataFile)
+  # We also need to copy the dc simulation log file because it will be overwritten by the next dc simulation
+  shutil.copy2(simulationLog, ngspiceLogFile)
+
+df_sim=pd.read_table(ngspiceDataFile, sep=' +', engine='python')
+fsim=df_sim['frequency'].to_numpy()
+AvmagdBsim=df_sim['AmagdB'].to_numpy()
+Avphidegsim=df_sim['Aphdeg'].to_numpy()
+Npts=len(fsim)
+fmin=fsim[0]
+fmax=fsim[Npts-1]
+
+for k in range(0,Npts):
+  if Avphidegsim[k]<0:
+    Avphidegsim[k]=Avphidegsim[k]+180
+  else:
+    Avphidegsim[k]=Avphidegsim[k]-180
+
+regexp = re.compile(r'adc' + refloat)
+with open(ngspiceLogFile) as f:
+  for line in f:
+    match = re.match(regexp, line)
+    if match:
+      AdcdBsim=float(match.group(1))
+
+regexp = re.compile(r'gbw' + refloat)
+with open(ngspiceLogFile) as f:
+  for line in f:
+    match = re.match(regexp, line)
+    if match:
+      GBWsim=float(match.group(1))
+
+Gmsim=mos_df.at['M1a','Gm']
+Gdssim=mos_df.at['M1a','Gds']
+Adcsim=Gmsim/Gdssim
+A0dBsim=AvmagdBsim[0]
+A0sim=pow(10,A0dBsim/20)
+A0dBthe=20*log(abs(A0the))
+AindBsim=AvmagdBsim[Npts-1]
+
+params = {'figure.figsize': (5,5)}
+plt.rcParams.update(params)
+    
+fig, axs = plt.subplots(2, sharex=True)
+axs[0].semilogx([fmin,GBWsim],[0,0],'k--', linewidth=lw)
+axs[0].semilogx([GBWsim,GBWsim],[0,-60],'k--', linewidth=lw)
+axs[0].semilogx([fmin,fmax],[AindBthe,AindBthe],'k--', linewidth=lw)
+axs[0].semilogx(fsim,AvmagdBsim,'ro', markersize=4, markevery=15, label='Simulation')
+axs[0].semilogx(fthe,AvmagdBthe,'r-',label='Theory')
+axs[0].set(xlim=(fmin,fmax), ylim=(-25,25), ylabel='$|A_{vd}|$ [dB]')
+axs[0].set_yticks([-25,-20,-15,-10,-5,0,5,10,15,20,25])
+axs[0].legend(loc='lower left')
+textstr1 = '\n'.join((
+  f'$A_{{dc}} =$ {Adcthe:.1f} (theory)',
+  f'$A_{{dc}} =$ {Adcsim:.1f} (sim)',
+  f'$A_0 =$ {A0dBthe:.1f} dB (theory)',
+  f'$A_0 =$ {A0dBsim:.1f} dB (sim.)',
+  f'$A_{{\\infty}} =$ {AindBthe:.1f} dB (theory)',
+  f'$A_{{\\infty}} =$ {AindBsim:.1f} dB (sim.)',
+  f'$GBW =$ {GBWthe/1e6:.1f} MHz (theory)',
+  f'$GBW =$ {GBWsim/1e6:.1f} MHz (sim.)'))
+axs[0].text(1.05, 0.5, textstr1, ha='left', va='center', transform=axs[0].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+
+axs[1].semilogx([fmin,GBWsim],[-90,-90],'k--', linewidth=lw)
+axs[1].semilogx([GBWsim,GBWsim],[-90,0],'k--', linewidth=lw)
+axs[1].semilogx(fsim,Avphidegsim,'bo', markersize=4, markevery=15, label='Simulation')
+axs[1].semilogx(fthe,Avphidegthe,'b-',label='Theory')
+axs[1].set(xlim=(fmin,fmax), ylim=(-180,0), xlabel='Frequency [Hz]', ylabel='$arg\\{A_{vd}\\}$ [degree]')
+#axs[1].set_xticks([1e1,1e2,1e3,1e4,1e5,1e6,1e7,1e8])
+axs[1].set_yticks([-180,-135,-90,-45,0])
+axs[1].legend(loc='lower left')
+textstr2 = '\n'.join((
+    f'$L =$ {L/1e-6:.0f} $\\mu m$',
+    f'$C_L =$ {CL/1e-12:.0f} pF',
+    f'$C_S =$ {CS/1e-12:.0f} pF',
+    f'$C_F =$ {CF/1e-15:.0f} fF',
+    f'$C_{{F0}} =$ {CF0/1e-15:.3f} fF',
+    f'$C_{{GD}} =$ {CGD/1e-15:.3f} fF',
+    f'$C_{{in}} =$ {Cin/1e-15:.3f} fF',
+    f'$\\beta =$ {beta:.3f}',
+    f'$IC_{{opt}} =$ {ICopt:.2f}',
+    f'$I_{{b,opt}} =$ {Ibopt/1e-9:.0f} nA',
+    f'$W_{{opt}} =$ {Wopt/1e-6:.2f} $\\mu m$'))
+axs[1].text(1.05, 0.5, textstr2, ha='left', va='center', transform=axs[1].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+plt.subplots_adjust(hspace=0.1)
+plt.show()
+```
+
+# Conclusion
+In this notebook we have optimized a fully differential capacitiviely coupled OTA for achieving a certain DC gain and bandwidth with a minimum power consumption. We started to analyze the circuit accounting for the input parasitic capacitance which scales with the width of the transistor of the differential pair. We have found that there is an optimum transistor inversion coefficient and width for achieving a certain bandwidth with a minimum bias current. We then illustrated the theory with an example. The sized circuit was then simulated with ngspice using the EKV 2.6 compact model for a generic 180nm CMOS technology. The simulation results perfectly match the theory.
+
+::: {.callout-note}
+An analysis of the small- and large-signal step response and the related settling times is performed in the companion notebook entitled "OTA with Capacitive Feedback -- Step Response (Version 1)".
+:::
+
+# References

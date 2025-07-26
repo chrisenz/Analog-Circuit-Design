@@ -1,0 +1,13 @@
+* Intermediate Transient Solution
+* Circuit: simulation of the fully differential sc amplifier by c. enz
+* Recorded at simulation time: 0
+.ic v(outp) = 0.966482
+.ic v(g1a) = 0.899979
+.ic v(1) = 0.518367
+.ic v(outn) = 0.966482
+.ic v(g1b) = 0.899979
+.ic v(vdd) = 1.8
+.ic v(inp) = 0.9
+.ic v(inn) = 0.9
+.ic v(ic) = 0.9
+.ic v(id) = 0
