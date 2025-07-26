@@ -16,7 +16,7 @@ In this directory you will find the systematic design of various single-ended OT
 * [The symmetrical OTA](Amplifiers/OTAs/Symmetrical%20OTA/) ([pdf](Amplifiers/OTAs/Symmetrical%20OTA/Symmetrical_OTA.pdf)).
 * [The Miller OTA](Amplifiers/OTAs/Miller%20OTA/) ([pdf](Amplifiers/OTAs/Miller%20OTA/Miller_OTA.pdf)).
 * [The telescopic OTA](Amplifiers/OTAs/Telescopic%20OTA/) ([pdf](Amplifiers/OTAs/Telescopic%20OTA/Telescopic_OTA.pdf)).
-* [The folded-cascode OTA](Amplifiers/OTAs/Folded%20Cacsode%20OTA/) ([pdf](Amplifiers/OTAs/Folded%20Cascode%20OTA/Folded_cascode_OTA.pdf)).
+* [The folded-cascode OTA](Amplifiers/OTAs/Folded%20Cascode%20OTA/) ([pdf](Amplifiers/OTAs/Folded%20Cascode%20OTA/Folded_cascode_OTA.pdf)).
 
 ## SC-Circuits
 
