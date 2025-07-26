@@ -6,7 +6,10 @@ This repository presents various examples of analog CMOS circuit design. It is f
 
 ### Basic
 
-#### Common-source stage with capacitive feedback
+In this directory you will find the design of various single transistor gain stages.
+
+It currently includes:
+* [Common-source stage with capacitive feedback](Amplifiers/Basic/CS%20CL%20Optimization/) ([pdf](Amplifiers/Basic/CS%20CL%20Optimization/CS_CL_optimization.pdf)).
 
 
 ### OTAs
