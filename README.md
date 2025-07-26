@@ -8,17 +8,15 @@ This repository presents various examples of analog CMOS circuit design. It is f
 
 #### Common-source stage with capacitive feedback
 
+
 ### OTAs
-#### Simple OTA
 
-#### Symmetrical OTA
-
-#### Miller OTA
-
-#### Telescopic OTA
-
-#### Folded-cascode OTA
-
+In this directory you will find the systematic design of various single-ended OTAs for a generic 180nm bulk CMOS process. The OTAs are designed using the EKV approach with the inversion coefficient. They are then simulated with ngspice using the EKV 2.6 compact model. The designs currently include:
+* [The simple 5 transistors OTA](
+* The symmetrical OTA
+* The Miller OTA
+* The telescopic OTA
+* The folded-cascode OTA
 
 ## SC-Circuits
 
