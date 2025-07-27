@@ -1,8 +1,8 @@
-# My installation
+# My environment
 
-In order to run the Quarto or Jupyter notebooks I use the following set-up:
+In order to run the Quarto or Jupyter notebooks I use the following tools:
 * [Anaconda](https://www.anaconda.com/download) for Python and all the major packages (Matplotlib, Jupyter, etc..). I'm using Python version 3.12.7.
-* [Visual Studio Code](https://code.visualstudio.com/Download) with the following packages: 
+* [Visual Studio Code](https://code.visualstudio.com/Download) with the following packages installed: 
   * Python and related
   * Jupyter and related.
   * Quarto.
