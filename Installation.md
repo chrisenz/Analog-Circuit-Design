@@ -7,4 +7,4 @@ In order to run the Quarto or Jupyter notebooks I use the following set-up:
   * Jupyter and related.
   * Quarto.
 * [Quarto](https://quarto.org/docs/download/).
-* ngspice simulator. I'm using [ngspice version 4.3](https://sourceforge.net/projects/ngspice/files/ng-spice-rework/old-releases/43/), but the examples hould also run with the latest realease. Please check the [detailed installation of ngspice](ngspice_installation).
+* ngspice circuit simulator. I'm using [ngspice version 4.3](https://sourceforge.net/projects/ngspice/files/ng-spice-rework/old-releases/43/), but the examples should also run with the latest realease. SInce we are using the EKV 2.6 compact model this requires a specific osdi file. Please check the [detailed installation of ngspice](ngspice_installation.md).
