@@ -4,7 +4,7 @@ You can download the latest version of ngspice from the [official ngspice site](
 
 You can now install the ngspice folder named Spice64 where you want. I created a NGSpice folder in the C:\Program Files\ folder and copied the Spice64 folder in it. So for my installation, the path to the ngspice binary is C:\Program Files\NGSpice\Spice64\bin\. Of course you can choose any other installation location.
 
-Once you have installed (copied) ngspice, you need to download the EKV 2.6 osdi file and copy it to the folder \<your ngspice installation path\>\Spice64\lib\ngspice\. You can download the osdi for Windows 10 and Windows 11 from my [EKV repository](EKV/EKV2.6/va/code/)
+Once you have installed (copied) ngspice, you need to download the EKV 2.6 osdi file and copy it to the folder \<your ngspice installation path\>\Spice64\lib\ngspice\. You can download the osdi for Windows 10 and Windows 11 from my [EKV repository](chrisenz/EKV/EKV2.6/va/code/)
 
 Once you have installed (copied) ngspice, you need to check whther the PSP 103.6 osdi file that contains the PSP MOSFET model that is used for the simulations is already installed. Go to the folder \<your ngspice installation path\>\Spice64\lib\ngspice\ where you should see the psp103_nqs.osdi file and other osdi files. If it is not included, you can copy the psp103_nqs.osdi file from the [PSP Verilog-A directory](/PSP/Verilog-A/) and save it to the folder your ngspice installation path\Spice64\lib\ngspice\.
 
