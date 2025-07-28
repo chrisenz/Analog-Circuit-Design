@@ -1,6 +1,11 @@
 # Analog-Circuit-Design
 
-This repository presents various examples of analog CMOS circuit design. It is focused on the use of the EKV MOSFET model and the related inversion coefficient approach. The repository includes Quarto or Jupyter notebooks that you can download and run on your own computer. This assumes that you have the same (or similar) [environment](Installation.md) than the one I have installed on my WIndows 10 and Windows 11 machines.
+This repository presents various examples of analog CMOS circuit design. It is focused on the use of the EKV MOSFET model and the related inversion coefficient approach. The repository includes Quarto or Jupyter notebooks that you can download and run on your own computer.
+
+> [!NOTE]
+> Useful information that users should know, even when skimming content.
+
+This assumes that you have the same (or similar) [environment](Installation.md) than the one I have installed on my WIndows 10 and Windows 11 machines.
 
 The repository is structured in the following Chapters.
 
