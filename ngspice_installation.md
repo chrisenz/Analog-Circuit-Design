@@ -2,7 +2,7 @@
 
 You can download the latest version of ngspice from the [official ngspice site](https://sourceforge.net/projects/ngspice/files/ng-spice-rework/44.2/). You can also download the version 43 [version 43](https://sourceforge.net/projects/ngspice/files/ng-spice-rework/old-releases/43/) I am using. It is a good idea to also download the user manual from the same site.
 
-You can now install the ngspice folder named Spice64 where you want. I created a NGSpice folder in the C:\Program Files\ folder and copied the Spice64 folder in it. So for my installation, the path to the ngspice binary is C:\Program Files\NGSpice\Spice64\bin\. Of course you can choose any other installation location.
+You can now install the ngspice folder named Spice64 where you want. I created a NGSpice folder in the `C:\Program Files\` folder and copied the Spice64 folder in it. So for my installation, the path to the ngspice binary is C:\Program Files\NGSpice\Spice64\bin\. Of course you can choose any other installation location.
 
 Once you have installed (copied) ngspice, you need to download the EKV 2.6 osdi file and copy it to the folder \<your ngspice installation path\>\Spice64\lib\ngspice\ where you should see the psp103_nqs.osdi file and other osdi files. You can download the osdi for Windows 10 and Windows 11 from my [EKV repository](https://github.com/chrisenz/EKV/tree/main/EKV2.6/va/code).
 
