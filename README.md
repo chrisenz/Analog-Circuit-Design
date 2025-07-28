@@ -40,7 +40,7 @@ Of course to run the notebook you need to have Quarto and Python installed on yo
 In this directory you will find various notebooks related to the design of switched-capacitor (SC) circuits including amplifiers and filters.
 
 It currently includes:
-* [OTA with capacitive feedback](SC-Circuits/OTA%20with%20Capacitive%20Feedback/) ([pdf](SC-Circuits/OTA%20with%20Capacitive%20Feedback//OTA_with_capacitive_feedback.pdf)).
-* [Large-signal step-response of OTA with capacitive feedback](SC-Circuits/Large-signal%20Step%20Response/) ([pdf](SC-Circuits/Large-signal%20Step%20Response/Large_signal_step_response.pdf)).
+* [Optimization of a fully-differential OTA with capacitive feedback](SC-Circuits/OTA%20with%20Capacitive%20Feedback/) for minimum current consumption ([pdf](SC-Circuits/OTA%20with%20Capacitive%20Feedback//OTA_with_capacitive_feedback.pdf)).
+* [Analysis of the the large-signal step-response and settling time of an OTA with capacitive feedback](SC-Circuits/Large-signal%20Step%20Response/) ([pdf](SC-Circuits/Large-signal%20Step%20Response/Large_signal_step_response.pdf)).
 * [AC simulation of switched-capacitor circuits using a standard Spice simulator such as LTSpice or ngspice.](/Simulation%20of%20SC%20Circuits/) ([pdf](/Simulation%20of%20SC%20Circuits/SCC_simulation.pdf))
 
