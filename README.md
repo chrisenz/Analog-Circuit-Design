@@ -37,6 +37,10 @@ in the first cell of the notebook.
 Of course to run the notebook you need to have Quarto and Python installed on your computer.
 ## SC-Circuits
 
+In this directory you will find various notebooks related to the design of switched-capacitor (SC) circuits including amplifiers and filters.
+
+It currently includes:
+* [OTA with capacitive feedback](SC-Circuits/OTA%20with%20Capacitive%20Feedback/) ([pdf](SC-Circuits/OTA%20with%20Capacitive%20Feedback//OTA_with_capacitive_feedback.pdf)).
+* [Large-signal step-response of OTA with capacitive feedback](SC-Circuits/Large-signal%20Step%20Response/) ([pdf](SC-Circuits/Large-signal%20Step%20Response/Large_signal_step_response.pdf)).
 * [AC simulation of switched-capacitor circuits using a standard Spice simulator such as LTSpice or ngspice.](/Simulation%20of%20SC%20Circuits/) ([pdf](/Simulation%20of%20SC%20Circuits/SCC_simulation.pdf))
 
-To run the ngspice simulations you need to ![install ngspice](/ngspice_installation.md).
