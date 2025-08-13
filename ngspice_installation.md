@@ -36,6 +36,8 @@ as shown below:
 
 ![ngspice osdi dirspice scripts.](/img/SPICE_SCRIPTS.png)
 
+Finally you need to add the path to the ngpice binaries (mainly to the batch `ngspice_con.exe` executable). Add `<Your ngspice installation path>\Spice64\bin\`. This is needed for the python script to perform the ngspice simulation within the noteboos.
+
 You are now all set to run the examples.
 
 Enjoy!
