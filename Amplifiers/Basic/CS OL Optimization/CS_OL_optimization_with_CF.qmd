@@ -70,21 +70,6 @@ version = "_v1" # Allows you to save different versions
 #newSim=True
 newSim=False
 refloat=r'.*?([+-]?\d+([.]\d*)?([eE][+-]?\d+)?|[.]\d+([eE][+-]?\d+)?)'
-
-def saveFigures(savePath, plotName):
-#  print("Patience, saving plot!")
-  figFolder = savePath + r"\\{}.{}"
-  pngFile = figFolder.format(plotName,"png")
-  pdfFile = figFolder.format(plotName,"pdf")
-  svgFile = figFolder.format(plotName,"svg")
-  plt.savefig(pngFile, format="png", dpi=1200, bbox_inches="tight", transparent=True)
-  plt.savefig(pdfFile, format="pdf", dpi=1200, bbox_inches="tight", transparent=True)
-  plt.savefig(svgFile, format="svg", dpi=1200, bbox_inches="tight", transparent=True)
-  cmd_emf = '"{}" "{}\\{}.svg" --export-filename="{}\\{}.emf" --export-overwrite'.format(inkscapePath, savePath, plotName, savePath, plotName)
-#    cmd_emf = '"{}" "{}\{}.pdf" --export-filename="{}\{}.emf" --export-overwrite'.format(inkscapePath, savePath, plotName, savePath, plotName)
-#    cmd_pdf = '"{}" "{}\{}.svg" --export-filename="{}\{}.pdf" --export-overwrite'.format(inkscapePath, savePath, plotName, savePath, plotName)
-  subprocess.call(cmd_emf, shell=True)
-#    subprocess.call(cmd_pdf, shell=True)
 ```
 
 # Introduction
