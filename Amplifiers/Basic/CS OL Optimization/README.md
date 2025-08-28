@@ -1,6 +1,6 @@
 # Optimization of a Common-source Stage in Open-loop
 
-![CS OL Amplifier](/Amplifiers/Basic/CS%20CL%20Optimization/Figures/CS_OL_schematic.png)
+![CS OL Amplifier](/Amplifiers/Basic/CS%20OL%20Optimization/Figures/CS_OL_schematic.png)
 
 This [Quarto notebook](/Amplifiers/Basic/CS%20OL%20Optimization/CS_OL_optimization_with_CF.pdf) shows how to minimize the current consumption of the above common-source (CS) amplifier in open-loop. A first example is optimizing the CS stage for a given gain-bandwidth product for a given transistor length and the second example is taking advantage of the additional degree of freedom on the transistor length to simultaneously optimize for a given DC gain and gain-bandwidth product.
 
