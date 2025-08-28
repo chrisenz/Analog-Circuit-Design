@@ -1,0 +1,11 @@
+figure.figsize : 12, 8
+axes.labelsize : 28
+xtick.labelsize : 20
+ytick.labelsize : 20
+legend.fontsize : 18
+axes.grid: True
+xtick.direction : in
+ytick.direction : in
+xtick.minor.visible: True
+ytick.minor.visible: True
+
