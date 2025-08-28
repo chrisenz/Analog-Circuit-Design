@@ -1,8 +1,8 @@
 ---
-title: "Optimization of CS SC Amplifier"
-subtitle: "Version 1"
-author: "Christian Enz"
-affiliation: "EPFL"
+title: Common-source Stage Optimization using the Inversion Coefficient
+subtitle: In Closed-loop Configuration (Version 1)
+author: Christian Enz (christian.enz@epfl.ch)
+affiliation: EPFL
 date: today
 execute:
   echo: false
@@ -33,7 +33,7 @@ format:
 ---
 
 ```{python}
-#| init_cell: true
+# Initialization
 
 from ekv_functions import *
 
@@ -49,43 +49,43 @@ import re
 
 from IPython.display import Markdown
 from tabulate import tabulate
-from matplotlib.ticker import EngFormatter
 
-#plt.rcParams['text.usetex'] = True
 plt.rcParams['svg.fonttype'] = 'none'
 plt.rcParams['pdf.fonttype'] = 42
-#plt.rcParams['ps.fonttype'] = 42
 plt.rcParams['font.family'] = 'Arial'
-#plt.rcParams['mathtext.fontset'] = 'cm'
-
 plt.rcParams['mathtext.fontset'] = 'custom'
 plt.rcParams['mathtext.rm'] = 'Arial'
 plt.rcParams['mathtext.it'] = 'Arial:italic'
 plt.rcParams['mathtext.bf'] = 'Arial:bold'
 
-#plt.rcParams['text.usetex'] = True
-plt.rcParams['svg.fonttype'] = 'none'
-plt.rcParams['pdf.fonttype'] = 42
-#plt.rcParams['ps.fonttype'] = 42
-plt.rcParams['font.family'] = 'Arial'
-#plt.rcParams['mathtext.fontset'] = 'cm'
-
-plt.rcParams['mathtext.fontset'] = 'custom'
-plt.rcParams['mathtext.rm'] = 'Arial'
-plt.rcParams['mathtext.it'] = 'Arial:italic'
-plt.rcParams['mathtext.bf'] = 'Arial:bold'
-
-plt.style.use('plt_style_small.mplstyle')
 lw=1
+curvelw=1
 msize=5
+textFontSize=9
+BodePlotParams = {'figure.figsize': (5,5)}
+pltStyle='plt_style_small.mplstyle'
+plt.style.use(pltStyle)
 
 circuitName="CS_CL_optimization"
 version = "_v1" # Allows you to save different versions
-newDesign=True
-#newDesign=False
-newSim=True
-#newSim=False
+#newSim=True
+newSim=False
 refloat=r'.*?([+-]?\d+([.]\d*)?([eE][+-]?\d+)?|[.]\d+([eE][+-]?\d+)?)'
+
+def saveFigures(savePath, plotName):
+#  print("Patience, saving plot!")
+  figFolder = savePath + r"\\{}.{}"
+  pngFile = figFolder.format(plotName,"png")
+  pdfFile = figFolder.format(plotName,"pdf")
+  svgFile = figFolder.format(plotName,"svg")
+  plt.savefig(pngFile, format="png", dpi=1200, bbox_inches="tight", transparent=True)
+  plt.savefig(pdfFile, format="pdf", dpi=1200, bbox_inches="tight", transparent=True)
+  plt.savefig(svgFile, format="svg", dpi=1200, bbox_inches="tight", transparent=True)
+  cmd_emf = '"{}" "{}\\{}.svg" --export-filename="{}\\{}.emf" --export-overwrite'.format(inkscapePath, savePath, plotName, savePath, plotName)
+#    cmd_emf = '"{}" "{}\{}.pdf" --export-filename="{}\{}.emf" --export-overwrite'.format(inkscapePath, savePath, plotName, savePath, plotName)
+#    cmd_pdf = '"{}" "{}\{}.svg" --export-filename="{}\{}.pdf" --export-overwrite'.format(inkscapePath, savePath, plotName, savePath, plotName)
+  subprocess.call(cmd_emf, shell=True)
+#    subprocess.call(cmd_pdf, shell=True)
 ```
 
 # Introduction
@@ -174,7 +174,7 @@ where $g_{ms}(IC)$ is the long-channel normalized source transconductance given 
 \end{equation}
 Solving for $I_b$ and $W/L$ leads to the following normalized solutions
 \begin{align}\label{eq:ib_AR}
-  i_b &\triangleq \frac{I_b}{I_{pec\Box} \cdot \Omega} = \frac{IC}{g_{ms}(IC) - \Theta},\\
+  i_b &\triangleq \frac{I_b}{I_{spec\Box} \cdot \Omega} = \frac{IC}{g_{ms}(IC) - \Theta},\\
   AR &\triangleq \frac{W/L}{\Omega} =\frac{1}{g_{ms} - \Theta},
 \end{align}
 where
@@ -242,10 +242,9 @@ plt.ylim(1,1e2)
 #plt.yticks(np.arange(0,1.1,0.1))
 plt.ylabel('Normalized bias current $i_b$')
 #plt.legend(loc='lower right')
-plt.legend(loc='center left', fontsize=9, bbox_to_anchor=(1, 0.5))
-plt.text(0.7, 0.95, 'No VS ($\\lambda_c = 0$)', ha='left', va='top', size=9, transform=plt.gca().transAxes,
+plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+plt.text(0.7, 0.95, 'No VS ($\\lambda_c = 0$)', ha='left', va='top', size=textFontSize, transform=plt.gca().transAxes,
          bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
-#saveFigures(savePath, 'CS_opt_ib_vs_IC_no_VS')
 plt.show()
 ```
 
@@ -328,10 +327,9 @@ plt.ylim(1e-1,1e2)
 #plt.yticks(np.arange(0,1.1,0.1))
 plt.ylabel('Normalized $W/L$')
 #plt.legend(loc='lower right')
-plt.legend(loc='center left', fontsize=9, bbox_to_anchor=(1, 0.5))
-plt.text(0.7, 0.95, 'No VS ($\\lambda_c = 0$)', ha='left', va='top', size=9, transform=plt.gca().transAxes,
+plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+plt.text(0.7, 0.95, 'No VS ($\\lambda_c = 0$)', ha='left', va='top', size=textFontSize, transform=plt.gca().transAxes,
          bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
-#saveFigures(savePath, 'CS_opt_AR_vs_IC_no_VS')
 plt.show()
 ```
 
@@ -359,9 +357,7 @@ We will set $f_l$ to 1 Hz.
 
 from specs import *
 
-Adc=10**(AdcdB/20)
-wc=2*pi*BW
-table = [["DC gain","$A_{{dc}}$",f'{AdcdB:.0f}',"$dB$"],
+table = [["DC gain","$A_0$",f'{A0dB:.0f}',"$dB$"],
          ["Bandwidth","$BW$",f'{BW/1e3:.0f}',"$kHz$"],
          ["Load capacitance","$C_L$",f'{CL/1e-12:.0f}',"$pF$"],
          ["Feedback capacitance","$C_F$",f'{CF/1e-15:.0f}',"$fF$"],
@@ -466,7 +462,7 @@ which depends on transistor length $L$. Since the above theory was developed for
 
 ```{python}
 CGW=(1-1/(3*n0n))*Cox*L+CGSOn+CGBOn
-A0=pow(10,AdcdB/20)
+A0=pow(10,A0dB/20)
 CS=A0*CF
 ```
 
@@ -726,17 +722,15 @@ Avthe=np.zeros(Npts,dtype=complex)
 AvmagdBthe=np.zeros(Npts)
 Avphidegthe=np.zeros(Npts)
 for k in range(0,Npts):
-    jw=1j*2*pi*fthe[k]
-    Avide[k]=Av(jw,A0ide,wcide,wzide)
-    AvmagdBide[k]=20*log(abs(Avide[k]))
-    Avphidegide[k]=np.angle(Avide[k],deg=True)
-    Avthe[k]=Av(jw,A0the,wcthe,wzthe)
-    AvmagdBthe[k]=20*log(abs(Avthe[k]))
-    Avphidegthe[k]=np.angle(Avthe[k],deg=True)
+  jw=1j*2*pi*fthe[k]
+  Avide[k]=Av(jw,A0ide,wcide,wzide)
+  AvmagdBide[k]=20*log(abs(Avide[k]))
+  Avphidegide[k]=np.angle(Avide[k],deg=True)-180
+  Avthe[k]=Av(jw,A0the,wcthe,wzthe)
+  AvmagdBthe[k]=20*log(abs(Avthe[k]))
+  Avphidegthe[k]=np.angle(Avthe[k],deg=True)-180
 
-params = {'figure.figsize': (5,5)}
-plt.rcParams.update(params)
-
+plt.rcParams.update(BodePlotParams)
 fig, axs = plt.subplots(2, sharex=True)
 
 axs[0].semilogx([fmin,fcthe],[A0dBide-3,A0dBide-3],'k--', linewidth=lw)
@@ -749,54 +743,53 @@ axs[0].set(xlim=(fmin,fmax), ylim=(-25,25), ylabel='$|A_v|$ [dB]')
 axs[0].set_yticks([-25,-20,-15,-10,-5,0,5,10,15,20,25])
 axs[0].legend(loc='best')
 textstr1 = '\n'.join((
-    r'$A_{0,ideal} =$'+ f'{A0ide:.1f}',
-    r'$A_{dc} =$'+ f'{Adcthe:.1f}',
-    r'$A_0 =$'+ f'{A0the:.1f}',
-    r'$f_c =$'+ f'{fcide/1e3:.0f} kHz',
-    r'$f_c =$'+ f'{fcthe/1e3:.0f} kHz',
-    r'$GBW =$'+ f'{GBWide/1e6:.1f} MHz',
-    r'$GBW =$'+ f'{GBWthe/1e6:.1f} MHz'))
-axs[0].text(1.05, 0.5, textstr1, ha='left', va='center', transform=axs[0].transAxes, size=9,
+  f'$|A_0| =$ {A0ide:.0f} ({20*log(A0ide):.0f} dB) (ideal)',
+  f'$A_{{dc}} =$ {Adcthe:.0f} ({20*log(Adcthe):.1f} dB)',
+  f'$|A_0| =$ {A0the:.1f} ({20*log(A0the):.1f} dB) (effective)',
+  f'$f_c =$ {fcide/1e3:.0f} kHz (ideal)',
+  f'$f_c =$ {fcthe/1e3:.0f} kHz (effective)',
+  f'$GBW =$ {GBWide/1e6:.1f} MHz (ideal)',
+  f'$GBW =$ {GBWthe/1e6:.1f} MHz (effective)'))
+axs[0].text(1.05, 0.5, textstr1, ha='left', va='center', transform=axs[0].transAxes, size=textFontSize,
          bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
-axs[0].text(0.74, 0.95, 'No VS ($\\lambda_c = 0$)', ha='left', va='top', transform=axs[0].transAxes, size=9,
+axs[0].text(0.74, 0.95, 'No VS ($\\lambda_c = 0$)', ha='left', va='top', transform=axs[0].transAxes, size=textFontSize,
          bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
 
-axs[1].semilogx([fmin,fcide],[-45,-45],'k--', linewidth=lw)
-axs[1].semilogx([fcide,fcide],[-45,0],'k--', linewidth=lw)
-axs[1].semilogx([fmin,GBWthe],[-90,-90],'k--', linewidth=lw)
-axs[1].semilogx([GBWthe,GBWthe],[-90,0],'k--', linewidth=lw)
+axs[1].semilogx([fmin,fcide],[-225,-225],'k--', linewidth=lw)
+axs[1].semilogx([fcide,fcide],[-225,-180],'k--', linewidth=lw)
+axs[1].semilogx([fmin,GBWthe],[-270,-270],'k--', linewidth=lw)
+axs[1].semilogx([GBWthe,GBWthe],[-270,-180],'k--', linewidth=lw)
 axs[1].semilogx(fthe,Avphidegide,'b-',label='Ideal')
 axs[1].semilogx(fthe,Avphidegthe,'b--',label='Incl. finite gain')
-axs[1].set(xlim=(fmin,fmax), ylim=(-180,0), xlabel='Frequency [Hz]', ylabel='$arg\\{A_v\\}$ [degree]')
-axs[1].set_yticks([-180,-135,-90,-45,0])
+axs[1].set(xlim=(fmin,fmax), ylim=(-360,-180), xlabel='Frequency [Hz]', ylabel='$arg\\{A_v\\}$ [degree]')
+axs[1].set_yticks([-360,-315,-270,-225,-180])
 axs[1].legend(loc='best')
 textstr2 = '\n'.join((
-    r'$L =$'+ f'{L/1e-6:.0f} $\\mu m$',
-    r'$C_L =$'+ f'{CL/1e-12:.0f} pF',
-    r'$C_S =$'+ f'{CS/1e-12:.0f} pF',
-    r'$C_F =$'+ f'{CF/1e-15:.3f} fF',
-    r'$C_{{GD}} =$'+ f'{CGD/1e-15:.3f} fF',
-    r'$C_{{in}} =$'+ f'{Cin/1e-15:.3f} fF',
-    f'$\\beta =$ {beta:.3f}',
-    r'$IC_{opt} =$'+ f'{ICopt:.2f}',
-    r'$I_{b,opt} =$'+ f'{Ibopt/1e-9:.0f} nA',
-    r'$W_{opt} =$'+ f'{Wopt/1e-6:.2f} $\\mu m$'))
-axs[1].text(1.05, 0.5, textstr2, ha='left', va='center', transform=axs[1].transAxes, size=9,
+  f'$L =$ {L/1e-6:.0f} $\\mu m$',
+  f'$C_L =$ {CL/1e-12:.0f} pF',
+  f'$C_S =$ {CS/1e-12:.0f} pF',
+  f'$C_F =$ {CF/1e-15:.3f} fF',
+  f'$C_{{GD}} =$ {CGD/1e-15:.3f} fF',
+  f'$C_{{in}} =$ {Cin/1e-15:.3f} fF',
+  f'$\\beta =$ {beta:.3f}',
+  f'$IC_{{opt}} =$ {ICopt:.2f}',
+  f'$I_{{b,opt}} =$ {Ibopt/1e-9:.0f} nA',
+  f'$W_{{opt}} =$ {Wopt/1e-6:.2f} $\\mu m$'))
+axs[1].text(1.05, 0.5, textstr2, ha='left', va='center', transform=axs[1].transAxes, size=textFontSize,
          bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
 plt.subplots_adjust(hspace=0.1)
-
 plt.show()
+plt.style.use(pltStyle)
 ```
 
 
-# Simulation results from ngspice
+## Simulation results from ngspice
 The theoretical results can be validated by comparing them to the results obtained from simulations performed with ngspice. The cells below will run the simulations with ngspice. In order to run the simulations you need to have ngspice installed. Please refer to the ngspice instructions.
 
 ::: {.callout-note}
 The simulations are performed with ngspice @bib:ngspice:2024 using the EKV 2.6 compact model @bib:ekv2p6:doc:rev2:1998. For ngspice, we use the original Verilog-A implementation of EKV 2.6 @bib:grabinski:ekv2p6veriloga:essderc:2019 modified by C. Enz to get the operating point informations and available on the Gitub va-models site provided by D. Warning at @bib:dwarning:2024. The parameters correspond to a generic 180 nm bulk CMOS process @bib:grabinski:ekv2p6_param_extraction:mixdes:2015.
 :::
 
-## Operating point
 Before running the AC simulation, we first need to check the quiescent voltages and currents and the operating point by running an .OP simulation. The node voltages are extracted from the .ic file and presented in @tbl-op_voltages.
 
 ```{python}
@@ -973,10 +966,10 @@ fmin=fsim[0]
 fmax=fsim[Npts-1]
 
 for k in range(0,Npts):
-  if Avphidegsim[k]<0:
-    Avphidegsim[k]=Avphidegsim[k]+180
+  if Avphidegsim[k]>0:
+    Avphidegsim[k]=Avphidegsim[k]-360
   else:
-    Avphidegsim[k]=Avphidegsim[k]-180
+    Avphidegsim[k]=Avphidegsim[k]
 
 regexp = re.compile(r'adc' + refloat)
 with open(ngspiceLogFile) as f:
@@ -1007,10 +1000,9 @@ A0dBsim=AvmagdBsim[0]
 A0sim=pow(10,A0dBsim/20)
 A0dBthe=20*log(abs(A0the))
 
-params = {'figure.figsize': (5,5)}
-plt.rcParams.update(params)
-    
+plt.rcParams.update(BodePlotParams)
 fig, axs = plt.subplots(2, sharex=True)
+
 #axs[0].semilogx([fmin,GBWsim],[0,0],'k--', linewidth=lw)
 #axs[0].semilogx([GBWsim,GBWsim],[0,-60],'k--', linewidth=lw)
 axs[0].semilogx(fsim,AvmagdBsim,'ro', markersize=4, markevery=15, label='Simulation')
@@ -1021,36 +1013,200 @@ axs[0].legend(loc='lower left')
 textstr1 = '\n'.join((
   f'$A_{{dc}} =$ {Adcthe:.1f} (theory)',
   f'$A_{{dc}} =$ {Adcsim:.1f} (sim)',
-  f'$A_0 =$ {A0dBthe:.1f} dB (theory)',
-  f'$A_0 =$ {A0dBsim:.1f} dB (sim.)',
+  f'$|A_0| =$ {A0dBthe:.1f} dB (theory)',
+  f'$|A_0| =$ {A0dBsim:.1f} dB (sim.)',
   f'$GBW =$ {GBWthe/1e6:.1f} MHz (theory)',
   f'$GBW =$ {GBWsim/1e6:.1f} MHz (sim.)'))
-axs[0].text(1.05, 0.5, textstr1, ha='left', va='center', transform=axs[0].transAxes, size=9,
+axs[0].text(1.05, 0.5, textstr1, ha='left', va='center', transform=axs[0].transAxes, size=textFontSize,
          bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
 
 #axs[1].semilogx([fmin,GBWsim],[PGBWsim,PGBWsim],'k--', linewidth=lw)
 #axs[1].semilogx([GBWsim,GBWsim],[PGBWsim,0],'k--', linewidth=lw)
 axs[1].semilogx(fsim,Avphidegsim,'bo', markersize=4, markevery=15, label='Simulation')
 axs[1].semilogx(fthe,Avphidegthe,'b-',label='Theory')
-axs[1].set(xlim=(fmin,fmax), ylim=(-180,0), xlabel='Frequency [Hz]', ylabel='$arg\\{A_{vd}\\}$ [degree]')
+axs[1].set(xlim=(fmin,fmax), ylim=(-360,-180), xlabel='Frequency [Hz]', ylabel='$arg\\{A_{vd}\\}$ [degree]')
 #axs[1].set_xticks([1e1,1e2,1e3,1e4,1e5,1e6,1e7,1e8])
-axs[1].set_yticks([-180,-135,-90,-45,0])
+axs[1].set_yticks([-360,-315,-270,-225,-180])
 axs[1].legend(loc='lower left')
 textstr2 = '\n'.join((
-    f'$L =$ {L/1e-6:.0f} $\\mu m$',
-    f'$C_L =$ {CL/1e-12:.0f} pF',
-    f'$C_S =$ {CS/1e-12:.0f} pF',
-    f'$C_F =$ {CF/1e-15:.0f} fF',
-    f'$C_{{F0}} =$ {CF0/1e-15:.3f} fF',
-    f'$C_{{GD}} =$ {CGD/1e-15:.3f} fF',
-    f'$C_{{in}} =$ {Cin/1e-15:.3f} fF',
-    f'$\\beta =$ {beta:.3f}',
-    f'$IC_{{opt}} =$ {ICopt:.2f}',
-    f'$I_{{b,opt}} =$ {Ibopt/1e-9:.0f} nA',
-    f'$W_{{opt}} =$ {Wopt/1e-6:.2f} $\\mu m$'))
-axs[1].text(1.05, 0.5, textstr2, ha='left', va='center', transform=axs[1].transAxes, size=9,
+  f'$L =$ {L/1e-6:.0f} $\\mu m$',
+  f'$C_L =$ {CL/1e-12:.0f} pF',
+  f'$C_S =$ {CS/1e-12:.0f} pF',
+  f'$C_F =$ {CF/1e-15:.0f} fF',
+  f'$C_{{F0}} =$ {CF0/1e-15:.3f} fF',
+  f'$C_{{GD}} =$ {CGD/1e-15:.3f} fF',
+  f'$C_{{in}} =$ {Cin/1e-15:.3f} fF',
+  f'$\\beta =$ {beta:.3f}',
+  f'$IC_{{opt}} =$ {ICopt:.2f}',
+  f'$I_{{b,opt}} =$ {Ibopt/1e-9:.0f} nA',
+  f'$W_{{opt}} =$ {Wopt/1e-6:.2f} $\\mu m$'))
+axs[1].text(1.05, 0.5, textstr2, ha='left', va='center', transform=axs[1].transAxes, size=textFontSize,
          bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
 plt.subplots_adjust(hspace=0.1)
+plt.show()
+plt.style.use(pltStyle)
+```
+
+::: {.callout-tip title="Question"}
+Is this truly the minimum current?
+:::
+
+We can check this by sweeping $IC$ and running a simulation for each of these point keeping the same specifications as in @tbl-specs. This leads to the family of transfer functions shown in @fig-tf_sweep_ic. We see that all the simulations match the specification for different bias currents. The actual bias currents are plotted versus the inversion coefficient in @fig-ib_sweep_ic. We see that the bias current is indeed minimum at the theoretical value extracted above.
+
+::: {.callout-note}
+We observe that the minimum is rather flat and therefore not too sensitive to the value of the optimum inversion coefficient.
+:::
+
+```{python}
+#| label: fig-tf_sweep_ic
+#| fig-cap: Simulated gain response for various values of the inversion coefficient $IC$.
+
+simtype = ".ac"
+fileName = circuitName + simtype
+simulationPath = "./Simulations/ngspice/sweep/"
+simulationFile = simulationPath + fileName + ".cir"
+simulationLog = simulationPath + fileName + ".log"
+simulationData = simulationPath + fileName + ".dat"
+
+# Specs
+GBW=1e6
+A0dB=20
+CL=1e-12
+CF=100e-15
+L=1e-6
+
+# Parameters that do not depand on IC nor on W/L (they depend on L though)
+nUT=n0n*UT
+A0=pow(10,A0dB/20)
+CS=A0*CF
+fc=GBW/A0
+wc=2*pi*fc
+wL=Ispecsqn/((1+CS/CL+CS/CF)*CL*nUT)
+wW=Ispecsqn/((1+CL/CF)*CGW*L*nUT)
+Omega=wc/wL
+theta=wc/wW
+ICopt=ICopt_theta(theta)
+ibopt=ibopt_theta(theta)
+ARopt=ARopt_theta(theta)
+Ibopt=ibopt*Ispecsqn*Omega
+fl=10
+wl=2*pi*fl
+RF=A0/(wl*CS)
+
+logICmin=-2
+logICmax=1
+ICmin=pow(10,logICmin)
+ICmax=pow(10,logICmax)
+NptsDec=6
+Ncurves=(abs(logICmin)+abs(logICmax))*NptsDec+1
+IC=np.logspace(logICmin,logICmax,Ncurves,endpoint=True,base=10.0)
+#IC=5*IC
+colors=plt.cm.rainbow(np.linspace(0, 1, Ncurves))
+
+Ib=np.zeros(Ncurves)
+
+plt.rcParams.update(BodePlotParams)
+fig, axs = plt.subplots(2, sharex=True)
+
+for m in range(0,Ncurves):
+  ib=IC[m]/(gms_ic(IC[m])-theta)
+  Ib[m]=Ispecsqn*Omega*ib
+  AR=1/(gms_ic(IC[m])-theta)
+  WoverL=Omega*AR
+  W=WoverL*L
+  CGD=W*CGDOn
+  CF0=CF-CGD
+  paramstr = '\n'.join((
+    f'.param VDD={VDD:.1f} Ib={Ib[m]/1e-9:.0f}n',
+    f'.param RF={RF:.3e} CL={CL/1e-12:.3f}p CS={CS/1e-12:.3f}p CF={CF0/1e-15:.3f}f',
+    f'.param W1={W/1e-6:.2f}u L1={L/1e-6:.2f}u'
+  ))
+  #print(paramstr)
+  with open(simulationPath+'size_bias.par', 'w') as f:
+    f.write(paramstr)
+  #print('Starting NGSpice simulation...\n')
+  result = subprocess.run(f"""ngspice_con -b -o "{simulationLog}" "{simulationFile}" """, shell=True, capture_output=True, text=True)
+  # We need to copy the resulting dc simulation data file because it will be overwritten by the next dc simulation
+  df_sim=pd.read_table(simulationData, sep=' +', engine='python')
+  fsim=df_sim['frequency'].to_numpy()
+  AvmagdBsim=df_sim['AmagdB'].to_numpy()
+  Avphidegsim=df_sim['Aphdeg'].to_numpy()
+  for k in range(0,Npts):
+    if Avphidegsim[k]>0:
+      Avphidegsim[k]=Avphidegsim[k]-360
+    else:
+      Avphidegsim[k]=Avphidegsim[k]
+  Npts=len(fsim)
+  fmin=fsim[0]
+  fmax=fsim[Npts-1]
+  axs[0].semilogx(fsim, AvmagdBsim, color=colors[m], label='$IC =$' + f'{IC[m]:.3f}')
+  axs[1].semilogx(fsim, Avphidegsim, color=colors[m], label='$IC =$' + f'{IC[m]:.3f}')
+
+axs[0].semilogx([fmin,GBW],[0,0],'k--', linewidth=lw)
+axs[0].semilogx([GBW,GBW],[-25,0],'k--', linewidth=lw)
+axs[0].semilogx([fmin,fc],[17,17],'k--', linewidth=lw)
+axs[0].semilogx([fc,fc],[-25,17],'k--', linewidth=lw)
+axs[0].set(xlim=(fmin,fmax), ylim=(-25,25), ylabel='$|A_{vd}|$ [dB]')
+axs[0].set_yticks([-25,-20,-15,-10,-5,0,5,10,15,20,25])
+#axs[0].legend(loc='lower left')
+axs[0].legend(loc='upper left', bbox_to_anchor=(1, 1))
+
+axs[1].semilogx([fc,fc],[-360,-180],'k--', linewidth=lw)
+axs[1].semilogx([fmin,fc],[-225,-225],'k--', linewidth=lw)
+axs[1].semilogx([GBW,GBW],[-360,-180],'k--', linewidth=lw)
+axs[1].semilogx([fmin,GBW],[-270,-270],'k--', linewidth=lw)
+axs[1].set(xlim=(fmin,fmax), ylim=(-360,-180), xlabel='Frequency [Hz]', ylabel='$arg\\{A_{vd}\\}$ [degree]')
+#axs[1].set_xticks([1e1,1e2,1e3,1e4,1e5,1e6,1e7,1e8])
+axs[1].set_yticks([-360,-315,-270,-225,-180])
+#axs[1].legend(loc='lower left')
+textstr = '\n'.join((
+    f'$|A_0| =$ {A0dB:.0f} dB',
+    f'$GBW =$ {GBW/1e6:.0f} MHz',
+    f'$f_c =$ {fc/1e3:.0f} kHz',
+    f'$C_L =$ {CL/1e-12:.0f} pF',
+    f'$C_F=$ {CF/1e-12:.1f} pF',))
+axs[1].text(0.05, 0.06, textstr, ha='left', va='bottom', transform=axs[1].transAxes, size=textFontSize,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+plt.subplots_adjust(hspace=0.1)
+plt.show()
+plt.style.use(pltStyle)
+```
+
+```{python}
+#| label: fig-ib_sweep_ic
+#| fig-cap: Bias current $I_b$ versus inversion coefficient $IC$ corresponding to the transfer functions shown in @fig-tf_sweep_ic.
+
+plt.semilogx([ICopt,ICopt], [0,Ibopt/1e-9], 'k--', linewidth=lw)
+plt.semilogx([ICmin,ICopt], [Ibopt/1e-9,Ibopt/1e-9], 'k--', linewidth=lw)
+plt.semilogx(IC, Ib/1e-9, 'o-', color=colors[m], label='Simulation')
+plt.semilogx([ICopt,ICopt], [Ibopt/1e-9,Ibopt/1e-9], 'ob', label='Minimum')
+plt.xlim(ICmin,ICmax)
+#plt.xticks(np.arange(0,11,1))
+plt.xlabel('$IC$')
+plt.ylim(0,1e3)
+#plt.yticks(np.arange(0,1.1,0.1))
+plt.ylabel('Bias current $I_b$ [nA]')
+#plt.legend(loc='lower right')
+textstr = '\n'.join((
+    f'$|A_0| =$ {A0dB:.0f} dB',
+    f'$GBW =$ {GBW/1e6:.0f} MHz',
+    f'$f_c =$ {fc/1e3:.0f} kHz',
+    f'$C_L =$ {CL/1e-12:.0f} pF',
+    f'$C_F=$ {CF/1e-12:.1f} pF',))
+plt.text(0.05, 0.95, textstr, ha='left', va='top', size=textFontSize, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+plt.annotate('$IC_{{opt}} =$' + f'{ICopt:.3f}', size=textFontSize,
+             xy=(ICopt, 0), xycoords='data',
+             xytext=(0, -20), textcoords='offset points',
+             bbox=dict(boxstyle='square,pad=0', fc='w', ec='none'),
+             arrowprops=dict(arrowstyle="-|>", shrinkA=0, capstyle='butt', ec='k', fc='k', joinstyle='miter'),
+             ha='center', va='top')
+plt.annotate('$I_{{b,opt}} =$' + f'{Ibopt/1e-9:.0f}', size=textFontSize,
+             xy=(1e-2, Ibopt/1e-9), xycoords='data',
+             xytext=(-25, -25), textcoords='offset points',
+             bbox=dict(boxstyle='square,pad=0', fc='w', ec='none'),
+             arrowprops=dict(arrowstyle="-|>", shrinkA=0, capstyle='butt', ec='k', fc='k', joinstyle='miter'),
+             ha='right', va='top')
 plt.show()
 ```
 
