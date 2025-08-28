@@ -6,4 +6,4 @@ This [Quarto notebook](/Amplifiers/Basic/CS%20CL%20Optimization/CS_CL_optimizati
 
 The ngspice simulations are using the EKV 2.6 compact model with the parameters corresponding to a generic 180nm bulk CMOS process. For the simulations to work you should install ngspice following the ![ngspice installation instructions](/ngspice_installation.md).
 
-We now also have added the [Qucs-s schematic](/Amplifiers/Basic/CS CL Optimization/Simulations/qucs-s/README.md) using ngspice with the EKV2.6 compact model.
+We now also have added the [Qucs-s schematic](/Amplifiers/Basic/CS%20CL%20Optimization/Simulations/qucs-s/README.md) using ngspice with the EKV2.6 compact model.
