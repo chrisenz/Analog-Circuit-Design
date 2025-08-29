@@ -37,7 +37,7 @@ newSim=True
 ```
 in the first cell of the notebook.
 
-Of course to run the notebook you need to have Quarto, Python, Visual Studio code and ngspice installed on your computer with the same or similar [environment](Installation.md) I have on my computer.
+Of course to run the notebook you need to have Quarto, Python, Visual Studio code and ngspice installed on your computer with the same or similar [environment](Installation.md) I have on my Windows 11 computer.
 
 ## SC-Circuits
 
