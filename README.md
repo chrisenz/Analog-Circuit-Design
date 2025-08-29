@@ -3,7 +3,7 @@
 This repository presents various examples of analog CMOS circuit design. It is focused on the use of the EKV MOSFET model and the related inversion coefficient approach. The repository includes Quarto or Jupyter notebooks that you can download and run on your own computer.
 
 > [!NOTE]
-> This assumes that you have the same (or similar) [environment](Installation.md) than the one I have installed on my WIndows 10 and Windows 11 machines.
+> This assumes that you have the same (or similar) [environment](Installation.md) than the one I have installed on my Windows 11 machines.
 
 The repository is structured in the following Chapters.
 
@@ -19,7 +19,7 @@ It currently includes:
 
 ### [Operational Transconductance Amplifiers (OTAs)](Amplifiers/OTAs/)
 
-In this directory you will find the systematic design of various single-ended OTAs for a generic 180nm bulk CMOS process. The OTAs are designed using the EKV approach with the inversion coefficient. They are then simulated with ngspice using the EKV 2.6 compact model. The design and simulation are performed ina Quarto notebook. The latter includes the complete design flow and simuations. It is used to generate a design report in pdf format.
+In this directory you will find the systematic design of various single-ended OTAs for a generic 180nm bulk CMOS process. The OTAs are designed using the EKV approach with the inversion coefficient. They are then simulated with ngspice using the EKV 2.6 compact model. The design and simulation are performed in a Quarto notebook. The latter includes the complete design flow and simuations. It is used to generate a design report in pdf format.
 
 The directory currently includes:
 * [The simple 5 transistors OTA](Amplifiers/OTAs/Simple%20OTA/) ([pdf](Amplifiers/OTAs/Simple%20OTA/Simple_OTA.pdf)).
@@ -28,7 +28,7 @@ The directory currently includes:
 * [The telescopic OTA](Amplifiers/OTAs/Telescopic%20OTA/) ([pdf](Amplifiers/OTAs/Telescopic%20OTA/Telescopic_OTA.pdf)).
 * [The folded-cascode OTA](Amplifiers/OTAs/Folded%20Cascode%20OTA/) ([pdf](Amplifiers/OTAs/Folded%20Cascode%20OTA/Folded_cascode_OTA.pdf)).
 
-You can either just read the pdf file to understand how the OTA was designed. You can also download the folder and perform the design on you own computer either withe same specifications which does not need the simulations to be re-ran. You can also redesign the OTA for a different set of specification but for the same 180nm technology. In order to do this you neeed to enable the following variables  
+You can either just read the pdf file to understand how the OTA was designed. You can also download the folder and perform the design on your own computer either with the same specifications which does not need the simulations to be re-ran. You can also redesign the OTA for a different set of specification but for the same 180nm technology. In order to do this you neeed to enable the following variables  
 ```python
 newDesign=True  
 #newDesign=False  
@@ -37,7 +37,8 @@ newSim=True
 ```
 in the first cell of the notebook.
 
-Of course to run the notebook you need to have Quarto and Python installed on your computer.
+Of course to run the notebook you need to have Quarto, Python, Visual Studio code and ngspice installed on your computer with the same or similar [environment](Installation.md) I have on my computer.
+
 ## SC-Circuits
 
 In this directory you will find various notebooks related to the design of switched-capacitor (SC) circuits including amplifiers and filters.
