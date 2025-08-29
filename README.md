@@ -2,6 +2,8 @@
 
 This repository presents various examples of analog CMOS circuit design. It is focused on the use of the EKV MOSFET model and the related inversion coefficient approach. The repository includes Quarto or Jupyter notebooks that you can download and run on your own computer.
 
+I now have added schematics with qucs-s. You can run the same ngspice simulation for the latest design directly from the qucs-s schematic editor and visualize the results.
+
 > [!NOTE]
 > This assumes that you have the same (or similar) [environment](Installation.md) than the one I have installed on my Windows 11 machines.
 
