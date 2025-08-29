@@ -14,7 +14,7 @@ The repository is structured in the following Chapters.
 In this directory you will find the design of various single transistor gain stages.
 
 It currently includes:
-* [Common-source stage in open-loop configutation](Amplifiers/Basic/CS%20OL%20Optimization/) ([pdf](Amplifiers/Basic/CS%20OL%20Optimization/CS_OL_optimization.pdf)).
+* [Common-source stage in open-loop configutation](Amplifiers/Basic/CS%20OL%20Optimization/) ([pdf](Amplifiers/Basic/CS%20OL%20Optimization/CS_OL_optimization_with_CF.pdf)).
 * [Common-source stage with capacitive feedback](Amplifiers/Basic/CS%20CL%20Optimization/) ([pdf](Amplifiers/Basic/CS%20CL%20Optimization/CS_CL_optimization.pdf)).
 
 
