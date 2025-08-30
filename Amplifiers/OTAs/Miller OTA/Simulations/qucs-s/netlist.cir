@@ -1,0 +1,64 @@
+* Qucs 25.1.0  M:/My Drive/My Github Repositories/Analog Circuit Design/Amplifiers/OTAs/Miller OTA/Simulations/qucs-s/Miller_OTA.sch
+.INCLUDE "C:/Program Files/Qucs-S/share/qucs-s/xspice_cmlib/include/ngspice_mathfunc.inc"
+.INCLUDE "M:/My Drive/My Github Repositories/Analog Circuit Design/Amplifiers/OTAs/Miller OTA/Simulations/qucs-s/ekv018va.par"
+.INCLUDE "M:/My Drive/My Github Repositories/Analog Circuit Design/Amplifiers/OTAs/Miller OTA/Simulations/qucs-s/size_bias.par"
+NM1a n4  inn  n3  n3 ekvn_va W={W1} L={L1}
+NM1b n1  inp  n3  n3 ekvn_va W={W1} L={L1}
+
+Vic ic 0 DC {VIC}
+ESRC2 inp ic id 0 0.5
+Vin id id0 DC 0 SIN(0 1 1K 0 0 0) AC 1 ACPHASE 0
+Vid id0 0 DC {VOS}
+NM3b n3  n5  0  0 ekvn_va W={W3} L={L3}
+NM3a n5  n5  0  0 ekvn_va W={W3} L={L3}
+Cc out  n1 {Cc}
+NM4a n4  n4  vdd  vdd ekvp_va W={W4} L={L4}
+NM4b n1  n4  vdd  vdd ekvp_va W={W4} L={L4}
+NM2 out  n1  vdd  vdd ekvp_va W={W2} L={L2}
+NM5a n6  n6  0  0 ekvn_va W={W5} L={L5}
+Ib1 vdd n5 DC {2*IB1}
+Ib2 vdd n6 DC {2*IB2}
+CL 0 out  {CL} 
+ESRC1 inn ic id 0 -0.5
+VDD vdd 0 DC {VDD}
+NM5b out  n6  0  0 ekvn_va W={W5} L={L5}
+
+.control
+
+dc vid -0.9 0.9 0.0018
+write spice4qucs.sw1.plot v(ic) v(id) v(id0) v(inn) v(inp) v(n1) v(n3) v(n4) v(n5) v(n6) v(out) v(vdd)
+destroy all
+reset
+
+op
+print v(ic) v(id) v(id0) v(inn) v(inp) v(n1) v(n3) v(n4) v(n5) v(n6) v(out) v(vdd)   > spice4qucs.dc1.ngspice.dc.print
+destroy all
+reset
+
+ac dec 101 1 100meg 
+let Gain_dB=dB(V(out)/V(id))
+let Phase=(cph(V(out))-cph(V(id)))*180/pi
+write spice4qucs.ac1.plot v(ic) v(id) v(id0) v(inn) v(inp) v(n1) v(n3) v(n4) v(n5) v(n6) v(out) v(vdd) Gain_dB Phase
+destroy all
+reset
+
+op
+print v(ic) v(id) v(id0) v(inn) v(inp) v(n1) v(n3) v(n4) v(n5) v(n6) v(out) v(vdd)   > spice4qucs.dc2.ngspice.dc.print
+destroy all
+reset
+
+dc vid -0.0004 0.0004 8e-07
+write spice4qucs.sw2.plot v(ic) v(id) v(id0) v(inn) v(inp) v(n1) v(n3) v(n4) v(n5) v(n6) v(out) v(vdd)
+destroy all
+reset
+
+noise v(out) Vin dec 101 1 100MEG
+print inoise_total onoise_total >> spice4qucs.noise1.cir.noise
+setplot noise1
+write spice4qucs.noise1.plot inoise_spectrum onoise_spectrum
+destroy all
+reset
+
+exit
+.endc
+.END
