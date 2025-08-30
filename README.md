@@ -17,7 +17,7 @@ In this directory you will find the design of various single transistor gain sta
 
 It currently includes:
 * [Common-source stage in open-loop configuration](Amplifiers/Basic/CS%20OL%20Optimization/) ([pdf](Amplifiers/Basic/CS%20OL%20Optimization/CS_OL_optimization_with_CF.pdf)) ([sch for GBW](Amplifiers/Basic/CS%20OL%20Optimization/Simulations/qucs-s/Optimization%20for%20GBW/)) [sch for Adc and GBW](Amplifiers/Basic/CS%20OL%20Optimization/Simulations/qucs-s/Optimization%20for%20Adc%20and%20GBW)).
-* 
+* [CS Input-referred white noise optimization](Amplifiers/Basic/CS%20OL%20Noise%20Optimization) 
 * [Common-source stage with capacitive feedback](Amplifiers/Basic/CS%20CL%20Optimization/) ([pdf](Amplifiers/Basic/CS%20CL%20Optimization/CS_CL_optimization.pdf)) ([sch for Adc and GBW](Amplifiers/Basic/CS%20OL%20Optimization/Simulations/qucs-s/Optimization%20for%20Adc%20and%20GBW)).
 
 
