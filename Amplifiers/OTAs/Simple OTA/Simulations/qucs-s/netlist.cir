@@ -1,0 +1,35 @@
+* Qucs 25.1.0  M:/My Drive/My Github Repositories/Analog Circuit Design/Amplifiers/OTAs/Simple OTA/Simulations/qucs-s/Simple_OTA.sch
+.INCLUDE "C:/Program Files/Qucs-S/share/qucs-s/xspice_cmlib/include/ngspice_mathfunc.inc"
+.INCLUDE "M:/My Drive/My Github Repositories/Analog Circuit Design/Amplifiers/OTAs/Simple OTA/Simulations/qucs-s/ekv018va.par"
+.INCLUDE "M:/My Drive/My Github Repositories/Analog Circuit Design/Amplifiers/OTAs/Simple OTA/Simulations/qucs-s/size_bias.par"
+CL 0 out  {CL} 
+NM1a n2  inp  n1  n1 ekvn_va W={W1} L={L1}
+NM1b out  inn  n1  n1 ekvn_va W={W1} L={L1}
+Ib vdd n3 DC {2*IB}
+NM2b out  n2  vdd  vdd ekvp_va W={W2} L={L2}
+NM2a n2  n2  vdd  vdd ekvp_va W={W2} L={L2}
+
+NM3b n1  n3  0  0 ekvn_va W={W3} L={L3}
+NM3a n3  n3  0  0 ekvn_va W={W3} L={L3}
+ESRC1 inn ic id 0 -0.5
+ESRC2 inp ic id 0 0.5
+Vic1 ic 0 DC {VIC}
+Vin1 id id0 DC 0 SIN(0 1 1K 0 0 0) AC 1 ACPHASE 0
+Vid1 id0 0 DC {VOS}
+VDD vdd 0 DC {VDD}
+
+.control
+
+dc vid -0.9 0.9 0.0018
+write spice4qucs.sw1.plot v(ic) v(id) v(id0) v(inn) v(inp) v(n1) v(n2) v(n3) v(out) v(vdd)
+destroy all
+reset
+
+op
+print v(ic) v(id) v(id0) v(inn) v(inp) v(n1) v(n2) v(n3) v(out) v(vdd)   > spice4qucs.dc1.ngspice.dc.print
+destroy all
+reset
+
+exit
+.endc
+.END
