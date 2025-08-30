@@ -1,4 +1,4 @@
-# Qucs-s Schematic of the Simple OTA
+# Qucs-s Schematic of the Telescopic OTA
 
 ![Simple OTA.](/Amplifiers/OTAs/Telescopic%20OTA/Simulations/qucs-s/Telescopic_OTA.png)
 
