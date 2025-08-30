@@ -1,4 +1,4 @@
-# Qucs-s Schematic of the Simple OTA
+# Qucs-s Schematic of the Miller OTA
 
 ![Simple OTA.](/Amplifiers/OTAs/Miller%20OTA/Simulations/qucs-s/Miller_OTA.png)
 
