@@ -1,4 +1,4 @@
-# Qucs-s Schematic of the Simple OTA
+# Qucs-s Schematic of the Folded Cascode OTA
 
 ![Simple OTA.](/Amplifiers/OTAs/Folded%20Cascode%20OTA/Simulations/qucs-s/Folded_cascode_OTA.png)
 
