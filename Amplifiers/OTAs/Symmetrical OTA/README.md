@@ -18,3 +18,4 @@ in the first cell of the notebook.
 
 You also need to have ngspice installed (see the [ngspice installation instructions](/ngspice_installation.md)).
 
+We now have also added the [Qucs-s schematic](/Amplifiers/OTAs/Symmetrical%20OTA/Simulations/qucs-s/).
