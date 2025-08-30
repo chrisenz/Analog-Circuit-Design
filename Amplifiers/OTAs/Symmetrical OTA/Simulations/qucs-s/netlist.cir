@@ -1,0 +1,74 @@
+* Qucs 25.1.0  M:/My Drive/My Github Repositories/Analog Circuit Design/Amplifiers/OTAs/Symmetrical OTA/Simulations/qucs-s/Symmetrical_OTA.sch
+.INCLUDE "C:/Program Files/Qucs-S/share/qucs-s/xspice_cmlib/include/ngspice_mathfunc.inc"
+.INCLUDE "M:/My Drive/My Github Repositories/Analog Circuit Design/Amplifiers/OTAs/Symmetrical OTA/Simulations/qucs-s/ekv018va.par"
+.INCLUDE "M:/My Drive/My Github Repositories/Analog Circuit Design/Amplifiers/OTAs/Symmetrical OTA/Simulations/qucs-s/size_bias.par"
+.PARAM Vnin=20*log(inoise_spectrum)
+Ib vdd n8 DC {2*IB}
+
+Vic _net0 0 DC {VIC}
+Vin id id0 DC 0 SIN(0 1 1K 0 0 0) AC 1 ACPHASE 0
+Vb2 _net1 0 DC {VB2}
+Vb1 _net2 0 DC {VB1}
+VDD vdd 0 DC {VDD}
+CL 0 out  {CL} 
+Vid id0 0 DC {VOS}
+ESRC1 _net3 _net0 id 0 -0.5
+ESRC2 _net4 _net0 id 0 0.5
+NM1a _net5  _net3  _net6  _net6 ekvn_va W={W1} L={L1}
+NM1b _net7  _net4  _net6  _net6 ekvn_va W={W1} L={L1}
+NM2c n3  _net5  vdd  vdd ekvp_va W={W2} L={L2}
+NM2a _net5  _net5  vdd  vdd ekvp_va W={W2} L={L2}
+NM2b _net7  _net7  vdd  vdd ekvp_va W={W2} L={L2}
+NM2d n6  _net7  vdd  vdd ekvp_va W={W2} L={L2}
+NM5a n8  n8  0  0 ekvn_va W={W5} L={L5}
+NM5b _net6  n8  0  0 ekvn_va W={W5} L={L5}
+NM3a n3  n3  0  0 ekvn_va W={W3} L={L3}
+NM3b n5  n3  0  0 ekvn_va W={W3} L={L3}
+NM7 out  _net1  n5  0 ekvn_va W={W7} L={L7}
+NM4 out  _net2  n6  vdd ekvp_va W={W4} L={L4}
+
+.control
+
+let Vnin=20*log(inoise_spectrum)
+dc vid -0.9 0.9 0.0018
+write spice4qucs.sw1.plot v(id) v(id0) v(n3) v(n5) v(n6) v(n8) v(out) v(vdd)
+destroy all
+reset
+
+let Vnin=20*log(inoise_spectrum)
+op
+print v(id) v(id0) v(n3) v(n5) v(n6) v(n8) v(out) v(vdd)   > spice4qucs.dc1.ngspice.dc.print
+destroy all
+reset
+
+let Vnin=20*log(inoise_spectrum)
+ac dec 90 0.1 100meg 
+let Gain_dB=dB(V(out)/V(id))
+let Phase=(cph(V(out))-cph(V(id)))*180/pi
+write spice4qucs.ac1.plot v(id) v(id0) v(n3) v(n5) v(n6) v(n8) v(out) v(vdd)
+destroy all
+reset
+
+let Vnin=20*log(inoise_spectrum)
+op
+print v(id) v(id0) v(n3) v(n5) v(n6) v(n8) v(out) v(vdd)   > spice4qucs.dc2.ngspice.dc.print
+destroy all
+reset
+
+let Vnin=20*log(inoise_spectrum)
+noise v(out) Vin dec 101 1 100MEG
+print inoise_total onoise_total >> spice4qucs.noise1.cir.noise
+setplot noise1
+write spice4qucs.noise1.plot inoise_spectrum onoise_spectrum
+destroy all
+reset
+
+let Vnin=20*log(inoise_spectrum)
+dc vid 6e-05 8.5e-05 2.5e-08
+write spice4qucs.sw2.plot v(id) v(id0) v(n3) v(n5) v(n6) v(n8) v(out) v(vdd)
+destroy all
+reset
+
+exit
+.endc
+.END
