@@ -1,22 +1,9 @@
 # Common-source Input-referred White Noise Optimization
 
+![CS OL Amplifier](/Amplifiers/Basic/CS%20CL%20Optimization/Figures/CS_CL_amplifier_schematic.png)
 
+This [Quarto notebook](/Amplifiers/Basic/CS%20CL%20Optimization/CS_CL_optimization.pdf) shows how to minimize the current consumption of the above common-source (CS) amplifier in closed-loop for achieving a given bandwidth. This example can be extended to a switched-capacitor amplifier using an OTA.
 
-This repository presents various examples of analog CMOS circuit design. It is focused on the use of the EKV MOSFET model and the related inversion coefficient approach. The repository includes Quarto or Jupyter notebooks that you can download and run on your own computer.
+The ngspice simulations are using the EKV 2.6 compact model with the parameters corresponding to a generic 180nm bulk CMOS process. For the simulations to work you should install ngspice following the ![ngspice installation instructions](/ngspice_installation.md).
 
-I now have added schematics with qucs-s. You can run the same ngspice simulation for the latest design directly from the qucs-s schematic editor and visualize the results.
-
-> [!NOTE]
-> This assumes that you have the same (or similar) [environment](Installation.md) than the one I have installed on my Windows 11 machines.
-
-The repository is structured in the following Chapters.
-
-## Amplifiers
-
-### [Single transistor gain stage (Basic)](Amplifiers/Basic/)
-
-In this directory you will find the design of various single transistor gain stages.
-
-It currently includes:
-* [Common-source stage in open-loop configuration](Amplifiers/Basic/CS%20OL%20Optimization/) ([pdf](Amplifiers/Basic/CS%20OL%20Optimization/CS_OL_optimization_with_CF.pdf)) ([sch for GBW](Amplifiers/Basic/CS%20OL%20Optimization/Simulations/qucs-s/Optimization%20for%20GBW/)).
-* [Common-source stage with capacitive feedback](Amplifiers/Basic/CS%20CL%20Optimization/) ([pdf](Amplifiers/Basic/CS%20CL%20Optimization/CS_CL_optimization.pdf)) ([sch for Adc and GBW](Amplifiers/Basic/CS%20OL%20Optimization/Simulations/qucs-s/Optimization%20for%20Adc%20and%20GBW)).
+We now also have added the [Qucs-s schematic](/Amplifiers/Basic/CS%20CL%20Optimization/Simulations/qucs-s/README.md) using ngspice with the EKV2.6 compact model.
