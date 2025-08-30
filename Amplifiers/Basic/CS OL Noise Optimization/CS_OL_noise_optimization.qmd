@@ -1,0 +1,615 @@
+---
+title: Common-source Stage Optimization using the Inversion Coefficient
+subtitle: Input-referred white noise optimization (Version 1)
+author: Christian Enz (christian.enz@epfl.ch)
+affiliation: EPFL
+date: today
+execute:
+  echo: false
+  warning: false
+toc: true
+number-sections: true
+number-depth: 3
+highlight-style: pygments
+bibliography: references.bib
+csl: ieee.csl
+format: 
+  html:
+    include-in-header: mathjax.html
+    code-fold: true
+    html-math-method: mathjax
+    css: styles.css
+  pdf:
+    keep-tex: true
+    pdf-engine: pdflatex
+    documentclass: scrreprt
+    papersize: a4
+    geometry:
+      - top=20mm
+      - bottom=20mm
+      - left=20mm
+      - right=20mm
+---
+
+```{python}
+# Initialization
+
+from ekv_functions import *
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import subprocess
+import shutil
+import os
+import os.path as op
+import sys
+sys.path.append(".")
+import re
+
+from IPython.display import Markdown
+from tabulate import tabulate
+
+plt.rcParams['svg.fonttype'] = 'none'
+plt.rcParams['pdf.fonttype'] = 42
+plt.rcParams['font.family'] = 'Arial'
+plt.rcParams['mathtext.fontset'] = 'custom'
+plt.rcParams['mathtext.rm'] = 'Arial'
+plt.rcParams['mathtext.it'] = 'Arial:italic'
+plt.rcParams['mathtext.bf'] = 'Arial:bold'
+
+lw=1
+curvelw=1.5
+msize=5
+textFontSize=9
+BodePlotParams = {'figure.figsize': (5,5)}
+pltStyle='plt_style_small.mplstyle'
+plt.style.use(pltStyle)
+```
+
+# Introduction
+
+![Schematic of the open-loop common-source (CS) gain stage.](Figures/CS_OL_schematic.png){#fig-CS_OL_schematic}
+
+The schematic of the common-source (CS) stage in open-loop configuration is shown in @fig-CS_OL_schematic. To size the transistor according to some specifications on the gain, bandwidth or noise, we need to find the bias current $I_b$ and the aspect ratio $W/L$ that satisfies the given specifications. In order to do this, we first need to analyze the circuit in terms of its key features. We will start with a small-signal analysis.
+
+# Small-signal analysis
+
+![Small-signal schematic of the open-loop (OL) common-source (CS) gain stage including its noise source.](Figures/CS_OL_small-signal.png){#fig-CS_OL_small-signal}
+
+The small-signal schematic of the open-loop (OL) common-source (CS) stage is shown in @fig-CS_OL_small-signal. Ignoring the noise source $I_n$, it is straightforward to show that the transfer function is given by
+\begin{equation*}
+  A(s) \triangleq \frac{\Delta V_{out}}{\Delta V_{in}} = A_{dc} \cdot \frac{1}{1+s/\omega_p}
+\end{equation*}
+where
+\begin{align*}
+  A_{dc} &= -G_m \cdot R_{ds},\\
+  \omega_p &= \frac{R_{ds}}{C_L}.
+\end{align*}
+$A_{dc} = -G_m \cdot R_{ds}$ is the DC voltage gain and $\omega_p$ the pole. The gain-bandwidth product ($GBW$)or unity gain frequency ($\omega_u$)is then given by
+\begin{equation*}
+  GBW = \omega_u = |A_{dc}| \cdot \omega_p = \frac{G_m}{C_L}.
+\end{equation*}
+The transfer function magnitude is plotted in @fig-Transfer_function.
+
+![Small-signal transfer function of the OL CS amplifier.](Figures/Transfer_function.png){#fig-Transfer_function}
+
+# Minimum current for a given transconductance
+In this section we want to answer the following question:
+
+::: {.callout-tip title="Question"}
+What is the minimum current $I_b$ and transistor size (aspect ratio $W/L$) in order for the OL CS gain stage to achieve a given transconductance?
+:::
+
+To answer this question we first rewrite the current as @bib:enz:book:2006 @bib:enz:sscmag:autumn:2017 @bib:enz:sscmag:winter:2017
+\begin{equation}
+  I_b = I_{spec\Box} \cdot \frac{W}{L} \cdot IC
+\end{equation}
+and the transconductance as
+\begin{equation}
+  G_m = \frac{I_{spec\Box}}{n U_T} \cdot \frac{W}{L} \cdot g_{ms}(IC),
+\end{equation}
+where $g_{ms}(IC)$ is the normalized source transconductance which only depends on $IC$ according to @bib:enz:book:2006 @bib:enz:sscmag:autumn:2017 @bib:enz:sscmag:winter:2017
+\begin{equation}
+  g_{ms} \triangleq \frac{G_{ms}}{G_{spec}} = \frac{n\,G_m}{G_{spec}} = \frac{\sqrt{4 IC+1}-1}{2}
+\end{equation}
+for a long-channel transistor and @bib:enz:book:2006 @bib:enz:sscmag:autumn:2017 @bib:enz:sscmag:winter:2017
+\begin{equation}\label{eqn:gms_short}
+  g_{ms} = \frac{\sqrt{4 IC+1+(\lambda_c\,IC)^2}-1}{2+\lambda_c^2\,IC}
+\end{equation}
+for a short-channel transistor accounting for velocity saturation with parameter $\lambda_c$. Note that, according to \eqref{eqn:gms_short}, $g_{ms}$ saturates to $1/\lambda_c$ in very strong inversion.
+
+We then need to solve the following set of equation for $I_b$ and $W/L$
+\begin{align}
+  G_m &= \frac{I_{spec\Box}}{n U_T} \cdot \frac{W}{L} \cdot g_{ms}(IC),\\
+  I_b &= I_{spec\Box} \cdot \frac{W}{L} \cdot IC.
+\end{align}
+
+This leads to the following normalized results
+\begin{align}
+  i_b &\triangleq \frac{I_b}{G_m \cdot n U_T} = \frac{IC}{g_{ms}},\\
+  AR &\triangleq \frac{W}{L} \cdot \frac{I_{spec\Box}}{G_m \cdot n U_T} = \frac{1}{g_{ms}}.
+\end{align}
+$i_b$ and $AR$ are plotted below for various values of $\lambda_c$
+
+```{python}
+#| label: fig-ib_ar_vs_ic
+#| fig-cap: Normalized bias current $i_b$ and aspect ratio $AR$ versus inversion coefficient $IC$.
+
+Npts=101
+logICmin=-2
+logICmax=2
+ICmin=pow(10,logICmin)
+ICmax=pow(10,logICmax)
+IC=np.logspace(logICmin,logICmax,Npts,endpoint=True,base=10.0)
+ib0=np.zeros(Npts)
+ib0si=np.zeros(Npts)
+ib1=np.zeros(Npts)
+ib1si=np.zeros(Npts)
+ib2=np.zeros(Npts)
+ib2si=np.zeros(Npts)
+ar0=np.zeros(Npts)
+ar0si=np.zeros(Npts)
+ar1=np.zeros(Npts)
+ar1si=np.zeros(Npts)
+ar2=np.zeros(Npts)
+ar2si=np.zeros(Npts)
+lambdac=[0,0.3,1]
+
+for k in range(0,Npts):
+    ib0[k]=idgms_ic(IC[k])
+    ib0si[k]=sqrt(IC[k])
+    ib1[k]=idgms_ic_short(IC[k],lambdac[1])
+    ib1si[k]=lambdac[1]*IC[k]
+    ib2[k]=idgms_ic_short(IC[k],lambdac[2])
+    ib2si[k]=lambdac[2]*IC[k]
+    ar0[k]=1/gms_ic(IC[k])
+    ar0si[k]=1/sqrt(IC[k])
+    ar1[k]=1/gms_ic_short(IC[k],lambdac[1])
+    ar1si[k]=lambdac[1]
+    ar2[k]=1/gms_ic_short(IC[k],lambdac[2])
+    ar2si[k]=lambdac[2]
+    
+fig, ax1 = plt.subplots()
+
+ax2 = ax1.twinx()
+ax1.loglog(IC,ib0si,'k--',linewidth=lw)
+ax1.loglog(IC,ib0,'r-',linewidth=curvelw)
+ax1.loglog(IC,ib1si,'k--',linewidth=lw)
+ax1.loglog(IC,ib1,'r-',linewidth=curvelw)
+ax1.loglog(IC,ib2si,'k--',linewidth=lw)
+ax1.loglog(IC,ib2,'r-',linewidth=curvelw)
+ax1.set_xlabel('Inversion Coefficient $IC$')
+ax1.set_xlim(ICmin,ICmax)
+ax1.set_ylabel('Normalized bias current $i_b$')
+ax1.set_ylim(0.1,100)
+ax1.annotate('$\\lambda_c=$' + f'{lambdac[0]:.0f}', size=textFontSize,
+             xy=(10, idgms_ic(10)), xycoords='data',
+             xytext=(-20, 20), textcoords='offset points',
+             bbox=dict(boxstyle='square,pad=0', fc='w', ec='none'),
+             arrowprops=dict(arrowstyle="-|>", shrinkA=0, capstyle='butt', ec='k', fc='k', joinstyle='miter'),
+             ha='right', va='bottom')
+ax1.annotate('$\\lambda_c=$' + f'{lambdac[1]:.1f}', size=textFontSize,
+             xy=(20, idgms_ic_short(20,lambdac[1])), xycoords='data',
+             xytext=(-20, 20), textcoords='offset points',
+             bbox=dict(boxstyle='square,pad=0', fc='w', ec='none'),
+             arrowprops=dict(arrowstyle="-|>", shrinkA=0, capstyle='butt', ec='k', fc='k', joinstyle='miter'),
+             ha='right', va='bottom')
+ax1.annotate('$\\lambda_c=$' + f'{lambdac[2]:.0f}', size=textFontSize,
+             xy=(20, idgms_ic_short(20,lambdac[2])), xycoords='data',
+             xytext=(-20, 20), textcoords='offset points',
+             bbox=dict(boxstyle='square,pad=0', fc='w', ec='none'),
+             arrowprops=dict(arrowstyle="-|>", shrinkA=0, capstyle='butt', ec='k', fc='k', joinstyle='miter'),
+             ha='right', va='bottom')
+ax1.annotate('', xy=(20, 65), xycoords='axes points',
+             xytext=(20, 0), textcoords='offset points',
+             arrowprops=dict(arrowstyle="-|>", shrinkA=0, linewidth=3, capstyle='butt', ec='r', fc='r', joinstyle='miter'))
+
+ax2.loglog(IC,ar0si,'k--',linewidth=lw)
+ax2.loglog(IC,ar0,'b-',linewidth=curvelw)
+ax2.loglog(IC,ar1si,'k--',linewidth=lw)
+ax2.loglog(IC,ar1,'b-',linewidth=curvelw)
+ax2.loglog(IC,ar2si,'k--',linewidth=lw)
+ax2.loglog(IC,ar2,'b-',linewidth=curvelw)
+ax2.set_ylabel('Normalized $W/L$ $AR$', va='bottom', rotation=270)
+ax2.set_ylim(0.1,100)
+ax2.annotate('$\\lambda_c=$' + f'{lambdac[0]:.0f}', size=textFontSize,
+             xy=(18, 1/gms_ic(18)), xycoords='data',
+             xytext=(-12, -12), textcoords='offset points',
+             bbox=dict(boxstyle='square,pad=0', fc='w', ec='none'),
+             arrowprops=dict(arrowstyle="-|>", shrinkA=0, capstyle='butt', ec='k', fc='k', joinstyle='miter'),
+             ha='right', va='top')
+ax2.annotate('$\\lambda_c=$' + f'{lambdac[1]:.1f}', size=textFontSize,
+             xy=(10, 1/gms_ic_short(10,lambdac[1])), xycoords='data',
+             xytext=(-15, -15), textcoords='offset points',
+             bbox=dict(boxstyle='square,pad=0', fc='w', ec='none'),
+             arrowprops=dict(arrowstyle="-|>", shrinkA=0, capstyle='butt', ec='k', fc='k', joinstyle='miter'),
+             ha='right', va='top')
+ax2.annotate('$\\lambda_c=$' + f'{lambdac[2]:.0f}', size=textFontSize,
+             xy=(8, 1/gms_ic_short(8,lambdac[2])), xycoords='data',
+             xytext=(-20, -20), textcoords='offset points',
+             bbox=dict(boxstyle='square,pad=0', fc='w', ec='none'),
+             arrowprops=dict(arrowstyle="-|>", shrinkA=0, capstyle='butt', ec='k', fc='k', joinstyle='miter'),
+             ha='right', va='top')
+ax2.annotate('', xy=(60, 130), xycoords='axes points',
+             xytext=(-20, 0), textcoords='offset points',
+             arrowprops=dict(arrowstyle="-|>", shrinkA=0, linewidth=3, capstyle='butt', ec='b', fc='b', joinstyle='miter'))
+plt.show()
+```
+
+From @fig-ib_ar_vs_ic, we see that we can reduce the current $i_b$ when moving from strong inversion (SI) to moderate inversion (MI) reaching a minimum in weak inversion (WI). The loss of transconductance resulting from a reduction of $IC$ is compensated by an increase of $W/L$ as shown by the blue curves, resulting in a very large transistor and a drastic area increase. Moderate inversion turns out to be a good trade-off between low current and acceptable area for achieving a given transconductance.
+
+# Minimum current for a given input-referred thermal noise
+In this section we want to answer the following question:
+
+::: {.callout-tip title="Question"}
+What is the minimum current $I_b$ and transistor size (aspect ratio $W/L$) in order for the OL CS gain stage to achieve a given input-referred thermal noise resistance?
+:::
+
+The input-referred thermal noise resistance is given by
+\begin{equation*}
+  R_{n,th}=\frac{\gamma_n}{G_m}
+\end{equation*}
+For a long-channel transistor, the thermal noise excess factor $\gamma_n$ is constant and $R_{n,th}$ decreases with $IC$, as $1/IC$ in WI and $1/\sqrt{IC}$ in SI. However, when velocity saturation (VS) is considered, $G_m$ will saturate in SI and the thermal noise excess factor $\gamma_n$ increases with $IC$.
+
+We first will consider the long-channel case (no VS).
+
+## Long-channel (no VS)
+In this case the thermal noise excess factor $\gamma_n$ can be considered as constant.
+
+We then need to solve the following set of equation for $I_b$ and $W/L$
+\begin{align*}
+  R_{n,th} &= \frac{\gamma_n}{G_m},\\
+  G_m &= \frac{I_{spec\Box}}{n U_T} \cdot \frac{W}{L} \cdot g_{ms}(IC),\\
+  I_b &= I_{spec\Box} \cdot \frac{W}{L} \cdot IC.
+\end{align*}
+
+This leads to the following normalized results
+\begin{align}
+  i_b &\triangleq \frac{I_b \cdot R_{n,th}}{n U_T \cdot \gamma_n} = \frac{IC}{g_{ms}},\\
+  AR &\triangleq \frac{W}{L} \cdot \frac{I_{spec\Box} \cdot R_{n,th}}{n U_T \cdot \gamma_n}.
+\end{align}
+With this normalization, the normalized current $i_b$ and aspect ratio $AR$ are identical to the curve of the constant $G_m$ case with $\lambda_c=0$ shown in @fig-ib_ar_vs_ic.
+
+## Short-channel case (incl. VS)
+When VS is present we need to account for the transconductance saturation in SI given by \eqref{eqn:gms_short} and for the dependence of $\gamma_n$ to $IC$ which can be approximated by @bib:enz:icecs:2022
+\begin{equation}\label{eqn:gamman_short}
+  \gamma_n = \gamma_{nwi} \cdot (1 + \alpha_n \cdot IC)
+\end{equation}
+where $\gamma_{nwi}$ is normally the noise excess factor in WI given by $\gamma_{nwi} \cong n/2$. However in the empirical model \eqref{eqn:gamman_short} it is used as a fitting parameter which turns out to be very close to one. Parameter $\alpha_n$ depends on the VS parameter $\lambda_c$ according to
+\begin{equation}
+  \alpha_n = \frac{n}{2} \cdot \lambda_c^2.
+\end{equation}
+
+The normalized input-referred thermal noise resistance can be defined as
+\begin{equation}
+  r_n \triangleq R_{n,th} \cdot G_{spec} = \frac{\gamma_n}{g_m}
+\end{equation}
+with $g_m \triangleq G_m/G_{spec}$.
+
+To find the current for achieving a given input-referred thermal noise resistance, we need to solve the following set of equations for $I_b$ and $W/L$
+\begin{align}
+  R_{nt} &= \frac{\gamma_n}{G_m},\\
+  \gamma_n &= \gamma_{nwi} \cdot (1 + \alpha_n \cdot IC),\\
+  G_m &= \frac{I_{spec\Box}}{n U_T} \cdot \frac{W}{L} \cdot g_{ms}(IC),\\
+  I_b &= I_{spec\Box} \cdot \frac{W}{L} \cdot IC,
+\end{align}
+
+This leads to the following normalized results
+\begin{align}
+  i_b &\triangleq \frac{I_b \cdot R_{n,th}}{n U_T \cdot \gamma_{nwi}}
+  = \frac{IC}{g_{ms}} \cdot (1+\alpha_n \cdot IC),\\
+  AR &\triangleq \frac{W}{L} \cdot \frac{I_{spec\Box} \cdot R_{n,th}}{n U_T \cdot \gamma_{nwi}}
+  = \frac{1}{g_{ms}}\cdot (1+\alpha_n \cdot IC).
+\end{align}
+$i_b$ is plotted versus $IC$ in @fig-ib_vs_ic_short for various values of $\lambda_c$. We see that things have become worse in SI. We need much more current to achieve the same input-referred thermal noise resistance as $\lambda_c$ increases. As the inversion coefficient increases, the normalized source transconductance saturates to $1/\lambda_c$ and therefore the normalized current increase with $IC$ according to
+\begin{equation}
+  i_b \cong \lambda_c \cdot \alpha_n \cdot IC^2 = \frac{n}{2} \cdot \lambda_c^3 \cdot IC^2.
+\end{equation}
+For example for $\lambda_c = 0.5$, this means that we need 100 times more current for $IC=100$ compared to the long-channel case ($\lambda_c = 0$). Clearly, WI gives the smallest bias current. However this leads to a large transistor.
+
+```{python}
+#| label: fig-ib_vs_ic_short
+#| fig-cap: Normalized bias current $i_b$ versus inversion coefficient $IC$.
+
+n=1.3
+#gammanwi=n/2
+gammanwi=1
+lambdac=[0,0.1,0.2,0.3,0.4,0.5]
+Npts=1001
+Ncurves=len(lambdac)
+IClim=np.zeros(Ncurves)
+colors=plt.cm.rainbow(np.linspace(0, 1, Ncurves))
+logICmin=-2
+logICmax=2
+ICmin=pow(10,logICmin)
+ICmax=pow(10,logICmax)
+IC=np.logspace(logICmin,logICmax,Npts,endpoint=True,base=10.0)
+
+ib=np.zeros(Npts)
+ibsi=np.zeros(Npts)
+
+for m in range(0,Ncurves):
+  alphan=n/2*lambdac[m]**2
+  for k in range(0,Npts):
+    ib[k]=idgms_ic_short(IC[k],lambdac[m])*(1+alphan*IC[k])
+    ibsi[k]=lambdac[m]*alphan*IC[k]**2
+  plt.loglog(IC, ib, color=colors[m], label='$\\lambda_c =$' + f'{lambdac[m]:.1f}')
+#  plt.loglog(IC, ibsi, linestyle='dashed', color=colors[m])
+
+plt.loglog([1,1e2],[1,1e1],'k--', linewidth=lw)
+#plt.loglog([1/4,1e2],[1,20],'k--', linewidth=lw)
+#plt.loglog(IC,ibopt,'r--')
+plt.xlim(ICmin,ICmax)
+#plt.xticks(np.arange(0,11,1))
+plt.xlabel('$IC$')
+plt.ylim(1,1e3)
+#plt.yticks(np.arange(0,1.1,0.1))
+plt.ylabel('Normalized bias current $i_b$')
+#plt.legend(loc='lower right')
+plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+textstr = '\n'.join((
+  f'$n =$ {n:.1f}',
+  f'$\\gamma_{{nwi}} =$ {gammanwi:.0f}'))
+plt.text(0.05, 0.95, textstr, ha='left', va='top', size=textFontSize, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+plt.show()
+```
+
+This can be evaluated by looking at the normalized aspect ratio $AR$ which is plotted versus $IC$ in @fig-ar_vs_ic_short for the same values of $\lambda_c$. As for the long-channel case, we see that $AR$ increases as $1/IC$ when moving to WI. In SI and under VS, $AR$ increases instead of decreasing as $1/\sqrt{IC}$ as it does for $\lambda_c=0$. In SI under VS $1/g_{ms}=\lambda_c$ and hence $AR$ increases as
+\begin{equation}
+  AR \cong \lambda_c \cdot \alpha_n \cdot IC = \frac{n}{2} \cdot \lambda_c^3 \cdot IC.
+\end{equation}
+We also see that there is a minimum of $AR$ and therefore a minimum width for a given length.
+
+```{python}
+#| label: fig-ar_vs_ic_short
+#| fig-cap: Normalized aspect ratio $W/L$ versus inversion coefficient $IC$.
+
+n=1.3
+#gammanwi=n/2
+gammanwi=1
+lambdac=[0,0.1,0.2,0.3,0.4,0.5]
+Npts=1001
+Ncurves=len(lambdac)
+IClim=np.zeros(Ncurves)
+colors=plt.cm.rainbow(np.linspace(0, 1, Ncurves))
+logICmin=-2
+logICmax=2
+ICmin=pow(10,logICmin)
+ICmax=pow(10,logICmax)
+IC=np.logspace(logICmin,logICmax,Npts,endpoint=True,base=10.0)
+
+ar=np.zeros(Npts)
+
+for m in range(0,Ncurves):
+  alphan=n/2*lambdac[m]**2
+  for k in range(0,Npts):
+    ar[k]=(1+alphan*IC[k])/gms_ic_short(IC[k],lambdac[m])
+  plt.loglog(IC, ar, color=colors[m], label='$\\lambda_c =$' + f'{lambdac[m]:.1f}')
+
+plt.loglog([1e-2,1],[1e2,1],'k--', linewidth=lw)
+plt.loglog([1,1e2],[1,1e-1],'k--', linewidth=lw)
+plt.loglog([1,1],[1e-1,1],'k--', linewidth=lw)
+plt.xlim(ICmin,ICmax)
+#plt.xticks(np.arange(0,11,1))
+plt.xlabel('$IC$')
+plt.ylim(1e-1,1e2)
+#plt.yticks(np.arange(0,1.1,0.1))
+plt.ylabel('Normalized bias current $AR$')
+#plt.legend(loc='lower right')
+plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+textstr = '\n'.join((
+  f'$n =$ {n:.1f}',
+  f'$\\gamma_{{nwi}} =$ {gammanwi:.0f}'))
+plt.text(0.05, 0.05, textstr, ha='left', va='bottom', size=textFontSize, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+plt.show()
+```
+
+# Minimum input-referred thermal noise (short-channel)
+We have seen that for a short-channel transistor the thermal noise excess factor increases with $IC$ in SI. According to \eqref{eqn:gamman_short}, in very SI under heavy VS the thermal noise excess factor is given by $\gamma_n \cong \gamma_{wi} \cdot \alpha_n \cdot IC$ and the normalized transconductance $g_m$ saturates to $g_m \cong 1/(n\,\lambda_c)$ so that the normalized thermal noise resistance $r_n$ now increases with $IC$ according to
+\begin{equation}
+  r_n \cong \gamma_{nwi} \cdot \frac{n^2}{2} \cdot \lambda_c^3 \cdot IC \cong \frac{n^2}{2} \cdot \lambda_c^3 \cdot IC \quad \textsf{in SI and sat.}
+\end{equation}
+On the other hand, in WI, $\gamma_{nwi}$ is constant (close to one) and $g_m$ is proportionnal to $IC$ according to $g_m \cong IC/n$. The normalized input-referred white noise resistance decreases with respect to $IC$ improving the noise according to
+\begin{equation}
+  r_n \cong \gamma_{nwi}\,\frac{n}{IC} \cong \frac{n}{IC} \quad \textsf{in WI and sat.}
+\end{equation}
+
+Since the normalized input-referred white noise resistance $r_n$ decreases as $1/IC$ in WI and inceases as $IC$ in SI, it reaches a minimum in moderate inversion (MI). There is no simple closed form expression of the optimum $IC$ for which $r_n$ reaches a minimum. However we can find an approximation by equating the two asymptotes and solving for $IC$. This gives an approximate value of the optimum inversion coefficient
+\begin{equation}
+  IC_{opt} \cong \sqrt{\frac{2}{n \cdot \lambda_c^3}}.
+\end{equation}
+
+The normalized input-referred thermal noise resistance $r_n$ in saturation is plotted versus the inversion coefficient $IC$ for an nMOS transistor from a 40nm bulk CMOS technology in @fig-rn_ic. We clearly see that there is a minimum on the upper side of moderate inversion. The estimation of the optimum inversion coefficient is slightly lower than the value corresponding to the effective minimum. However, considering the log scale used for the x-axis and the empiricial model used, this estimation is good enough.
+
+```{python}
+#| label: fig-rn_ic
+#| fig-cap: Normalized input-referred thermal noise resistance versus $IC$ including VS.
+
+Npts=101
+logICmin=-2
+logICmax=3
+ICmin=pow(10,logICmin)
+ICmax=pow(10,logICmax)
+IC=np.logspace(logICmin,logICmax,Npts,endpoint=True,base=10.0)
+rn=np.zeros(Npts)
+rn_novs=np.zeros(Npts)
+rn_si=np.zeros(Npts)
+rn_wi=np.zeros(Npts)
+n=1.45
+lambdac=0.3069421539622848
+gammanwi=1.0053001262586172
+alphan=0.06794466197521234
+
+for k in range(0,Npts):
+  rn[k]=rnsat_ic_emp(IC[k],n,lambdac,gammanwi,alphan)
+#  rn_novs[k]=gamman_ic(IC[k],n)*n/gms_ic(IC[k])
+  rn_novs[k]=gammanwi*n/gms_ic(IC[k])
+  rn_wi[k]=gammanwi*n/(IC[k])
+  rn_si[k]=gammanwi*n**2/2*lambdac**3*IC[k]
+
+idx_min=np.argmin(rn)
+ICopt=IC[idx_min]
+ICopta=sqrt(2/(n*lambdac**3))
+rnmin=rnsat_ic_emp(ICopt,n,lambdac,gammanwi,alphan)
+
+plt.plot((ICmin,ICopt),(rnmin,rnmin),'k--',linewidth=lw)
+plt.plot((ICopt,ICopt),(1e-1,rnmin),'k--',linewidth=lw)
+plt.loglog(IC,rn_si, 'k--', linewidth=curvelw, label='SI asymptote')
+plt.loglog(IC,rn_wi, 'k-.', linewidth=curvelw, label='WI asymptote')
+plt.loglog(IC,rn_novs, 'b--', linewidth=curvelw, label='$r_n$ (long-channel)')
+plt.loglog(IC,rn, 'r', linewidth=curvelw, label='$r_n$ (short-channel)')
+plt.loglog([ICopt,ICopt],[rnmin,rnmin], 'ro')
+plt.xlabel('Inversion coefficient $IC$')
+plt.xlim(ICmin,ICmax)
+plt.ylabel('$r_n = \\gamma_n/g_m$ (saturation)')
+plt.ylim(1e-1,1e2)
+plt.legend(loc='upper center')
+textstr1 = '\n'.join((
+    f'$n =$ {n:.2f}',
+    f'$\\lambda_c =$ {lambdac:.2f}',
+    f'$\\gamma_{{nwi}} =$ {gammanwi:.2f}'))
+plt.text(0.75, 0.05, textstr1, ha='left', va='bottom', size=textFontSize, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+textstr2 = '\n'.join((
+    f'$IC_{{opt}} =$ {ICopt:.3f}',
+    f'$IC_{{opt}} \\cong$ {ICopta:.3f} (approx.)',
+    f'$r_{{n,min}} \\cong$ {rnmin:.3f}'))
+plt.text(0.05, 0.05, textstr2, ha='left', va='bottom', size=textFontSize, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+plt.show()
+```
+
+This result is particularly important for RF IC design where white noise is dominating in low-noise amplifiers (LNAs). Note that an additional gate resitance needs to be added to the input-referred noise resistance @bib:enz:book:2006.
+
+Now that we have found the optimum inversion coefficient for achieving a minimum input-referred thermal noise resistance, we can find the corresponding $W/L$ and bias current $I_b$ according to
+\begin{align}
+  \left.\frac{W}{L}\right|_{opt} &= r_{n,min} \cdot \frac{U_T}{R_{n,th}\,I_{spec\Box}},\\
+  I_b &= I_{spec\Box} \cdot \left.\frac{W}{L}\right|_{opt} \cdot IC_{opt} = r_{n,min} \cdot \frac{U_T}{R_{n,th}} \cdot IC_{opt}.
+\end{align}
+where $r_{n,min} = r_n(IC_{opt})$.
+
+::: {.callout-note}
+The fact that the input-referred thermal noise resistance (or white noise power spectral density or PSD) gets minimum for an optimum value of the inversion coefficient often located on the upper side of moderate inversion does not mean that it is achieved with a minimum bias current. It simply means that for a given current budget, we can find an optimum value of the inversion coefficient for which the input-referred thermal noise resistance gets minimum.
+:::
+
+# Minimum of $F_{min}$ (short-channel)
+It can be shown that the minimum noise factor accounting for the effects of the gate resistance and the induced-gate noise (but without the correlation) can be approximated by @bib:enz:book:2006
+\begin{equation}
+  F_{min} \cong 1 + 2\frac{\gamma_n}{G_m} \, \omega \, C_{GS} \, \sqrt{\alpha_G + b_n},
+\end{equation}
+where $C_{GS}$ is the gate-to-source capacitance, $b_n=2/(5n^2)$ and $\alpha_G$ is the thermal noise contribution of the gate resistance normalized to that of the channel
+\begin{equation}
+  \alpha_G \triangleq \frac{R_G}{\gamma_n/G_m}.
+\end{equation}
+
+In RF we often use minimum length devices. In this case the gate-to-source capacitance is dominated by the extrinsic capacitance made of the overlap and fringing field capacitances. It scales with the width according to $C_{GS} \cong W \cdot C_{GeW}$ where $C_{GeW}$ is the total extrinsic capacitance per unit width. We can then rewrite the minimum noise factor as
+\begin{equation}
+  F_{min} \cong 1 + 2\frac{\gamma_n}{g_{ms}}  \, \frac{\omega}{\omega_n} \, \sqrt{\alpha_G + b_n}
+\end{equation}
+where
+\begin{equation}
+  \omega_n \triangleq \frac{I_{spec\Box}}{n U_T \,L_f\,C_{GeW}}
+\end{equation}
+
+The minimum noise figure $NF_{min}$ is plotted versus $IC$ in @fig-fmin_ic for two different operating frequencies in the case of an nMOS transistor from a 40nm bulk CMOS process. The transisor is rather large since it is made of $M=10$ devices with $N_f=10$ fingers and a finger width $W_f=1.8\,\mu m$ and a finger length $L_f=40\,nm$. We clearly see the minimum which occurs for the same value of $IC$ than the input-referred thermal noise resistance. The larger the frequency the larger the minimum figure.
+
+```{python}
+#| label: fig-fmin_ic
+#| fig-cap: Minimum noise figure 
+
+RG=4.2
+CGeW=640e-12
+Ispecsq=650e-9
+Lf=40e-9
+omegan=Ispecsq/(n*UT*Lf*CGeW)
+omega10GHz=2*pi*10e9
+omega14GHz=2*pi*14e9
+Omega10GHz=omega10GHz/omegan
+Omega14GHz=omega14GHz/omegan
+M=6
+Nf=10
+Wf=1.8e-6
+Wtot=M*Nf*Wf
+Ispec=Ispecsq*Wtot/Lf
+Gspec=Ispec/UT
+bn=2/(5*n**2)
+#bn=0
+
+Npts=101
+logICmin=-1
+logICmax=2
+ICmin=pow(10,logICmin)
+ICmax=pow(10,logICmax)
+IC=np.logspace(logICmin,logICmax,Npts,endpoint=True,base=10.0)
+
+Fmin10GHz=np.zeros(Npts)
+Fmin14GHz=np.zeros(Npts)
+NFmin10GHz=np.zeros(Npts)
+NFmin14GHz=np.zeros(Npts)
+
+for k in range(Npts):
+  gms=gms_ic_short(IC[k],lambdac)
+  Gm=Gspec*gms/n
+  gamman=gammanwi*(1+alphan*IC[k])
+  Rni=gamman/Gm
+  alphag=RG/Rni
+  Fmin10GHz[k]=1+2*gamman/gms*Omega10GHz*sqrt(alphag+bn)
+  NFmin10GHz[k]=10*log(Fmin10GHz[k])
+  Fmin14GHz[k]=1+2*gamman/gms*Omega14GHz*sqrt(alphag+bn)
+  NFmin14GHz[k]=10*log(Fmin14GHz[k])
+
+idx_min=np.argmin(NFmin10GHz)
+ICopt=IC[idx_min]
+idx_min=np.argmin(NFmin10GHz)
+NFminopt10GHz=NFmin10GHz[idx_min]
+idx_min=np.argmin(NFmin14GHz)
+NFminopt14GHz=NFmin14GHz[idx_min]
+
+plt.plot((ICopt,ICopt),(0,NFminopt14GHz),'k--',linewidth=lw)
+plt.plot((ICmin,ICopt),(NFminopt10GHz,NFminopt10GHz),'k--',linewidth=lw)
+plt.plot((ICmin,ICopt),(NFminopt14GHz,NFminopt14GHz),'k--',linewidth=lw)
+plt.semilogx(IC, NFmin10GHz, 'r-', linewidth=curvelw, label='Model at 10GHz')
+plt.semilogx(IC, NFmin14GHz, 'b-', linewidth=curvelw, label='Model at 14GHz')
+plt.semilogx([ICopt,ICopt], [NFminopt14GHz,NFminopt10GHz], 'ro')
+plt.semilogx([ICopt,ICopt], [NFminopt14GHz,NFminopt14GHz], 'bo')
+plt.xlabel('Inversion Coefficient $IC$')
+plt.xlim(ICmin,ICmax)
+plt.ylabel('$NF_{min}$ [dB]')
+plt.ylim(0,1.2)
+plt.legend(loc='lower right')
+textstr1 = '\n'.join((
+  f'$M =$ {M:.0f}',
+  f'$W_f =$ {Wf/1e-6:.1f} $\\mu m$',
+  f'$L_f =$ {Lf/1e-9:.0f} nm',
+  f'$N_f =$ {Nf:.0f}',
+  f'$W_{{tot}} =$ {Wtot/1e-6:.0f} $\\mu m$',
+  f'$W_{{tot}}/L_f =$ {Wtot/Lf:.0f}'))
+plt.text(0.05, 0.06, textstr1, ha='left', va='bottom', size=textFontSize, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+textstr2 = '\n'.join((
+  f'$I_{{specsq}} =$ {Ispecsq/1e-9:.0f} nA',
+  f'$I_{{spec}} =$ {Ispec/1e-3:.1f} mA/V',
+  f'$G_{{spec}} =$ {Gspec/1e-3:.1f} mA/V',
+  f'$R_G =$ {RG:.1f} $\\Omega$',
+  f'$C_{{GeW}} =$ {CGeW/1e-12:.0f} pF/m',
+  f'$f_n =$ {omegan/(2*pi*1e9):.1f} GHz',
+  f'$n =$ {n:.2f}',
+  f'$\\lambda_c =$ {lambdac:.2f}, '
+  f'$\\gamma_{{wi}} =$ {gammanwi:.2f}',
+  f'$\\alpha_n =$ {alphan:.3f}, '
+  f'$IC_{{opt}} =$ {ICopt:.3f}',
+  f'$NF_{{min,opt}} =$ {NFminopt10GHz:.3f} dB (10GHz)',
+  f'$NF_{{min,opt}} =$ {NFminopt14GHz:.3f} dB (14GHz)'))
+plt.text(1.05, 0.5, textstr2, ha='left', va='center', size=textFontSize, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+plt.show()
+```
+
+# Conclusion
+In this notebook, we have analyzed the input-referred white noise or thermal noise resistance of a common-source nMOS gain stage. We first have investigated what is the minimum bias current for achieving a given input-referred thermal noise resistance. We have seen that the minimum current is achieved in WI at the cost of a larger transistor. The current reduction moving from SI to WI can be significant particularly for short-channel devices.
+We then have found that, for short-channel devices, there is an optimum inversion coefficient for which the input-referred thermal noise resistance becomes minimum. This does not mean it corresponds to a minimum current, but for a given current budget, choosing this optimum inversion coefficient garanties that we achieve a minimum input-referred thermal noise resistance.
+Finally, we also have seen that the minimum noise factor reaches a minimum in the upper side of moderate inversion.
+
+# References
