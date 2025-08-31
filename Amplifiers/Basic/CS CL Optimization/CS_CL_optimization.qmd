@@ -784,6 +784,7 @@ Before running the AC simulation, we first need to check the quiescent voltages 
 simtype = ".op"
 fileName = circuitName + simtype
 simulationPath = "./Simulations/ngspice/"
+qucsPath = "./Simulations/qucs-s/"
 simulationFile = simulationPath + fileName + ".cir"
 simulationLog = simulationPath + fileName + ".log"
 simulationVoltages = simulationPath + fileName + ".ic"
@@ -806,8 +807,11 @@ if newSim:
     f'.param RF={RF:.3e} CL={CL/1e-12:.3f}p CS={CS/1e-12:.3f}p CF={CF0/1e-15:.3f}f',
     f'.param W1={W1/1e-6:.2f}u L1={L1/1e-6:.2f}u'
   ))
-  #print(paramstr)
+  # Write the transistors sizes and bias to the ngspice directory
   with open(simulationPath+'size_bias.par', 'w') as f:
+    f.write(paramstr)
+  # Write the transistors sizes and bias to the qucs-s directory
+  with open(qucsPath+'size_bias.par', 'w') as f:
     f.write(paramstr)
   #print('Starting ngspice simulation...\n')
   result = subprocess.run(f"""ngspice_con -b -o "{simulationLog}" "{simulationFile}" """, shell=True, capture_output=True, text=True)
