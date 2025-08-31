@@ -1807,6 +1807,7 @@ From @fig-ng_large_signal, we see that the output swing is about $V_{out,swing} 
 simtype = ".dc"
 fileName = otaName + simtype
 simulationPath = "./Simulations/ngspice/Gain/"
+qucsPath = "./Simulations/qucs-s/"
 simulationFile = simulationPath + fileName + ".cir"
 simulationLog = simulationPath + fileName + ".log"
 simulationData = simulationPath + fileName + ".dat"
@@ -1890,16 +1891,20 @@ plt.text(1.05, 0.5, textstr, ha='left', va='center', size=9, transform=plt.gca()
          bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
 plt.show()
 
-paramstr = '\n'.join((
-  f'.param VDD={VDD:.1f} Vic={Vic:.1f} Vos={Vos/1e-6:.1f}u Ib={Ib/1e-9:.0f}n',
-  f'.param CL={CL/1e-12:.0f}p',
-  f'.param W1={W1/1e-6:.2f}u L1={L1/1e-6:.2f}u',
-  f'.param W2={W2/1e-6:.2f}u L2={L2/1e-6:.2f}u',
-  f'.param W3={W3/1e-6:.2f}u L3={L3/1e-6:.2f}u'
-))
-#print(paramstr)
-with open(simulationPath+'size_bias.par', 'w') as f:
-  f.write(paramstr)
+if newSim:
+  paramstr = '\n'.join((
+    f'.param VDD={VDD:.1f} Vic={Vic:.1f} Vos={Vos/1e-6:.1f}u Ib={Ib/1e-9:.0f}n',
+    f'.param CL={CL/1e-12:.0f}p',
+    f'.param W1={W1/1e-6:.2f}u L1={L1/1e-6:.2f}u',
+    f'.param W2={W2/1e-6:.2f}u L2={L2/1e-6:.2f}u',
+    f'.param W3={W3/1e-6:.2f}u L3={L3/1e-6:.2f}u'
+  ))
+  # Write the transistors sizes and bias to the ngspice directory
+  with open(simulationPath+'size_bias.par', 'w') as f:
+    f.write(paramstr)
+  # Write the transistors sizes and bias to the qucs-s directory
+  with open(qucsPath+'size_bias.par', 'w') as f:
+    f.write(paramstr)
 ```
 
 We see that the required offset voltage to bring the output voltage to $V_{outq} =$  `{python} f'{Voutq/1e-3:.0f}'` $mV$ is equal to $V_{os} =$ `{python} f'{Vos/1e-6:.3f}'` $\mu V$, which is small.
@@ -2050,7 +2055,7 @@ plt.semilogx(fthenz,SnindBvthe,'r--', label='Total (theory)')
 plt.xlim(fmin,fmax)
 plt.xticks([1e0,1e1,1e2,1e3,1e4,1e5,1e6,1e7,1e8])
 plt.xlabel('Frequency [Hz]')
-plt.ylim(-150,-100)
+plt.ylim(-150,-90)
 plt.ylabel(r'Input Noise PSD $[dBv/\sqrt{Hz}]$')
 #plt.legend(loc='best')
 plt.legend(loc='center left', fontsize=9, bbox_to_anchor=(1, 0.5))
