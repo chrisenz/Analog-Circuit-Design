@@ -16,9 +16,9 @@ The repository is structured in the following Chapters.
 In this directory you will find the design of various single transistor gain stages.
 
 It currently includes:
-* [Common-source stage in open-loop configuration](Amplifiers/Basic/CS%20OL%20Optimization/) ([pdf](Amplifiers/Basic/CS%20OL%20Optimization/CS_OL_optimization_with_CF.pdf)) ([sch for GBW](Amplifiers/Basic/CS%20OL%20Optimization/Simulations/qucs-s/Optimization%20for%20GBW/)) ([sch for Adc and GBW](Amplifiers/Basic/CS%20OL%20Optimization/Simulations/qucs-s/Optimization%20for%20Adc%20and%20GBW)).
+* [Common-source stage in open-loop configuration](Amplifiers/Basic/CS%20OL%20Optimization/) ([pdf](Amplifiers/Basic/CS%20OL%20Optimization/CS_OL_optimization_with_CF.pdf)) ([sch for GBW](Amplifiers/Basic/CS%20OL%20Optimization/Simulations/qucs-s/Optimization%20for%20GBW/README.md)) ([sch for Adc and GBW](Amplifiers/Basic/CS%20OL%20Optimization/Simulations/qucs-s/Optimization%20for%20Adc%20and%20GBW/README.me)).
 * [Common-source input-referred white noise optimization](Amplifiers/Basic/CS%20OL%20Noise%20Optimization) ([pdf](Amplifiers/Basic/CS%20OL%20Noise%20Optimization/CS_OL_noise_optimization.pdf)).
-* [Common-source stage with capacitive feedback](Amplifiers/Basic/CS%20CL%20Optimization/) ([pdf](Amplifiers/Basic/CS%20CL%20Optimization/CS_CL_optimization.pdf)) ([sch](/Amplifiers/Basic/CS%20CL%20Optimization/Simulations/qucs-s/)).
+* [Common-source stage with capacitive feedback](Amplifiers/Basic/CS%20CL%20Optimization/) ([pdf](Amplifiers/Basic/CS%20CL%20Optimization/CS_CL_optimization.pdf)) ([sch](/Amplifiers/Basic/CS%20CL%20Optimization/Simulations/qucs-s/README.md)).
 
 
 ### [Operational Transconductance Amplifiers (OTAs)](Amplifiers/OTAs/)
