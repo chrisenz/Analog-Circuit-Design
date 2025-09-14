@@ -1,8 +1,0 @@
-N1 out g 0 0 ekvn_va W={W1} L={L1}
-CL out 0 {CL}
-CF out g {CF}
-RF out g {RF}
-CS in g {CS}
-Ib vdd out {Ib}
-VDD vdd 0 {VDD}
-Vin in 0 DC 0 AC 1
