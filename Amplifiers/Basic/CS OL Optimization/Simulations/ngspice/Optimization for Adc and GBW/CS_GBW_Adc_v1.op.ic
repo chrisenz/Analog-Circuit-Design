@@ -1,8 +1,0 @@
-* Intermediate Transient Solution
-* Circuit: simulation of the cs stage optimized for gbw and dc gain
-* Recorded at simulation time: 0
-.ic v(out) = 0.438602
-.ic v(in) = 0.438602
-.ic v(1) = 0.438602
-.ic v(vdd) = 1.8
-.ic v(2) = 0.438602
