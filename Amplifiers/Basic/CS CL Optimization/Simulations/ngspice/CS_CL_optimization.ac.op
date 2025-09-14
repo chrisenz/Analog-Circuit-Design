@@ -1,0 +1,21 @@
+Title: simulation of the cs sc amplifier by c. enz
+Date: Sun Sep 14 16:53:27  2025
+Plotname: Operating Point
+Flags: real
+No. Variables: 6
+No. Points: 1
+Variables:
+	0	v(out)	voltage
+	1	v(g)	voltage
+	2	v(in)	voltage
+	3	v(vdd)	voltage
+	4	i(vdd)	current
+	5	i(vin)	current
+Values:
+ 0	3.820477050770705e-01
+	3.820477050770960e-01
+	0.000000000000000e+00
+	1.800000000000000e+00
+	-2.720000000000000e-07
+	0.000000000000000e+00
+

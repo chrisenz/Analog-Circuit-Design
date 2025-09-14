@@ -1,0 +1,7 @@
+* Intermediate Transient Solution
+* Circuit: simulation of the cs sc amplifier by c. enz
+* Recorded at simulation time: 0
+.ic v(out) = 0.382048
+.ic v(g) = 0.382048
+.ic v(in) = 0
+.ic v(vdd) = 1.8

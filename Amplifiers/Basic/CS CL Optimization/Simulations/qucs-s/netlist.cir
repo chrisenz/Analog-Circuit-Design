@@ -1,0 +1,19 @@
+* Qucs 25.1.0  L:/My Drive/My Github Repositories/Analog Circuit Design/Amplifiers/Basic/CS CL Optimization/Simulations/qucs-s/CS_CL_optimization.sch
+.INCLUDE "C:/Program Files/Qucs-S/share/qucs-s/xspice_cmlib/include/ngspice_mathfunc.inc"
+.INCLUDE "L:/My Drive/My Github Repositories/Analog Circuit Design/Amplifiers/OTAs/Simple OTA/Simulations/qucs-s/ekv018va.par"
+.INCLUDE "L:/My Drive/My Github Repositories/Analog Circuit Design/Amplifiers/OTAs/Simple OTA/Simulations/qucs-s/size_bias.par"
+RF g out  {RF} tc1=0.0 tc2=0.0 
+CS g  in {CS}
+Vin in 0 DC 0 SIN(0 1 1K 0 0 0) AC 1 ACPHASE 0
+Ib vdd out DC {IB}
+CL 0 out  {CL} 
+VDD vdd 0 DC {VDD}
+CF out  g {CF}
+NM1 out  g  0  0 ekvn_va W={W1} L={L1}
+
+
+.control
+
+exit
+.endc
+.END

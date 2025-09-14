@@ -1,0 +1,3 @@
+.param VDD=1.8 Ib=919n
+.param RF=1.592e+11 CL=1.000p CS=1.000p CF=99.953f
+.param W1=0.13u L1=1.00u
