@@ -17,6 +17,13 @@ from numpy import sqrt as sqrt
 from numpy import exp as exp
 from numpy import arctan as atan
 
+import scipy
+kB=scipy.constants.Boltzmann
+q=scipy.constants.e
+T0=scipy.constants.zero_Celsius
+T=300
+UT=kB*T/q
+
 #####################################
 # Large-signal normalized functions #
 #####################################
@@ -270,6 +277,10 @@ def deltansat_qs(qs,lc):
 def gamman_ic_short(ic,n,lc):
     return gamman_ic(ic,n)*(1+3/4*lc**2*ic)
 
+# Emprical thermal noise excess factor including short-channel effects
+def gamman_ic_emp(ic,gammanwi,alphan):
+    return gammanwi*(1+alphan*ic)
+
 # Thermal noise excess factor including short-channel effects
 def gammansat_qs(qs,n,lc):
     gnsat=gnsat_qs(qs,lc)
@@ -279,6 +290,12 @@ def gammansat_qs(qs,n,lc):
 # Input-referred thermal noise resistance including short-channel effects
 def rnsat_ic(ic,n,lc):
     gammansat=gamman_ic_short(ic,n,lc)
+    gm=gms_ic_short(ic,lc)/n
+    return gammansat/gm
+
+# Input-referred thermal noise resistance including short-channel effects
+def rnsat_ic_emp(ic,n,lc,gammanwi,alphan):
+    gammansat=gamman_ic_emp(ic,gammanwi,alphan)
     gm=gms_ic_short(ic,lc)/n
     return gammansat/gm
 
