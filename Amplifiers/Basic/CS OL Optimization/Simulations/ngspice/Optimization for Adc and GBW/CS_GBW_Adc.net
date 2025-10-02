@@ -1,0 +1,9 @@
+*N1 out in 0 0 ekvn_va W={W1} L={L1}
+N1 out in 0 0 ekvn_va W={W1} L={L1} AD={AD1} PD={PD1}
+N2 1 1 0 0 ekvn_va W={W1} L={L1}
+CL out 0 {CL}
+Ib1 VDD out {Ib}
+Ib2 VDD 1 {Ib}
+VDD VDD 0 {VDD}
+Vin 2 in AC=1
+Eb 2 0 1 0 1
