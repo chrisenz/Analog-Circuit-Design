@@ -1,0 +1,32 @@
+Version 4
+SymbolType CELL
+LINE Normal 48 16 48 0
+LINE Normal 32 16 48 16
+LINE Normal 32 48 32 16
+LINE Normal 48 48 32 48
+LINE Normal 48 64 48 48
+LINE Normal 26 41 26 22
+LINE Normal 26 32 0 32
+LINE Normal 38 32 48 32
+LINE Normal 32 32 32 32
+LINE Normal 38 29 32 32
+LINE Normal 38 35 38 29
+LINE Normal 32 32 38 35
+LINE Normal 48 48 48 32
+WINDOW 3 57 32 Left 2
+WINDOW 123 57 48 Left 2
+WINDOW 0 57 16 Left 2
+SYMATTR Value W=
+SYMATTR Value2 L=
+SYMATTR SpiceModel NMOS
+SYMATTR Prefix M
+SYMATTR Description NMOS transistor (3 pins with B=S)
+PIN 48 0 NONE 8
+PINATTR PinName D
+PINATTR SpiceOrder 1
+PIN 0 32 NONE 8
+PINATTR PinName G
+PINATTR SpiceOrder 2
+PIN 48 64 NONE 8
+PINATTR PinName S
+PINATTR SpiceOrder 3
