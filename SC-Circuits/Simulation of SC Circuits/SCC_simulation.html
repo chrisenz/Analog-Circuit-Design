@@ -1,0 +1,2639 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.32">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Christian Enz (christian.enz@epfl.ch)">
+
+<title>The Simulation of Switched Capacitor Circuits</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="SCC_simulation_files/libs/clipboard/clipboard.min.js"></script>
+<script src="SCC_simulation_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="SCC_simulation_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="SCC_simulation_files/libs/quarto-html/popper.min.js"></script>
+<script src="SCC_simulation_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="SCC_simulation_files/libs/quarto-html/anchor.min.js"></script>
+<link href="SCC_simulation_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="SCC_simulation_files/libs/quarto-html/quarto-syntax-highlighting-236d90495073fb2ac8939117e3e83141.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="SCC_simulation_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="SCC_simulation_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="SCC_simulation_files/libs/bootstrap/bootstrap-de3a1749c61124d0c7456a0612b16043.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script>
+
+  MathJax = {
+
+    tex: {
+
+      tags: 'ams'  // should be 'ams', 'none', or 'all'
+
+    }
+
+  };
+
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a></li>
+  <li><a href="#simulation-of-sc-circuits-with-spice" id="toc-simulation-of-sc-circuits-with-spice" class="nav-link" data-scroll-target="#simulation-of-sc-circuits-with-spice"><span class="header-section-number">2</span> Simulation of SC circuits with Spice</a>
+  <ul class="collapse">
+  <li><a href="#continuous-time-model-of-a-switched-capacitor" id="toc-continuous-time-model-of-a-switched-capacitor" class="nav-link" data-scroll-target="#continuous-time-model-of-a-switched-capacitor"><span class="header-section-number">2.1</span> Continuous-time model of a switched-capacitor</a></li>
+  <li><a href="#ltspice-sc-components-library" id="toc-ltspice-sc-components-library" class="nav-link" data-scroll-target="#ltspice-sc-components-library"><span class="header-section-number">2.2</span> LTSpice SC components library</a></li>
+  <li><a href="#approximation-of-time-delay-in-ngspice" id="toc-approximation-of-time-delay-in-ngspice" class="nav-link" data-scroll-target="#approximation-of-time-delay-in-ngspice"><span class="header-section-number">2.3</span> Approximation of time delay in ngspice</a></li>
+  </ul></li>
+  <li><a href="#example-1-first-order-passive-low-pass-filter" id="toc-example-1-first-order-passive-low-pass-filter" class="nav-link" data-scroll-target="#example-1-first-order-passive-low-pass-filter"><span class="header-section-number">3</span> Example 1: First-order passive low-pass filter</a>
+  <ul class="collapse">
+  <li><a href="#simulations" id="toc-simulations" class="nav-link" data-scroll-target="#simulations"><span class="header-section-number">3.1</span> Simulations</a>
+  <ul class="collapse">
+  <li><a href="#ltspice" id="toc-ltspice" class="nav-link" data-scroll-target="#ltspice"><span class="header-section-number">3.1.1</span> LTSpice</a></li>
+  <li><a href="#ngspice" id="toc-ngspice" class="nav-link" data-scroll-target="#ngspice"><span class="header-section-number">3.1.2</span> ngspice</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#example-2-first-order-active-low-pass-filter" id="toc-example-2-first-order-active-low-pass-filter" class="nav-link" data-scroll-target="#example-2-first-order-active-low-pass-filter"><span class="header-section-number">4</span> Example 2: First-order active low-pass filter</a>
+  <ul class="collapse">
+  <li><a href="#simulations-1" id="toc-simulations-1" class="nav-link" data-scroll-target="#simulations-1"><span class="header-section-number">4.1</span> Simulations</a>
+  <ul class="collapse">
+  <li><a href="#ltspice-1" id="toc-ltspice-1" class="nav-link" data-scroll-target="#ltspice-1"><span class="header-section-number">4.1.1</span> LTSpice</a></li>
+  <li><a href="#ngspice-1" id="toc-ngspice-1" class="nav-link" data-scroll-target="#ngspice-1"><span class="header-section-number">4.1.2</span> ngspice</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#example-3-second-order-active-low-pass-filter" id="toc-example-3-second-order-active-low-pass-filter" class="nav-link" data-scroll-target="#example-3-second-order-active-low-pass-filter"><span class="header-section-number">5</span> Example 3: Second-order active low-pass filter</a>
+  <ul class="collapse">
+  <li><a href="#simulations-2" id="toc-simulations-2" class="nav-link" data-scroll-target="#simulations-2"><span class="header-section-number">5.1</span> Simulations</a>
+  <ul class="collapse">
+  <li><a href="#ltspice-2" id="toc-ltspice-2" class="nav-link" data-scroll-target="#ltspice-2"><span class="header-section-number">5.1.1</span> LTSpice</a></li>
+  <li><a href="#ngspice-2" id="toc-ngspice-2" class="nav-link" data-scroll-target="#ngspice-2"><span class="header-section-number">5.1.2</span> ngspice</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#example-4-third-order-active-low-pass-filter" id="toc-example-4-third-order-active-low-pass-filter" class="nav-link" data-scroll-target="#example-4-third-order-active-low-pass-filter"><span class="header-section-number">6</span> Example 4: Third-order active low-pass filter</a>
+  <ul class="collapse">
+  <li><a href="#simulations-3" id="toc-simulations-3" class="nav-link" data-scroll-target="#simulations-3"><span class="header-section-number">6.1</span> Simulations</a>
+  <ul class="collapse">
+  <li><a href="#ltspice-3" id="toc-ltspice-3" class="nav-link" data-scroll-target="#ltspice-3"><span class="header-section-number">6.1.1</span> LTSpice</a></li>
+  <li><a href="#ngspice-3" id="toc-ngspice-3" class="nav-link" data-scroll-target="#ngspice-3"><span class="header-section-number">6.1.2</span> ngspice</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#example-5-third-order-elliptic-low-pass-filter" id="toc-example-5-third-order-elliptic-low-pass-filter" class="nav-link" data-scroll-target="#example-5-third-order-elliptic-low-pass-filter"><span class="header-section-number">7</span> Example 5: Third-order elliptic low-pass filter</a>
+  <ul class="collapse">
+  <li><a href="#simulations-4" id="toc-simulations-4" class="nav-link" data-scroll-target="#simulations-4"><span class="header-section-number">7.1</span> Simulations</a>
+  <ul class="collapse">
+  <li><a href="#ltspice-4" id="toc-ltspice-4" class="nav-link" data-scroll-target="#ltspice-4"><span class="header-section-number">7.1.1</span> LTSpice</a></li>
+  <li><a href="#ngspice-4" id="toc-ngspice-4" class="nav-link" data-scroll-target="#ngspice-4"><span class="header-section-number">7.1.2</span> ngspice</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#non-ideal-effects" id="toc-non-ideal-effects" class="nav-link" data-scroll-target="#non-ideal-effects"><span class="header-section-number">8</span> Non-ideal effects</a>
+  <ul class="collapse">
+  <li><a href="#switches" id="toc-switches" class="nav-link" data-scroll-target="#switches"><span class="header-section-number">8.1</span> Switches</a></li>
+  <li><a href="#opamp-or-ota" id="toc-opamp-or-ota" class="nav-link" data-scroll-target="#opamp-or-ota"><span class="header-section-number">8.2</span> OPAMP or OTA</a></li>
+  </ul></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion"><span class="header-section-number">9</span> Conclusion</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">10</span> References</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="SCC_simulation.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div><div class="quarto-code-links"><h2>Code Links</h2><ul><li><a href="https://github.com/chrisenz/Analog-Circuit-Design/tree/main/SC-Circuits/Simulation%20of%20SC%20Circuits"><i class="bi bi-github"></i>Notebook code</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">The Simulation of Switched Capacitor Circuits</h1>
+<p class="subtitle lead">Using Spice AC Simulation (Version 2)</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Christian Enz (christian.enz@epfl.ch) </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">09.08.2026</p>
+    </div>
+  </div>
+  
+    <div>
+    <div class="quarto-title-meta-heading">Modified</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date-modified">19.08.2026</p>
+    </div>
+  </div>
+    
+  </div>
+  
+<div>
+  <div class="abstract">
+    <div class="block-title">Abstract</div>
+    <p>This notebook presents how to simulate switched-capacitor (SC) circuits and particularly filters in the frequency domain with AC simulation using Spice simulators such as LTSpice or ngspice.</p>
+  </div>
+</div>
+
+
+</header>
+
+
+<section id="introduction" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
+<p>This notebook presents how to simulate switched-capacitor (SC) circuits and particularly filters in the frequency domain with AC simulation using Spice simulator such as LTSpice <span class="citation" data-cites="bib:ltspice:2025"><a href="#ref-bib:ltspice:2025" role="doc-biblioref">[1]</a></span> or ngspice <span class="citation" data-cites="bib:ngspice:2024"><a href="#ref-bib:ngspice:2024" role="doc-biblioref">[2]</a></span>. The following theory is based on <span class="citation" data-cites="bib:biolek:wseas:2007"><a href="#ref-bib:biolek:wseas:2007" role="doc-biblioref">[3]</a></span> <span class="citation" data-cites="bib:biolek:wseas:2008"><a href="#ref-bib:biolek:wseas:2008" role="doc-biblioref">[4]</a></span>. Because SC circuits are not linear time invariant (non-LTI), they normally cannot be simulated in AC with a conventional Spice circuit simulator. However, we can use the special library that was developed by C. Enz for the AC simulation of SC circuit with two 50% duty-cycle non-overlapping clocks. This library basically simulates the circuits in phase <span class="math inline">\(\Phi_1\)</span> and <span class="math inline">\(\Phi_2\)</span> concurrently and then insures the charge conservation between the two circuits of phase <span class="math inline">\(\Phi_1\)</span> and phase <span class="math inline">\(\Phi_2\)</span>.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The library for LTSpice includes symbols that can be used for schematic capture of SC circuits making the simulations of SC circuits straightforward.</p>
+</div>
+</div>
+<div id="fig-Toggle_switch" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-Toggle_switch-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/Toggle_switch.svg" class="img-fluid figure-img" style="width:40.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-Toggle_switch-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Two switches controlled by two non-overlapping phases and the equivalent toggle switch.
+</figcaption>
+</figure>
+</div>
+<p>We will focus on two phases SC circuits which operate with two non-overlapping phases <span class="math inline">\(\Phi_1\)</span> and <span class="math inline">\(\Phi_2\)</span> as shown in <a href="#fig-Toggle_switch" class="quarto-xref">Figure&nbsp;1</a>. Phase <span class="math inline">\(\Phi_1\)</span> controls switch S<sub>1</sub>, whereas phase <span class="math inline">\(\Phi_2\)</span> controls switch S<sub>2</sub>. Switch S<sub>1</sub> is closed when phase <span class="math inline">\(\Phi_1\)</span> is high and switch S<sub>2</sub> is closed when phase <span class="math inline">\(\Phi_2\)</span> is high. Since phase <span class="math inline">\(\Phi_1\)</span> and <span class="math inline">\(\Phi_2\)</span> are non-overlapping, it means that switches S<sub>1</sub> and S<sub>2</sub> are never closed at the same time avoiding any short-circuit between the input and output. This means that they can be replaced by a toggle switch as shown in <a href="#fig-Toggle_switch" class="quarto-xref">Figure&nbsp;1</a>.</p>
+<p>We start describing the technique used for AC simulation in Spice and illustrate it with the design of various filters.</p>
+</section>
+<section id="simulation-of-sc-circuits-with-spice" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Simulation of SC circuits with Spice</h1>
+<section id="continuous-time-model-of-a-switched-capacitor" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="continuous-time-model-of-a-switched-capacitor"><span class="header-section-number">2.1</span> Continuous-time model of a switched-capacitor</h2>
+<p>SC circuits are linear circuits but they are not time-invariant (LTI) because the circuit during one phase (say phase <span class="math inline">\(\Phi_1\)</span>) is not the same than the circuit in other phases (say <span class="math inline">\(\Phi_2\)</span> for a two phases system). However, the circuit in each phase is LTI and can be simulated with Spice. The basic idea for a two non-overlapping phases SC circuit is to enter the netlist corresponding to each phase <span class="math inline">\(\Phi_1\)</span> and <span class="math inline">\(\Phi_2\)</span> and couple them with a special SC component that ensures the charge conservation between the two phases.</p>
+<p>Let’s consider a SC as shown in the left figure of <a href="#fig-SC_model" class="quarto-xref">Figure&nbsp;2</a> with the phases <span class="math inline">\(\Phi_1\)</span> and <span class="math inline">\(\Phi_2\)</span> shown on top where <span class="math inline">\(T=1/f_s\)</span> is the sampling period and <span class="math inline">\(D\)</span> the duty cycle which is usually equal to 1/2.</p>
+<div id="fig-SC_model" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-SC_model-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/SC_model.svg" class="img-fluid figure-img" style="width:60.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-SC_model-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Switched-capacitor C and its equivalent continuous-time equivalent.
+</figcaption>
+</figure>
+</div>
+<p>We can write the following charge conservation equations for capacitor <span class="math inline">\(C\)</span> <span class="math display">\[\begin{align}
+  \Delta Q_1((n+D)\,T) &amp;= C \cdot [V_1((n+D)\,T^{-})-V_2(n\,T^{-})],\\
+  \Delta Q_2((n+1)\,T) &amp;= C \cdot [V_2((n+1)\,T^{-})-V_1((n+D)\,T^{-})],
+\end{align}\]</span> where <span class="math inline">\(\Delta Q_1\)</span> corresponds to the change of charge on capacitor <span class="math inline">\(C\)</span> between the end of phase <span class="math inline">\(\Phi_1\)</span> and <span class="math inline">\(\Phi_2\)</span> and <span class="math inline">\(\Delta Q_2\)</span> is the change of charge on capacitor <span class="math inline">\(C\)</span> between the end of phase <span class="math inline">\(\Phi_2\)</span> and <span class="math inline">\(\Phi_1\)</span>. The above charge equations can be replaced by the average currents <span class="math inline">\(\overline{I_1}\)</span> and <span class="math inline">\(\overline{I_2}\)</span> <span class="math display">\[\begin{align}
+  \overline{I_1} &amp;= \frac{C}{T} \cdot [V_1((n+D)\,T^{-})-V_2(n\,T^{-})],\\
+  \overline{I_2} &amp;= \frac{C}{T} \cdot [V_2((n+1)\,T^{-})-V_1((n+D)\,T^{-})],
+\end{align}\]</span> where the average currents <span class="math inline">\(\overline{I_1}\)</span> and <span class="math inline">\(\overline{I_2}\)</span> are defined by <span class="math display">\[\begin{align}
+  \overline{I_1}((n+D)\,T) &amp;= \frac{1}{T} \cdot \int_{n\,T}^{(n+D)\,T} i_c(t)\,dt = \frac{\Delta Q_1((n+D)\,T)}{T},\\
+  \overline{I_2}((n+1)\,T) &amp;= \frac{1}{T} \cdot \int_{(n+D)\,T}^{(n+1)\,T} i_c(t)\,dt = \frac{\Delta Q_2((n+1)\,T)}{T}.
+\end{align}\]</span> The currents can then be written in the <span class="math inline">\(z\)</span>-domain as <span class="math display">\[\begin{align}
+  \overline{I_1} &amp;= \frac{C}{T} \cdot [V_1(z)-z^{-D}\,V_2(z)],\\
+  \overline{I_2} &amp;= \frac{C}{T} \cdot [V_2(z)-z^{-(1-D)}\,V_1(z)].
+\end{align}\]</span> The above equations can be modelled by the equivalent continuous-time circuit shown on the bottom right of <a href="#fig-SC_model" class="quarto-xref">Figure&nbsp;2</a> where <span class="math display">\[\begin{equation}
+  R_1 = R_2 = R_{eq} = \frac{T}{C}
+\end{equation}\]</span> and <span class="math display">\[\begin{align}
+  Y_{m1} &amp;= G_{meq} \cdot e^{-s\,D\,T},\\
+  Y_{m2} &amp;= G_{meq} \cdot e^{-s\,(1-D)\,T},
+\end{align}\]</span> with <span class="math display">\[\begin{equation}
+  G_{meq} = \frac{1}{R_{eq}.}
+\end{equation}\]</span></p>
+<p>The continuous-time equivalent is easy to implement in Spice using the Laplace instruction for implementing the time delays <span class="math inline">\(e^{-s\,D\,T}\)</span> and <span class="math inline">\(e^{-s\,(1-D)\,T}\)</span>. This Laplace operator is available in LTSpice but unfortunately it is not available in ngspice. However, we can replace it by using the XSpice s_xfer element which allows implementing a transfer function given by a rational function in <span class="math inline">\(s\)</span> provided the order of the denominator is equal or larger than the order of the numerator.</p>
+</section>
+<section id="ltspice-sc-components-library" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="ltspice-sc-components-library"><span class="header-section-number">2.2</span> LTSpice SC components library</h2>
+<div id="fig-ltspice_library" class="quarto-layout-panel">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ltspice_library-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-ltspice_library" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div id="fig-LTSpice_library_cap" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-LTSpice_library_cap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/LTSpice_library_cap.svg" class="img-fluid figure-img" style="width:40.0%" data-ref-parent="fig-ltspice_library">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-LTSpice_library_cap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(a) Floating switched capacitor.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-ltspice_library" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div id="fig-LTSpice_library_gnd_cap" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-LTSpice_library_gnd_cap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/LTSpice_library_gnd_cap.svg" class="img-fluid figure-img" style="width:30.0%" data-ref-parent="fig-ltspice_library">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-LTSpice_library_gnd_cap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(b) Grounded switched capacitor.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-ltspice_library" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div id="fig-LTSpice_library_opamp" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-LTSpice_library_opamp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/LTSpice_library_opamp.svg" class="img-fluid figure-img" style="width:60.0%" data-ref-parent="fig-ltspice_library">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-LTSpice_library_opamp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(c) Ideal switched OPAMP.
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-ltspice_library" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div id="fig-LTSpice_library_gnd_opamp" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-LTSpice_library_gnd_opamp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/LTSpice_library_gnd_opamp.svg" class="img-fluid figure-img" style="width:60.0%" data-ref-parent="fig-ltspice_library">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-LTSpice_library_gnd_opamp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(d) Ideal switched OPAMP with grounded positive input.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ltspice_library-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: LTSpice SC component library.
+</figcaption>
+</figure>
+</div>
+<p>I designed a LTSpice library including four components which symbols are illustrated in <a href="#fig-ltspice_library" class="quarto-xref">Figure&nbsp;3</a>. The floating switched capacitor of <a href="#fig-LTSpice_library_cap" class="quarto-xref">Figure&nbsp;3 (a)</a> calls a subcircuit in my LTSpice analog.lib library having the following code:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode default code-with-copy"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>* Switched capacitor</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>* ------------------</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>.subckt SC 1p1 2p1 1p2 2p2</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>* Parameters:</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>* C=1p</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>* fs=1k</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>* D=0.5</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>.param Req={1/(fs*C)} Gmeq={1/Req}</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>R1 1p1 2p1 {Req}</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>G1 2p1 1p1 1p2 2p2 Laplace=Gmeq*exp(-s*D/fs)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>R2 1p2 2p2 {Req}</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>G2 2p2 1p2 1p1 2p1 Laplace=Gmeq*exp(-s*(1-D)/fs)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>.ends SC</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The gounded switched capacitor of <a href="#fig-LTSpice_library_gnd_cap" class="quarto-xref">Figure&nbsp;3 (b)</a> uses the following subckt:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode default code-with-copy"><code class="sourceCode default"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>* Switched capacitor with one grounded node</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>* -----------------------------------------</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>.subckt SCG 1p1 1p2 gnd</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>* Parameters:</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>* C=1p</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>* fs=1k</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>* D=0.5</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>.param Req={1/(fs*C)} Gmeq={1/Req}</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>R1 1p1 gnd {Req}</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>G1 gnd 1p1 1p2 gnd Laplace=Gmeq*exp(-s*D/fs)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>R2 1p2 gnd {Req}</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>G2 gnd 1p2 1p1 gnd Laplace=Gmeq*exp(-s*(1-D)/fs)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>.ends SCG</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The OPAMPS need to be replaced by the switched OPAMP of <a href="#fig-LTSpice_library_opamp" class="quarto-xref">Figure&nbsp;3 (c)</a> which call the following subckt:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode default code-with-copy"><code class="sourceCode default"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>* Switched ideal OpAmp</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>* --------------------</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>.subckt SOPAMP in+p1 in-p1 outp1 in+p2 in-p2 outp2</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>* Parameters:</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>* Av=1E5</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>E1 outp1 0 in+p1 in-p1 {Av}</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>E2 outp2 0 in+p2 in-p2 {Av}</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>.ends SOPAMP</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In many single-ended SC circuits the OPAMP has its positive terminal connected to ground. These OPAMPs need to be replaced by corresponding switched OPAMP of <a href="#fig-LTSpice_library_gnd_opamp" class="quarto-xref">Figure&nbsp;3 (d)</a> which uses the following subckt:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode default code-with-copy"><code class="sourceCode default"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>* Switched ideal OpAmp with grounded positive input</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>* -------------------------------------------------</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>.subckt SOPAMPG in+ in-p1 outp1 in-p2 outp2</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>* Parameters:</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>* Av=1E5</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>E1 outp1 0 in+ in-p1 {Av}</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>E2 outp2 0 in+ in-p2 {Av}</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>.ends SOPAMPG</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The use of this library will be illustrated by many examples presented below.</p>
+</section>
+<section id="approximation-of-time-delay-in-ngspice" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="approximation-of-time-delay-in-ngspice"><span class="header-section-number">2.3</span> Approximation of time delay in ngspice</h2>
+<p>In the implementation of SC circuits with two non-overlapping phases for the simulation with LTSpice, we are using an ideal time delay <span class="math inline">\(e^{-s \dot \Delta T}\)</span> where <span class="math inline">\(s\)</span> is the Laplace variable, <span class="math inline">\(\Delta T = D \cdot T\)</span>, with <span class="math inline">\(T = 1/f_s\)</span> the sampling period and <span class="math inline">\(D\)</span> is the duty cycle (often equal to <span class="math inline">\(D=0.5\)</span>). This operator is available in LTSpice as <span class="math inline">\(LAPLACE = exp(-s*D*T)\)</span> but unfortunately it is not available in ngspice. We can however use the XSpice s_xfer model which describes the transfer function given by a rational function in <span class="math inline">\(s\)</span> with the order of the numerator <span class="math inline">\(m\)</span> smaller than the order of the denominator <span class="math inline">\(n\)</span>. There are various ways to approximate a constant delay with a rational function in <span class="math inline">\(s\)</span>. The one that gives the best results is the Pade approximation <span class="citation" data-cites="bib:pekar:wseas:2008"><a href="#ref-bib:pekar:wseas:2008" role="doc-biblioref">[5]</a></span> <span class="math display">\[\begin{equation}
+  e^{-s \cdot \Delta T} \cong \frac{\sum_{k=0}^{m} p_k \cdot (s \cdot \Delta T)^k}{\sum_{k=0}^{n} q_k \cdot (s \cdot \Delta T)^k}
+\end{equation}\]</span> The coefficients in the case <span class="math inline">\(m=n\)</span> are given by <span class="math display">\[\begin{align}
+  q_k &amp;= \frac{(2 n-k)!}{k!\,(n-k)!},\\
+  p_k &amp;= (-1)^k \cdot q_k.
+\end{align}\]</span></p>
+<p>The corresponding transfer function of the ideal delay is <span class="math display">\[\begin{equation}
+  H(\omega) = e^{-j\omega\,\Delta T}
+\end{equation}\]</span> with a magnitude and phase given by <span class="math display">\[\begin{align}
+  |H(\omega)| &amp;= 1,\\
+  \Phi(\omega) &amp;= arg(H(\omega)) = -\omega\,\Delta T.
+\end{align}\]</span></p>
+<p>An ideal delay can be characterized by a constant phase delay defined as <span class="math display">\[\begin{equation}
+  \tau_{\Phi}(\omega) = - \frac{\Phi(\omega)}{\omega} = \Delta T
+\end{equation}\]</span> or group delay <span class="math display">\[\begin{equation}
+  \tau_{gd}(\omega) = - \frac{d\Phi(\omega)}{d\omega} = \Delta T
+\end{equation}\]</span></p>
+<p>We can evaluate the coefficients for an order <span class="math inline">\(n=5\)</span>.</p>
+<div class="cell" data-execution_count="2">
+<div id="tbl-delay_coefficients" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="2">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-delay_coefficients-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Coefficients of <span class="math inline">\(q[k]\)</span> and <span class="math inline">\(p[k]\)</span> for <span class="math inline">\(n=5\)</span>.
+</figcaption>
+<div aria-describedby="tbl-delay_coefficients-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="2">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">n</th>
+<th style="text-align: center;">p[k]</th>
+<th style="text-align: center;">q[k]</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">30240</td>
+<td style="text-align: center;">30240</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">-15120</td>
+<td style="text-align: center;">15120</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">3360</td>
+<td style="text-align: center;">3360</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">-420</td>
+<td style="text-align: center;">420</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">30</td>
+<td style="text-align: center;">30</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">-1</td>
+<td style="text-align: center;">1</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>The approximations up to order 5 are simulated in LTSpice and compared to the ideal delay also simulated with LTSpice. The results are presented in <a href="#fig-delay_ltspice" class="quarto-xref">Figure&nbsp;4</a>.</p>
+<div id="cell-fig-delay_ltspice" class="cell" data-execution_count="3">
+<div class="cell-output cell-output-display">
+<div id="fig-delay_ltspice" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-delay_ltspice-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-delay_ltspice-output-1.png" width="462" height="663" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-delay_ltspice-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Comparison of the delay approximation to the ideal delay.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>In the case of <span class="math inline">\(D=0.5\)</span>, the phase delay is equal to 0.5. We see that the approximations progressively extends the phase delay to higher frequency. Since we usually are only interested on frequencies up to the Nyquist frequency <span class="math inline">\(f_2/2\)</span>, we observe that a 3<sup>rd</sup>-order approximation should already be fine.</p>
+<p>We can simulate the delay block in ngspice using the s_xfer XSpice description. The simulation results are presented in <a href="#fig-ng_delay" class="quarto-xref">Figure&nbsp;5</a>.</p>
+<div id="cell-fig-ng_delay" class="cell" data-execution_count="4">
+<div class="cell-output cell-output-display">
+<div id="fig-ng_delay" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ng_delay-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-ng_delay-output-1.png" width="449" height="441" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ng_delay-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Delay approximation with ngspice.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="example-1-first-order-passive-low-pass-filter" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Example 1: First-order passive low-pass filter</h1>
+<p>The simplest example is the implementation of a 1<sup>st</sup>-order passive RC low-pass filter as illustrated in the left schematic of <a href="#fig-Passive_RC" class="quarto-xref">Figure&nbsp;6</a>.</p>
+<div id="fig-Passive_RC" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-Passive_RC-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/Passive_RC.svg" class="img-fluid figure-img" style="width:70.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-Passive_RC-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Equivalence between 1<sup>st</sup>-order passive RC and SC filter.
+</figcaption>
+</figure>
+</div>
+<p>The transfer function of the continuous-time passive RC filter is given by <span class="math display">\[\begin{equation}
+  H_a(s) = \frac{1}{1+s\,\tau} = \frac{1}{1+s/\omega_c}
+\end{equation}\]</span> with <span class="math inline">\(\tau=1/\omega_c=R\,C\)</span>. The SC equivalent filter is shown on the right of <a href="#fig-Passive_RC" class="quarto-xref">Figure&nbsp;6</a> where <span class="math display">\[\begin{equation}
+  C_R = \alpha \cdot C
+\end{equation}\]</span> with <span class="math display">\[\begin{equation}
+  \alpha = \frac{\omega_c}{f_s} = 2\pi \, \frac{f_c}{f_s},
+\end{equation}\]</span> where <span class="math inline">\(f_s\)</span> is the sampling frequency.</p>
+<div id="fig-Passive_RC_phases" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-Passive_RC_phases-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/Passive_RC_phases.svg" class="img-fluid figure-img" style="width:50.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-Passive_RC_phases-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7: Phases and signals for the analysis of the passive SC filter.
+</figcaption>
+</figure>
+</div>
+<p>Assuming that the output voltage during phase <span class="math inline">\(\Phi_2\)</span> settles to its final value at the end of phase <span class="math inline">\(\Phi_2\)</span>, we can write the charge conservation equation between the end of phase <span class="math inline">\(\Phi_2\)</span>, i.e.&nbsp;time <span class="math inline">\(t=nT\)</span>, and the end of phase <span class="math inline">\(\Phi_1\)</span>. i.e.&nbsp;time <span class="math inline">\((n-1/2)T\)</span> as <span class="math display">\[\begin{equation}
+  (C+C_R)\,V_{out}(nT) = C_R\,V_{in}((n-1/2)T) + C\,V_{out}((n-1/2)T).
+\end{equation}\]</span> Assuming that the input and output voltages change only once per period as shown in <a href="#fig-Passive_RC_phases" class="quarto-xref">Figure&nbsp;7</a>, we have <span class="math display">\[\begin{align}
+  V_{in}((n-1/2)T) &amp;= V_{in}((n-1)T),\\
+  V_{out}((n-1/2)T) &amp;= V_{out}((n-1)T).
+\end{align}\]</span> The above difference equation becomes <span class="math display">\[\begin{equation}
+  (C+C_R)\,V_{out}(nT) = C_R\,V_{in}((n-1)T) + C\,V_{out}((n-1)T),
+\end{equation}\]</span> Taking the <span class="math inline">\(z\)</span>-transform leads to <span class="math display">\[\begin{equation}
+  (C+C_R)\,V_{out}(z) = z^{-1}\,[C_R\,V_{in}(z) + C\,V_{out}(z)]
+\end{equation}\]</span> which can be solved to derive the <span class="math inline">\(z\)</span>-transfer function of the passive SC filter <span class="math display">\[\begin{equation}
+  H(z) = \frac{\alpha\,z^{-1}}{1+\alpha-z^{-1}} = \frac{\alpha}{(1+\alpha)\,z-1}
+\end{equation}\]</span> with <span class="math display">\[\begin{equation}
+  \alpha = \frac{C_R}{C}.
+\end{equation}\]</span></p>
+<p>As an example, we want to implement a 1<sup>st</sup>-order low-pass filter of <a href="#fig-Passive_RC" class="quarto-xref">Figure&nbsp;6</a> with the parameters given in <a href="#tbl-first-order_passive_lpf_parameters" class="quarto-xref">Table&nbsp;2</a>.</p>
+<div class="cell" data-execution_count="5">
+<div id="tbl-first-order_passive_lpf_parameters" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="5">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-first-order_passive_lpf_parameters-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: Parameters for the 1<sup>st</sup>-order passive low-pass filter of <a href="#fig-Passive_RC" class="quarto-xref">Figure&nbsp;6</a>.
+</figcaption>
+<div aria-describedby="tbl-first-order_passive_lpf_parameters-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="5">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Specification</th>
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Cut-off frequency</td>
+<td style="text-align: center;"><span class="math inline">\(f_c\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(kHz\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Sampling frequency</td>
+<td style="text-align: center;"><span class="math inline">\(f_s\)</span></td>
+<td style="text-align: center;">100</td>
+<td style="text-align: center;"><span class="math inline">\(kHz\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Capacitance ratio</td>
+<td style="text-align: center;"><span class="math inline">\(\alpha \triangleq \omega_c/f_s\)</span></td>
+<td style="text-align: center;">0.062832</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Switched-capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C_R\)</span></td>
+<td style="text-align: center;">62.832</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div id="cell-fig-first-order_passive_lpf_tf" class="cell" data-execution_count="6">
+<div class="cell-output cell-output-display">
+<div id="fig-first-order_passive_lpf_tf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-first-order_passive_lpf_tf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-first-order_passive_lpf_tf-output-1.png" width="754" height="288" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-first-order_passive_lpf_tf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;8: Transfer function magnitude of the 1<sup>st</sup>-order passive low-pass filter of <a href="#fig-Passive_RC" class="quarto-xref">Figure&nbsp;6</a>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>As expected, the magnitude of the transfer function shown in <a href="#fig-Passive_RC" class="quarto-xref">Figure&nbsp;6</a> is periodic with a period <span class="math inline">\(f_s =\)</span> 100 <span class="math inline">\(kHz\)</span>. From <a href="#fig-Passive_RC" class="quarto-xref">Figure&nbsp;6</a>, we see that the cut-off frequency of the SC filter is equal to that of the continuous-time (CT) filter. However, because of the sampled-data nature of the SC filter, the transfer function is periodic in <span class="math inline">\(f_s\)</span>. The maximum attenuation is therefore only about <span class="math inline">\(30\,dB\)</span>.</p>
+<section id="simulations" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="simulations"><span class="header-section-number">3.1</span> Simulations</h2>
+<section id="ltspice" class="level3" data-number="3.1.1">
+<h3 data-number="3.1.1" class="anchored" data-anchor-id="ltspice"><span class="header-section-number">3.1.1</span> LTSpice</h3>
+<p>For the LTSpice simulations we can use the schematic shown in <a href="#fig-RC_LP" class="quarto-xref">Figure&nbsp;9</a>.</p>
+<div id="fig-RC_LP" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-RC_LP-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/RC_LP.svg" class="img-fluid figure-img" style="width:50.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-RC_LP-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;9: LTSpice schematic.
+</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We may wonder why capacitor <span class="math inline">\(C_2\)</span> also needs to be modeled by a switched-capacitor in LTSpice despite the fact that it is not really switched. The reason is that we need to define two separate circuits, one that represents the circuit during phase <span class="math inline">\(\Phi_1\)</span> and the other for phase <span class="math inline">\(\Phi_2\)</span>. We cannot have a schematic node, for example node 1 in the above circuit, that is common to the circuit of phase <span class="math inline">\(\Phi_1\)</span> and the circuit of phase <span class="math inline">\(\Phi_2\)</span>. The two separate circuits are then coupled by the implementation of charge conservation between phase <span class="math inline">\(\Phi_1\)</span> and <span class="math inline">\(\Phi_2\)</span>.</p>
+</div>
+</div>
+<p>We can now simulate the circuit in LTSpice with the same parameters as in <a href="#tbl-first-order_passive_lpf_parameters" class="quarto-xref">Table&nbsp;2</a>.</p>
+<div id="cell-fig-lt_1st_order_passive_lpf_lin" class="cell" data-execution_count="7">
+<div class="cell-output cell-output-display">
+<div id="fig-lt_1st_order_passive_lpf_lin" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-lt_1st_order_passive_lpf_lin-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-lt_1st_order_passive_lpf_lin-output-1.png" width="465" height="287" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-lt_1st_order_passive_lpf_lin-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;10: Transfer function magnitude of the simulated 1<sup>st</sup>-order passive low-pass filter of <a href="#fig-RC_LP" class="quarto-xref">Figure&nbsp;9</a> with linear x-axis.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>With the linear x-axis in <a href="#fig-lt_1st_order_passive_lpf_lin" class="quarto-xref">Figure&nbsp;10</a>, we can clearly see that the LTSpice AC simulation captures the sampled-data nature of the transfer function of the SC circuit which is now periodic with a period <span class="math inline">\(f_s\)</span>. It then obviously deviates from the CT transfer function for frequencies above about <span class="math inline">\(f_s/10\)</span>.</p>
+<p>We can now simulate and plot the same circuit but with a log scale to check whether the cut-off frequency is correct.</p>
+<div id="cell-fig-lt_1st_order_passive_lpf_log" class="cell" data-execution_count="8">
+<div class="cell-output cell-output-display">
+<div id="fig-lt_1st_order_passive_lpf_log" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-lt_1st_order_passive_lpf_log-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-lt_1st_order_passive_lpf_log-output-1.png" width="465" height="288" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-lt_1st_order_passive_lpf_log-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;11: Transfer function magnitude of the simulated 1<sup>st</sup>-order low-pass filter of <a href="#fig-RC_LP" class="quarto-xref">Figure&nbsp;9</a> with log x-axis.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The results shown in <a href="#fig-lt_1st_order_passive_lpf_lin" class="quarto-xref">Figure&nbsp;10</a> and <a href="#fig-lt_1st_order_passive_lpf_log" class="quarto-xref">Figure&nbsp;11</a> show that the simulations perfectly match the theoretical results and that the cut-off frequency is correct and that the asymptotic slope of -20dB/dec above the cut-off frequency is correct as well, up to about <span class="math inline">\(f_s/10\)</span>.</p>
+<p>We now will now simulate the circuit of <a href="#fig-RC_LP" class="quarto-xref">Figure&nbsp;9</a> with the ngspice simulator.</p>
+</section>
+<section id="ngspice" class="level3" data-number="3.1.2">
+<h3 data-number="3.1.2" class="anchored" data-anchor-id="ngspice"><span class="header-section-number">3.1.2</span> ngspice</h3>
+<p>We first have a look at the simulations with a linear scale for the frequency axis.</p>
+<div id="cell-fig-ng_1st_order_passive_lpf_ct_lin" class="cell" data-execution_count="9">
+<div class="cell-output cell-output-display">
+<div id="fig-ng_1st_order_passive_lpf_ct_lin" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ng_1st_order_passive_lpf_ct_lin-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-ng_1st_order_passive_lpf_ct_lin-output-1.png" width="465" height="282" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ng_1st_order_passive_lpf_ct_lin-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;12: Transfer function magnitude of the simulated 1<sup>st</sup>-order low-pass filter compared to the passive <span class="math inline">\(RC\)</span> circuit with linear x-axis.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>From <a href="#fig-ng_1st_order_passive_lpf_ct_lin" class="quarto-xref">Figure&nbsp;12</a>, we see that the ngspice simulation perfectly matches the theoretical data.</p>
+<p>We can check the effect of the various order for the delay model in ngspice.</p>
+<div id="cell-fig-ng_1st_order_passive_lpf_all" class="cell" data-execution_count="10">
+<div class="cell-output cell-output-display">
+<div id="fig-ng_1st_order_passive_lpf_all" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ng_1st_order_passive_lpf_all-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-ng_1st_order_passive_lpf_all-output-1.png" width="500" height="282" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ng_1st_order_passive_lpf_all-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;13: ngspice transfer function magnitude simulation of the 1<sup>st</sup>-order passive low-pass filter with different delay approximation orders.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>We can observe in <a href="#fig-ng_1st_order_passive_lpf_all" class="quarto-xref">Figure&nbsp;13</a> that the 1<sup>st</sup>-order delay model shows a large discrepancy and is therefore not sufficient. The 2<sup>nd</sup>-order delay model already does a good job up to the Nyquist frequency which is what we need. The 3<sup>rd</sup>-order and 4<sup>st</sup>-order delay models show discrepancy above <span class="math inline">\(3f_s/2\)</span>. We will keep the 5<sup>th</sup>-order delay model since it does not penalize the simulation time.</p>
+<div id="cell-fig-ng_1st_order_passive_lpf_ct_log" class="cell" data-execution_count="11">
+<div class="cell-output cell-output-display">
+<div id="fig-ng_1st_order_passive_lpf_ct_log" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ng_1st_order_passive_lpf_ct_log-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-ng_1st_order_passive_lpf_ct_log-output-1.png" width="465" height="288" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ng_1st_order_passive_lpf_ct_log-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;14: Transfer function magnitude of the simulated 1<sup>st</sup>-order low-pass filter compared to the passive <span class="math inline">\(RC\)</span> circuit with log x-axis.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The plot of <a href="#fig-ng_1st_order_passive_lpf_ct_log" class="quarto-xref">Figure&nbsp;14</a> shows that the ngspice simulation perfectly matches the theoretical result and that the cut-off frequency is correct and that the asymptotic slope of -20dB/dec above the cut-off frequency is correct as well, up to about <span class="math inline">\(f_s/10\)</span>.</p>
+<p>We can now proceed with the simplest active SC filter, namely a 1<sup>st</sup>-order LP filter.</p>
+</section>
+</section>
+</section>
+<section id="example-2-first-order-active-low-pass-filter" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Example 2: First-order active low-pass filter</h1>
+<p>The schematic of the general 1<sup>st</sup>-order SC section is shown in <a href="#fig-1st-order_schematic1" class="quarto-xref">Figure&nbsp;15</a>.</p>
+<div id="fig-1st-order_schematic1" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-1st-order_schematic1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/1st-order_schematic1.svg" class="img-fluid figure-img" style="width:50.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-1st-order_schematic1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;15: 1<sup>st</sup>-order LP filter with the zero inside the unit circle.
+</figcaption>
+</figure>
+</div>
+<p>The <span class="math inline">\(z\)</span>-transfer function is given by <span class="math display">\[\begin{equation}
+  H(z) = -\frac{(\alpha_1 + \alpha_2)\,z - \alpha_1}{(1 + \alpha_3)\,z - 1}
+\end{equation}\]</span> From the above <span class="math inline">\(z\)</span>-transfer function, we observe that the zero <span class="math inline">\(z_z = \alpha_1/(\alpha_1+\alpha_2) &lt; 1\)</span> is always inside the unit circle. The corresponding approximate <span class="math inline">\(s\)</span>-domain transfer assuming <span class="math inline">\(z \cong 1 + s\,T\)</span> is given by <span class="math display">\[\begin{equation}
+  H_a(s) \cong -K \cdot \frac{1 + s/\omega_z}{1 + s/\omega_p}
+\end{equation}\]</span> The approximate design equations for <span class="math inline">\(\omega_z\,T \ll 1\)</span> and <span class="math inline">\(\omega_p\,T \ll 1\)</span> are given by <span class="math display">\[\begin{align}
+  \alpha_1 &amp;\cong K,\\
+  \alpha_2 &amp;\cong K\,\omega_z\,T,\\
+  \alpha_3 &amp;\cong \omega_p\,T.
+\end{align}\]</span></p>
+<p>With the circuit of <a href="#fig-1st-order_schematic1" class="quarto-xref">Figure&nbsp;15</a>, we cannot disable the zero to implement a simple LP transfer function. Another 1<sup>st</sup>-order section having the zero outside the unit circle is shown in <a href="#fig-1st-order_schematic2" class="quarto-xref">Figure&nbsp;16</a>.</p>
+<div id="fig-1st-order_schematic2" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-1st-order_schematic2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/1st-order_schematic2.svg" class="img-fluid figure-img" style="width:50.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-1st-order_schematic2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;16: 1<sup>st</sup>-order LP filter with the zero outside the unit circle.
+</figcaption>
+</figure>
+</div>
+<p>The <span class="math inline">\(z\)</span>-transfer function is given by <span class="math display">\[\begin{equation}
+  H(z) = -\frac{\alpha_1\,z - (\alpha_1 + \alpha_2)}{(1 + \alpha_3)\,z - 1}
+\end{equation}\]</span> From the above <span class="math inline">\(z\)</span>-transfer function, we observe that the zero <span class="math inline">\(z_z = 1+\alpha_2/\alpha_1 &gt; 1\)</span> is now outside the unit circle. The corresponding approximate <span class="math inline">\(s\)</span>-domain transfer assuming <span class="math inline">\(z \cong 1 + s\,T\)</span> is given by <span class="math display">\[\begin{equation}
+  H_a(s) \cong K \cdot \frac{1 + s/\omega_z}{1 + s/\omega_p}
+\end{equation}\]</span> The approximate design equations for <span class="math inline">\(\omega_z\,T \ll 1\)</span> and <span class="math inline">\(\omega_p\,T \ll 1\)</span> are given by <span class="math display">\[\begin{align}
+  \alpha_1 &amp;\cong K\,\frac{\omega_p\,T}{\omega_z\,T},\\
+  \alpha_2 &amp;\cong K\,\omega_p\,T,\\
+  \alpha_3 &amp;\cong \omega_p\,T.
+\end{align}\]</span></p>
+<p>A LP transfer function without zero can now be implemented setting <span class="math inline">\(\omega_z\,T \rightarrow \infty\)</span> by choosing <span class="math inline">\(\alpha_1 = 0\)</span>. If additionally the gain in the passband is unity <span class="math inline">\(K = 1\)</span>, then <span class="math inline">\(\alpha_2 = \alpha_3 = \alpha\)</span> resulting in the schematic shown in <a href="#fig-1st-order_schematic3" class="quarto-xref">Figure&nbsp;17</a>.</p>
+<div id="fig-1st-order_schematic3" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-1st-order_schematic3-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/1st-order_schematic3.svg" class="img-fluid figure-img" style="width:50.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-1st-order_schematic3-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;17: 1<sup>st</sup>-order LP filter.
+</figcaption>
+</figure>
+</div>
+<p>As an example, we want to implement a 1<sup>st</sup>-order LP filter with the parameters given in <a href="#tbl-first-order_active_lpf_parameters" class="quarto-xref">Table&nbsp;3</a>.</p>
+<div class="cell" data-execution_count="12">
+<div id="tbl-first-order_active_lpf_parameters" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="12">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-first-order_active_lpf_parameters-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;3: Parameters for the 1<sup>st</sup>-order low-pass filter of <a href="#fig-1st-order_schematic3" class="quarto-xref">Figure&nbsp;17</a>.
+</figcaption>
+<div aria-describedby="tbl-first-order_active_lpf_parameters-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="12">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Specification</th>
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Scaling factor</td>
+<td style="text-align: center;"><span class="math inline">\(K\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Cut-off frequency</td>
+<td style="text-align: center;"><span class="math inline">\(f_c\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(kHz\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Clock frequency</td>
+<td style="text-align: center;"><span class="math inline">\(f_{{ck}}\)</span></td>
+<td style="text-align: center;">200</td>
+<td style="text-align: center;"><span class="math inline">\(kHz\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Integrating capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C\)</span></td>
+<td style="text-align: center;">3.3</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Capacitance ratio</td>
+<td style="text-align: center;"><span class="math inline">\(\alpha_2 = \alpha_3 = \alpha = \omega_c\,T\)</span></td>
+<td style="text-align: center;">0.031416</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Switched-capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C_2 = \alpha \cdot C\)</span></td>
+<td style="text-align: center;">103.673</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Switched-capacitance</td>
+<td style="text-align: center;"><span class="math inline">\(C_3 = \alpha \cdot C\)</span></td>
+<td style="text-align: center;">103.673</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div id="cell-fig-1st-order_active_lpf" class="cell" data-execution_count="13">
+<div class="cell-output cell-output-display">
+<div id="fig-1st-order_active_lpf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-1st-order_active_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-1st-order_active_lpf-output-1.png" width="463" height="288" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-1st-order_active_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;18: Theoretical transfer function of the 1<sup>st</sup>-order active low-pass filter of <a href="#fig-1st-order_schematic3" class="quarto-xref">Figure&nbsp;17</a>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<section id="simulations-1" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="simulations-1"><span class="header-section-number">4.1</span> Simulations</h2>
+<p>For the Spice simulation we will assume that the OPAMP have a DC gain <span class="math inline">\(A =\)</span> 100 and infinite bandwidth.</p>
+<section id="ltspice-1" class="level3" data-number="4.1.1">
+<h3 data-number="4.1.1" class="anchored" data-anchor-id="ltspice-1"><span class="header-section-number">4.1.1</span> LTSpice</h3>
+<p>The 1<sup>st</sup>-order LP SC filter of <a href="#fig-1st-order_schematic3" class="quarto-xref">Figure&nbsp;17</a> can be simulated in LTSpice using the dedicated library. The corresponding schematic is shown below.</p>
+<div id="fig-SC_1st_order_LP_LTSpice" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-SC_1st_order_LP_LTSpice-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/SC_1st_order_LP_LTSpice.svg" class="img-fluid figure-img" style="width:65.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-SC_1st_order_LP_LTSpice-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;19: Schematic of the 1<sup>st</sup>-order LP SC filter for LTSpice simulation.
+</figcaption>
+</figure>
+</div>
+<p>Notice that the integrating capacitor <span class="math inline">\(C\)</span>, which is actually not switched, is also modelled by a switched-capacitor (SC1 in the above schematic). As explained above, this is because the circuits during phase <span class="math inline">\(\Phi_1\)</span> and <span class="math inline">\(\Phi_2\)</span> need to be completely separated without any common nodes except the ground. We also need a special amplifier that has two different negative inputs and two different outputs, one for phase <span class="math inline">\(\Phi_1\)</span> and the other for phase <span class="math inline">\(\Phi_2\)</span>.</p>
+<p>The simulation result is presented in <a href="#fig-lt_1st-order_active_lpf" class="quarto-xref">Figure&nbsp;20</a> and compared to the theoretical transfer and the continuous-time (CT) equivalent. We see that the simulated transfer function perfectly matches the theoretical transfer function.</p>
+<div id="cell-fig-lt_1st-order_active_lpf" class="cell" data-execution_count="14">
+<div class="cell-output cell-output-display">
+<div id="fig-lt_1st-order_active_lpf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-lt_1st-order_active_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-lt_1st-order_active_lpf-output-1.png" width="463" height="288" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-lt_1st-order_active_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;20: Simulated transfer function of the active 1<sup>st</sup>-order low-pass SC filter of <a href="#fig-SC_1st_order_LP_LTSpice" class="quarto-xref">Figure&nbsp;19</a>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>We now will simulate the same circuit with ngspice.</p>
+</section>
+<section id="ngspice-1" class="level3" data-number="4.1.2">
+<h3 data-number="4.1.2" class="anchored" data-anchor-id="ngspice-1"><span class="header-section-number">4.1.2</span> ngspice</h3>
+<p>We simulate the same circuit of <a href="#fig-SC_1st_order_LP_LTSpice" class="quarto-xref">Figure&nbsp;19</a> with ngspice. The simulation result is presented in <a href="#fig-ng_1st-order_active_lpf" class="quarto-xref">Figure&nbsp;21</a> and compared to the theoretical and CT equivalent transfer functions. We can observe that the simulated transfer function perfectly matches the theoretical transfer function.</p>
+<div id="cell-fig-ng_1st-order_active_lpf" class="cell" data-execution_count="15">
+<div class="cell-output cell-output-display">
+<div id="fig-ng_1st-order_active_lpf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ng_1st-order_active_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-ng_1st-order_active_lpf-output-1.png" width="463" height="288" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ng_1st-order_active_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;21: Simulated transfer function of the active 1<sup>st</sup>-order low-pass SC filter of <a href="#fig-SC_1st_order_LP_LTSpice" class="quarto-xref">Figure&nbsp;19</a>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div id="cell-fig-1st-order_active_lpf_comp" class="cell" data-execution_count="16">
+<div class="cell-output cell-output-display">
+<div id="fig-1st-order_active_lpf_comp" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-1st-order_active_lpf_comp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-1st-order_active_lpf_comp-output-1.png" width="463" height="288" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-1st-order_active_lpf_comp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;22: Simulated transfer function of the active 1<sup>st</sup>-order low-pass SC filter of <a href="#fig-SC_1st_order_LP_LTSpice" class="quarto-xref">Figure&nbsp;19</a>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>As shown in <a href="#fig-1st-order_active_lpf_comp" class="quarto-xref">Figure&nbsp;22</a>, the ngspice simulation results perfectly match the LTSpice results.</p>
+</section>
+</section>
+</section>
+<section id="example-3-second-order-active-low-pass-filter" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Example 3: Second-order active low-pass filter</h1>
+<div id="fig-2nd-order_lc_ladder" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-2nd-order_lc_ladder-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/2nd-order_lc_ladder.svg" class="img-fluid figure-img" style="width:40.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-2nd-order_lc_ladder-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;23: 2<sup>nd</sup>-order LC ladder.
+</figcaption>
+</figure>
+</div>
+<p>The next example is the simplest LC ladder filter shown in <a href="#fig-2nd-order_lc_ladder" class="quarto-xref">Figure&nbsp;23</a> which includes only one inductor and one capacitor. In this case the load termination is infinite and therefore there is no <span class="math inline">\(6\,dB\)</span> loss to correct for. The LC ladder component values for implementing a Butterworth approximation with a <span class="math inline">\(-3\,dB\)</span> cut-off frequency at <span class="math inline">\(f_c =\)</span> 20 <span class="math inline">\(kHz\)</span> are given in <a href="#tbl-2nd-order_lc_component_values" class="quarto-xref">Table&nbsp;4</a>.</p>
+<div class="cell" data-execution_count="18">
+<div id="tbl-2nd-order_lc_component_values" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="18">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-2nd-order_lc_component_values-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;4: Component values of the 3<sup>rd</sup>-order LC filter for implementing a Butterworth approximation.
+</figcaption>
+<div aria-describedby="tbl-2nd-order_lc_component_values-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="18">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(R\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(\Omega\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(L\)</span></td>
+<td style="text-align: center;">5.627</td>
+<td style="text-align: center;"><span class="math inline">\(\mu H\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C\)</span></td>
+<td style="text-align: center;">11.25</td>
+<td style="text-align: center;"><span class="math inline">\(\mu F\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div id="fig-2nd-order_sc_lp_filter" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-2nd-order_sc_lp_filter-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/2nd-order_sc_lp_filter.svg" class="img-fluid figure-img" style="width:40.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-2nd-order_sc_lp_filter-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;24: 2<sup>nd</sup>-order SC LP filter.
+</figcaption>
+</figure>
+</div>
+<p>It can be shown that the transfer function can be implemented by the SC filter shown in <a href="#fig-2nd-order_sc_lp_filter" class="quarto-xref">Figure&nbsp;24</a>. From charge conservation analysis, it can be shown that the theoretical transfer function is given by <span class="math display">\[\begin{equation}
+  H_{SC}(z) = \frac{a_1\,z}{b_2\,z^2 + b_1\,z + b_0}
+\end{equation}\]</span> with <span class="math display">\[\begin{align}
+  a_1 &amp;= \alpha_1\,\alpha_2,\\
+  b_0 &amp;= 1,\\
+  b_1 &amp;= \alpha_1\,\alpha_2-\alpha_1-2,\\
+  b_2 &amp;= \alpha_1+1.
+\end{align}\]</span> where <span class="math display">\[\begin{align}
+  \alpha_1 &amp;= \frac{1}{f_s\,\tau_1},\\
+  \alpha_2 &amp;= \frac{1}{f_s\,\tau_2},
+\end{align}\]</span> with <span class="math display">\[\begin{align}
+  \tau_1 &amp;= \frac{L}{R},\\
+  \tau_2 &amp;= R \cdot C.
+\end{align}\]</span> The integrators time constants and capacitance ratios for a clock frequency <span class="math inline">\(f_{ck} =\)</span> 2 <span class="math inline">\(MHz\)</span> are given in <a href="#tbl-2nd-order_sc_cap_ratioes" class="quarto-xref">Table&nbsp;5</a>.</p>
+<div class="cell" data-execution_count="19">
+<div id="tbl-2nd-order_sc_cap_ratioes" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="19">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-2nd-order_sc_cap_ratioes-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;5: Capacitance ratios of the 2<sup>nd</sup>-order Butterworth LP filter of <a href="#fig-2nd-order_sc_lp_filter" class="quarto-xref">Figure&nbsp;24</a>.
+</figcaption>
+<div aria-describedby="tbl-2nd-order_sc_cap_ratioes-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="19">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\tau_1\)</span></td>
+<td style="text-align: center;">5.627</td>
+<td style="text-align: center;"><span class="math inline">\(\mu s\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\tau_2\)</span></td>
+<td style="text-align: center;">11.25</td>
+<td style="text-align: center;"><span class="math inline">\(\mu s\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_1\)</span></td>
+<td style="text-align: center;">0.088857</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\alpha_2\)</span></td>
+<td style="text-align: center;">0.044444</td>
+<td style="text-align: center;">-</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>The theroretical transfer function <span class="math inline">\(\eqref{eqn:sc_elliptic_tf}\)</span> is compared to that of the LC passive filter in <a href="#fig-2nd-order_lp_theoretical_tf" class="quarto-xref">Figure&nbsp;25</a>. We see a perfect agreement except at high frequency where we observe the deviation due to the sampled-data nature of the SC filter.</p>
+<div id="cell-fig-2nd-order_lp_theoretical_tf" class="cell" data-execution_count="20">
+<div class="cell-output cell-output-display">
+<div id="fig-2nd-order_lp_theoretical_tf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-2nd-order_lp_theoretical_tf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-2nd-order_lp_theoretical_tf-output-1.png" width="457" height="515" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-2nd-order_lp_theoretical_tf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;25: Theoretical transfer function magnitude of the 2<sup>nd</sup>-order active low-pass SC filter of <a href="#fig-2nd-order_sc_lp_filter" class="quarto-xref">Figure&nbsp;24</a>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>We can now check the design by LTspice and ngspice simulations.</p>
+<section id="simulations-2" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="simulations-2"><span class="header-section-number">5.1</span> Simulations</h2>
+<section id="ltspice-2" class="level3" data-number="5.1.1">
+<h3 data-number="5.1.1" class="anchored" data-anchor-id="ltspice-2"><span class="header-section-number">5.1.1</span> LTSpice</h3>
+<div id="fig-2nd-order_sc_lp_sim" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-2nd-order_sc_lp_sim-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/2nd-order_sc_lp_sim.svg" class="img-fluid figure-img" style="width:60.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-2nd-order_sc_lp_sim-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;26: Schematic of the 2<sup>nd</sup>-order LP SC filter used for LTSpice simulations
+</figcaption>
+</figure>
+</div>
+<p>The 2<sup>nd</sup>-order SC Butterworth LP filter can be simulated in LTSpice using the schematic shown in <a href="#fig-2nd-order_sc_lp_sim" class="quarto-xref">Figure&nbsp;26</a>. The simulation result are compared to the theoretical transfer function in <a href="#fig-lt_2nd-order_active_lpf" class="quarto-xref">Figure&nbsp;27</a>. We see a perfect match even at high frequency.</p>
+<div class="cell" data-execution_count="21">
+<div id="tbl-lt_2nd-order_active_lpf_cap_ratio" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="21">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-lt_2nd-order_active_lpf_cap_ratio-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;6: Component values of the 2<sup>nd</sup>-order active low-pass SC filter of <a href="#fig-2nd-order_sc_lp_sim" class="quarto-xref">Figure&nbsp;26</a>.
+</figcaption>
+<div aria-describedby="tbl-lt_2nd-order_active_lpf_cap_ratio-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="21">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(A\)</span></td>
+<td style="text-align: center;">100</td>
+<td style="text-align: center;"><span class="math inline">\(dB\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(f_{{ck}}\)</span></td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_1\)</span></td>
+<td style="text-align: center;">3.3</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_2\)</span></td>
+<td style="text-align: center;">3.3</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_1\)</span></td>
+<td style="text-align: center;">0.088857</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\alpha_2\)</span></td>
+<td style="text-align: center;">0.044444</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_{{11}}=\alpha_1\,C_1\)</span></td>
+<td style="text-align: center;">293</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_{{12}}=\alpha_1\,C_1\)</span></td>
+<td style="text-align: center;">293</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_2=\alpha_2\,C_2\)</span></td>
+<td style="text-align: center;">147</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_{{21}}=\alpha_2\,C_2\)</span></td>
+<td style="text-align: center;">147</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div id="cell-fig-lt_2nd-order_active_lpf" class="cell" data-execution_count="22">
+<div class="cell-output cell-output-display">
+<div id="fig-lt_2nd-order_active_lpf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-lt_2nd-order_active_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-lt_2nd-order_active_lpf-output-1.png" width="457" height="515" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-lt_2nd-order_active_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;27: Simulated transfer function of the active 3<sup>rd</sup>-order low-pass SC filter of .
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="ngspice-2" class="level3" data-number="5.1.2">
+<h3 data-number="5.1.2" class="anchored" data-anchor-id="ngspice-2"><span class="header-section-number">5.1.2</span> ngspice</h3>
+<p>The ngspice simulation is performed with the same circuit as the LTSpice circuit of <a href="#fig-2nd-order_sc_lp_sim" class="quarto-xref">Figure&nbsp;26</a> with the same component values as in <a href="#tbl-lt_3rd-order_active_lpf_cap_ratio" class="quarto-xref">Table&nbsp;10</a>. The ngspice simulation result is presented in <a href="#fig-ng_2nd-order_sc_lpf" class="quarto-xref">Figure&nbsp;28</a>. Similarly to the LTSpice, we see a perfect match between the simulated and the theoretical transfer functions.</p>
+<div class="cell" data-execution_count="23">
+<div id="tbl-ng_2nd-order_active_lpf_cap_ratio" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="23">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-ng_2nd-order_active_lpf_cap_ratio-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;7: Component values of the 2<sup>nd</sup>-order active low-pass SC filter of <a href="#fig-2nd-order_sc_lp_sim" class="quarto-xref">Figure&nbsp;26</a>.
+</figcaption>
+<div aria-describedby="tbl-ng_2nd-order_active_lpf_cap_ratio-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="23">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(A\)</span></td>
+<td style="text-align: center;">20</td>
+<td style="text-align: center;"><span class="math inline">\(dB\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(f_{{ck}}\)</span></td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_1\)</span></td>
+<td style="text-align: center;">3.3</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_2\)</span></td>
+<td style="text-align: center;">3.3</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_1\)</span></td>
+<td style="text-align: center;">0.088857</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\alpha_2\)</span></td>
+<td style="text-align: center;">0.044444</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_{{11}}=\alpha_1\,C_1\)</span></td>
+<td style="text-align: center;">293</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_{{12}}=\alpha_1\,C_1\)</span></td>
+<td style="text-align: center;">293</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_2=\alpha_2\,C_2\)</span></td>
+<td style="text-align: center;">147</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_{{21}}=\alpha_2\,C_2\)</span></td>
+<td style="text-align: center;">147</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div id="cell-fig-ng_2nd-order_sc_lpf" class="cell" data-execution_count="24">
+<div class="cell-output cell-output-display">
+<div id="fig-ng_2nd-order_sc_lpf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ng_2nd-order_sc_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-ng_2nd-order_sc_lpf-output-1.png" width="457" height="515" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ng_2nd-order_sc_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;28: Simulated transfer function of the active 2<sup>nd</sup>-order low-pass SC filter of <a href="#fig-2nd-order_sc_lp_sim" class="quarto-xref">Figure&nbsp;26</a>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="example-4-third-order-active-low-pass-filter" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Example 4: Third-order active low-pass filter</h1>
+<p>The third example is the 3<sup>rd</sup>-order low-pass filter shown in <a href="#fig-SC_3rd_order_LPF" class="quarto-xref">Figure&nbsp;29</a>.</p>
+<div id="fig-SC_3rd_order_LPF" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-SC_3rd_order_LPF-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/SC_3rd_order_LPF.svg" class="img-fluid figure-img" style="width:60.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-SC_3rd_order_LPF-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;29: Complete 3<sup>rd</sup>-order SC LP filter including the -6 dB DC gain correction.
+</figcaption>
+</figure>
+</div>
+<p>From charge conservation analysis, it can be shown that the theoretical transfer function is given by <span class="math display">\[\begin{equation}
+  H(z) = \frac{a_2\,z^2}{b_3\,z^3 + b_2\,z^2 + b_1\,z + b_0}
+\end{equation}\]</span> with <span class="math display">\[\begin{align}
+  a_2 &amp;= (\alpha_{11}+\alpha_{12})\,\alpha_2\,\alpha_3,\\
+  b_0 &amp;= -1,\\
+  b_1 &amp;= 3+\alpha_{12}-\alpha_{11}\,\alpha_2+\alpha_3-\alpha_2\,\alpha_3,\\
+  b_2 &amp;= -3-2\,\alpha_{12}+\alpha_{11}\,\alpha_2-2\alpha_3-\alpha_{12}\,\alpha_3+\alpha_2\,\alpha_3+\alpha_{11}\,\alpha_2\,\alpha_3+\alpha_{12}\,\alpha_2\,\alpha_3,\\
+  b_3 &amp;= (1+\alpha_{12})(1+\alpha_3).
+\end{align}\]</span></p>
+<p>The specifications of the filter are given in <a href="#tbl-3rd-order_active_lpf_specs" class="quarto-xref">Table&nbsp;8</a> .</p>
+<div class="cell" data-execution_count="25">
+<div id="tbl-3rd-order_active_lpf_specs" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="25">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-3rd-order_active_lpf_specs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;8: Specifications of the 3<sup>rd</sup>-order active low-pass filter.
+</figcaption>
+<div aria-describedby="tbl-3rd-order_active_lpf_specs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="25">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Specification</th>
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Cut-off frequency</td>
+<td style="text-align: center;"><span class="math inline">\(f_p\)</span></td>
+<td style="text-align: center;">20</td>
+<td style="text-align: center;"><span class="math inline">\(kHz\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Stop-band frequency</td>
+<td style="text-align: center;"><span class="math inline">\(f_s\)</span></td>
+<td style="text-align: center;">120</td>
+<td style="text-align: center;"><span class="math inline">\(kHz\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Clock frequency</td>
+<td style="text-align: center;"><span class="math inline">\(f_{{ck}}\)</span></td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Pass-band gain</td>
+<td style="text-align: center;"><span class="math inline">\(G_p\)</span></td>
+<td style="text-align: center;">-1</td>
+<td style="text-align: center;"><span class="math inline">\(dB\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Stop-band gain</td>
+<td style="text-align: center;"><span class="math inline">\(G_s\)</span></td>
+<td style="text-align: center;">-40</td>
+<td style="text-align: center;"><span class="math inline">\(dB\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>The capacitance ratios for a Chebyshev approximation and a clock frequency <span class="math inline">\(f_s =\)</span> 2 <span class="math inline">\(MHz\)</span> are given in <a href="#tbl-3rd-order_active_lpf_cap_ratio" class="quarto-xref">Table&nbsp;9</a>.</p>
+<div class="cell" data-execution_count="26">
+<div id="tbl-3rd-order_active_lpf_cap_ratio" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="26">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-3rd-order_active_lpf_cap_ratio-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;9: Capacitance ratioes of the 3<sup>rd</sup>-order active low-pass SC filter of <a href="#fig-SC_3rd_order_LPF" class="quarto-xref">Figure&nbsp;29</a>.
+</figcaption>
+<div aria-describedby="tbl-3rd-order_active_lpf_cap_ratio-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="26">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\tau_1\)</span></td>
+<td style="text-align: center;">16.1032</td>
+<td style="text-align: center;"><span class="math inline">\(\mu s\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\tau_2\)</span></td>
+<td style="text-align: center;">7.91082</td>
+<td style="text-align: center;"><span class="math inline">\(\mu s\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\tau_3\)</span></td>
+<td style="text-align: center;">16.1032</td>
+<td style="text-align: center;"><span class="math inline">\(\mu s\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(f_s\)</span></td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{11}}\)</span></td>
+<td style="text-align: center;">0.03105</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{12}}\)</span></td>
+<td style="text-align: center;">0.03105</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_2\)</span></td>
+<td style="text-align: center;">0.063205</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\alpha_3\)</span></td>
+<td style="text-align: center;">0.03105</td>
+<td style="text-align: center;">-</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>The transfer function magnitude corresponding to the parameters given in <a href="#tbl-3rd-order_active_lpf_cap_ratio" class="quarto-xref">Table&nbsp;9</a> is shown in <a href="#fig-3rd-order_active_lpf_theoretical_tf" class="quarto-xref">Figure&nbsp;30</a>.</p>
+<div id="cell-fig-3rd-order_active_lpf_theoretical_tf" class="cell" data-execution_count="27">
+<div class="cell-output cell-output-display">
+<div id="fig-3rd-order_active_lpf_theoretical_tf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-3rd-order_active_lpf_theoretical_tf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-3rd-order_active_lpf_theoretical_tf-output-1.png" width="465" height="510" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-3rd-order_active_lpf_theoretical_tf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;30: Theoretical transfer function magnitude of the 3<sup>rd</sup>-order active low-pass SC filter of <a href="#fig-SC_3rd_order_LPF" class="quarto-xref">Figure&nbsp;29</a>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<section id="simulations-3" class="level2" data-number="6.1">
+<h2 data-number="6.1" class="anchored" data-anchor-id="simulations-3"><span class="header-section-number">6.1</span> Simulations</h2>
+<section id="ltspice-3" class="level3" data-number="6.1.1">
+<h3 data-number="6.1.1" class="anchored" data-anchor-id="ltspice-3"><span class="header-section-number">6.1.1</span> LTSpice</h3>
+<p>The LTSpice simulations are done with the schematic shown in <a href="#fig-SC_3rd_order_LPF_schematic" class="quarto-xref">Figure&nbsp;31</a> with the capacitance values and capacitance ratios given in <a href="#tbl-lt_3rd-order_active_lpf_cap_ratio" class="quarto-xref">Table&nbsp;10</a>.</p>
+<div id="fig-SC_3rd_order_LPF_schematic" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-SC_3rd_order_LPF_schematic-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/SC_3rd_order_LPF_schematic.svg" class="img-fluid figure-img" style="width:80.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-SC_3rd_order_LPF_schematic-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;31: Schematic used for the LTSpice simulation.
+</figcaption>
+</figure>
+</div>
+<p>The simulated magnitude of the transfer function is compared to the theoretical one in <a href="#fig-lt_3rd-order_active_lpf" class="quarto-xref">Figure&nbsp;32</a>.</p>
+<div class="cell" data-execution_count="28">
+<div id="tbl-lt_3rd-order_active_lpf_cap_ratio" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="28">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-lt_3rd-order_active_lpf_cap_ratio-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;10: Component values of the 3<sup>rd</sup>-order active low-pass SC filter of <a href="#fig-SC_3rd_order_LPF_schematic" class="quarto-xref">Figure&nbsp;31</a>.
+</figcaption>
+<div aria-describedby="tbl-lt_3rd-order_active_lpf_cap_ratio-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="28">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(A\)</span></td>
+<td style="text-align: center;">100</td>
+<td style="text-align: center;"><span class="math inline">\(dB\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(f_{{ck}}\)</span></td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{11}}\)</span></td>
+<td style="text-align: center;">0.03105</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{12}}\)</span></td>
+<td style="text-align: center;">0.03105</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_2\)</span></td>
+<td style="text-align: center;">0.063205</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\alpha_3\)</span></td>
+<td style="text-align: center;">0.03105</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_1\)</span></td>
+<td style="text-align: center;">3.3</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_2\)</span></td>
+<td style="text-align: center;">3.3</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_3\)</span></td>
+<td style="text-align: center;">3.3</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_{{11}}=\alpha_{{11}}\,C_1\)</span></td>
+<td style="text-align: center;">102</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_{{12}}=\alpha_{{12}}\,C_1\)</span></td>
+<td style="text-align: center;">102</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_{{22}}=\alpha_2\,C_2\)</span></td>
+<td style="text-align: center;">209</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_{{33}}=\alpha_3\,C_3\)</span></td>
+<td style="text-align: center;">102</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div id="cell-fig-lt_3rd-order_active_lpf" class="cell" data-execution_count="29">
+<div class="cell-output cell-output-display">
+<div id="fig-lt_3rd-order_active_lpf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-lt_3rd-order_active_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-lt_3rd-order_active_lpf-output-1.png" width="465" height="510" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-lt_3rd-order_active_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;32: Simulated transfer function of the active 3<sup>rd</sup>-order low-pass SC filter of <a href="#fig-SC_3rd_order_LPF_schematic" class="quarto-xref">Figure&nbsp;31</a>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>From <a href="#fig-lt_3rd-order_active_lpf" class="quarto-xref">Figure&nbsp;32</a>, we see that the LTSpice simulation perfectly matches the theoretical transfer function.</p>
+</section>
+<section id="ngspice-3" class="level3" data-number="6.1.2">
+<h3 data-number="6.1.2" class="anchored" data-anchor-id="ngspice-3"><span class="header-section-number">6.1.2</span> ngspice</h3>
+<p>The ngspice simulation is performed with the same circuit as the LTSpice circuit of <a href="#fig-SC_3rd_order_LPF_schematic" class="quarto-xref">Figure&nbsp;31</a> with the same component values of <a href="#tbl-lt_3rd-order_active_lpf_cap_ratio" class="quarto-xref">Table&nbsp;10</a>. The ngspice simulation result is presented in <a href="#fig-ng_3rd-order_active_lpf" class="quarto-xref">Figure&nbsp;33</a>. Similarly to the LTSpice, we see a perfect match between the simulated and the theoretical transfer functions.</p>
+<div id="cell-fig-ng_3rd-order_active_lpf" class="cell" data-execution_count="30">
+<div class="cell-output cell-output-display">
+<div id="fig-ng_3rd-order_active_lpf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ng_3rd-order_active_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-ng_3rd-order_active_lpf-output-1.png" width="465" height="510" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ng_3rd-order_active_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;33: Simulated transfer function of the active 3<sup>rd</sup>-order low-pass SC filter of <a href="#fig-SC_3rd_order_LPF_schematic" class="quarto-xref">Figure&nbsp;31</a>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="example-5-third-order-elliptic-low-pass-filter" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Example 5: Third-order elliptic low-pass filter</h1>
+<div id="fig-LC_3rd_order_elliptic_LPF" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-LC_3rd_order_elliptic_LPF-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/LC_3rd_order_elliptic_LPF.svg" class="img-fluid figure-img" style="width:40.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-LC_3rd_order_elliptic_LPF-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;34: LC 3<sup>rd</sup>-order elliptic LP filter.
+</figcaption>
+</figure>
+</div>
+<p>The last example is a 3<sup>rd</sup>-order elliptic low-pass filter including transmission zeroes. It is based on the passive LC filter shown in <a href="#fig-LC_3rd_order_elliptic_LPF" class="quarto-xref">Figure&nbsp;34</a>. The component values to satisfy the specifications given in <a href="#tbl-3rd-order_active_elliptic_specs" class="quarto-xref">Table&nbsp;11</a> are given in <a href="#tbl-3rd-order_lc_component_values" class="quarto-xref">Table&nbsp;12</a>.</p>
+<div class="cell" data-execution_count="31">
+<div id="tbl-3rd-order_active_elliptic_specs" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="31">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-3rd-order_active_elliptic_specs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;11: Specifications of the 3<sup>rd</sup>-order active low-pass ellicptic filter.
+</figcaption>
+<div aria-describedby="tbl-3rd-order_active_elliptic_specs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="31">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Specification</th>
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Cut-off frequency</td>
+<td style="text-align: center;"><span class="math inline">\(f_p\)</span></td>
+<td style="text-align: center;">20</td>
+<td style="text-align: center;"><span class="math inline">\(kHz\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Stop-band frequency</td>
+<td style="text-align: center;"><span class="math inline">\(f_s\)</span></td>
+<td style="text-align: center;">120</td>
+<td style="text-align: center;"><span class="math inline">\(kHz\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Clock frequency</td>
+<td style="text-align: center;"><span class="math inline">\(f_{{ck}}\)</span></td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Pass-band gain</td>
+<td style="text-align: center;"><span class="math inline">\(G_p\)</span></td>
+<td style="text-align: center;">-1</td>
+<td style="text-align: center;"><span class="math inline">\(dB\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Stop-band gain</td>
+<td style="text-align: center;"><span class="math inline">\(G_s\)</span></td>
+<td style="text-align: center;">-40</td>
+<td style="text-align: center;"><span class="math inline">\(dB\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div class="cell" data-execution_count="32">
+<div id="tbl-3rd-order_lc_component_values" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="32">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-3rd-order_lc_component_values-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;12: Component values of the 3<sup>rd</sup>-order LC filter of <a href="#fig-LC_3rd_order_elliptic_LPF" class="quarto-xref">Figure&nbsp;34</a>.
+</figcaption>
+<div aria-describedby="tbl-3rd-order_lc_component_values-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="32">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_1\)</span></td>
+<td style="text-align: center;">15.19</td>
+<td style="text-align: center;"><span class="math inline">\(\mu F\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_2\)</span></td>
+<td style="text-align: center;">1.157</td>
+<td style="text-align: center;"><span class="math inline">\(\mu F\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_3\)</span></td>
+<td style="text-align: center;">15.19</td>
+<td style="text-align: center;"><span class="math inline">\(\mu F\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(L_2\)</span></td>
+<td style="text-align: center;">7.196</td>
+<td style="text-align: center;"><span class="math inline">\(\mu H\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(R_1\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(\Omega\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(R_3\)</span></td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><span class="math inline">\(\Omega\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>It can be shown that the corresponding SC filter achieving the desired elliptic transfer function is obtained as shown in <a href="#fig-SC_3rd_order_elliptic_LPF" class="quarto-xref">Figure&nbsp;35</a>. It is basically identical to the SC low-pass filter of <a href="#fig-SC_3rd_order_LPF" class="quarto-xref">Figure&nbsp;29</a> to which the two additional non-switched capacitors <span class="math inline">\(\beta_1\,C_1\)</span> and <span class="math inline">\(\beta_3\,C_3\)</span> have been added to realize the transimission zero.</p>
+<div id="fig-SC_3rd_order_elliptic_LPF" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-SC_3rd_order_elliptic_LPF-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/SC_3rd_order_elliptic_LPF.svg" class="img-fluid figure-img" style="width:80.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-SC_3rd_order_elliptic_LPF-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;35: 3<sup>rd</sup>-order SC elliptic LP filter.
+</figcaption>
+</figure>
+</div>
+<p>From charge conservation analysis, it can be shown that the theoretical <span class="math inline">\(z\)</span>-transfer function is given by <span class="math display">\[\begin{equation}\label{eqn:sc_elliptic_tf}
+  H(z) = \frac{a_3\,z^3 + a_2\,z^2 + a_1\,z + a_0}{b_3\,z^3 + b_2\,z^2 + b_1\,z + b_0}
+\end{equation}\]</span> with <span class="math display">\[\begin{align}
+  a_0 &amp;= 0,\\
+  a_1 &amp;= \alpha_{13}\,\beta_3,\\
+  a_2 &amp;= \alpha_{13}\,(\alpha_{21}\,\alpha_{31}-2\,\beta_3),\\
+  a_3 &amp;= \alpha_{13}\,\beta_3,\\
+  b_0 &amp;= 1-\beta_1\,\beta_3,\\
+  b_1 &amp;= -3-\alpha_{12}+\alpha_{11}\,\alpha_{21}+\alpha_{22}\,\alpha_{31}-\alpha_{32}-\alpha_{21}\,\alpha_{31}\,\beta_1-\alpha_{11}\,\alpha_{22}\,\beta_3+3\,\beta_1\,\beta_3,\\
+  b_2 &amp;= 3+2\,\alpha_{12}-\alpha_{11}\,\alpha_{21}-\alpha_{22}\,\alpha_{31}-\alpha_{12}\,\alpha_{22}\,\alpha_{31}\\
+  &amp;+2\,\alpha_{32}+\alpha_{12}\,\alpha_{32}-\alpha_{11}\,\alpha_{21}\,\alpha_{32}+\alpha_{21}\,\alpha_{31}\,\beta_1+\alpha_{11}\alpha_{22}\,\beta_3-3\,\beta_1\,\beta_3,\\
+  b_3 &amp;= -1-\alpha_{12}-\alpha_{32}-\alpha_{12}\,\alpha_{32}+\beta_1\,\beta_3.
+\end{align}\]</span> where <span class="math display">\[\begin{align}
+  \alpha_{11} &amp;= \frac{1}{f_s\,\tau_1},\\
+  \alpha_{12} &amp;= \alpha_{11},\\
+  \alpha_{13} &amp;= 2\,\alpha_{11},\\
+  \alpha_{21} &amp;= \frac{1}{f_s\,\tau_2},\\
+  \alpha_{22} &amp;= \alpha_{21},\\
+  \alpha_{31} &amp;= \frac{1}{f_s\,\tau_3},\\
+  \alpha_{32} &amp;= \alpha_{31},\\
+  \beta_1 &amp;= \frac{C_2}{C_2'},\\
+  \beta_3 &amp;= \frac{C_2}{C_3'},
+\end{align}\]</span> with <span class="math display">\[\begin{align}
+  \tau_1 &amp;= R_1 \cdot C_1',\\
+  \tau_2 &amp;= \frac{L_2}{R_1},\\
+  \tau_3 &amp;= R_1 \cdot C_3',
+\end{align}\]</span> and <span class="math display">\[\begin{align}
+  C_2' &amp;= C_1 + C_2,\\
+  C_3' &amp;= C_3 + C_2.
+\end{align}\]</span></p>
+<p>The SC filter capacitance ratios for achieving the specification of <a href="#tbl-3rd-order_active_elliptic_specs" class="quarto-xref">Table&nbsp;11</a> with a clock frequency <span class="math inline">\(f_s =\)</span> 2 <span class="math inline">\(MHz\)</span> are given in <a href="#tbl-3rd-order_elliptic_sc_cap_ratioes" class="quarto-xref">Table&nbsp;13</a>. We can observe that the capacitance ratios are close but not equal to those of the 3<sup>rd</sup>-order SC low-pass filter without transmission zeroes given in <a href="#tbl-3rd-order_active_lpf_cap_ratio" class="quarto-xref">Table&nbsp;9</a>.</p>
+<div class="cell" data-execution_count="33">
+<div id="tbl-3rd-order_elliptic_sc_cap_ratioes" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="33">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-3rd-order_elliptic_sc_cap_ratioes-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;13: Capacitance ratios of the 3<sup>rd</sup>-order SC elliptic filter of <a href="#fig-SC_3rd_order_elliptic_LPF" class="quarto-xref">Figure&nbsp;35</a>.
+</figcaption>
+<div aria-describedby="tbl-3rd-order_elliptic_sc_cap_ratioes-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="33">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\tau_1\)</span></td>
+<td style="text-align: center;">16.347</td>
+<td style="text-align: center;"><span class="math inline">\(\mu s\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\tau_2\)</span></td>
+<td style="text-align: center;">7.196</td>
+<td style="text-align: center;"><span class="math inline">\(\mu s\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\tau_3\)</span></td>
+<td style="text-align: center;">16.347</td>
+<td style="text-align: center;"><span class="math inline">\(\mu s\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(f_{{ck}}\)</span></td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{11}}\)</span></td>
+<td style="text-align: center;">0.030587</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{12}}\)</span></td>
+<td style="text-align: center;">0.030587</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{13}}\)</span></td>
+<td style="text-align: center;">0.061173</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{21}}\)</span></td>
+<td style="text-align: center;">0.069483</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{22}}\)</span></td>
+<td style="text-align: center;">0.069483</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{31}}\)</span></td>
+<td style="text-align: center;">0.030587</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{32}}\)</span></td>
+<td style="text-align: center;">0.030587</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\beta_1\)</span></td>
+<td style="text-align: center;">0.070778</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\beta_3\)</span></td>
+<td style="text-align: center;">0.070778</td>
+<td style="text-align: center;">-</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>The theoretical transfer function <span class="math inline">\(\eqref{eqn:sc_elliptic_tf}\)</span> is compared to that of the LC passive filter corrected for the <span class="math inline">\(-6\,dB\)</span> loss in <a href="#fig-3rd-order_active_elliptic_lpf_theoretical_tf" class="quarto-xref">Figure&nbsp;36</a>. We see a perfect agreement except at high frequency where we observe the deviation due to the sampled-data nature of the SC filter.</p>
+<div id="cell-fig-3rd-order_active_elliptic_lpf_theoretical_tf" class="cell" data-execution_count="34">
+<div class="cell-output cell-output-display">
+<div id="fig-3rd-order_active_elliptic_lpf_theoretical_tf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-3rd-order_active_elliptic_lpf_theoretical_tf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-3rd-order_active_elliptic_lpf_theoretical_tf-output-1.png" width="457" height="515" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-3rd-order_active_elliptic_lpf_theoretical_tf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;36: Theoretical transfer function magnitude of the 3<sup>rd</sup>-order active low-pass SC filter of <a href="#fig-SC_3rd_order_LPF" class="quarto-xref">Figure&nbsp;29</a>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>We can now check the design by LTspice and ngspice simulations.</p>
+<section id="simulations-4" class="level2" data-number="7.1">
+<h2 data-number="7.1" class="anchored" data-anchor-id="simulations-4"><span class="header-section-number">7.1</span> Simulations</h2>
+<section id="ltspice-4" class="level3" data-number="7.1.1">
+<h3 data-number="7.1.1" class="anchored" data-anchor-id="ltspice-4"><span class="header-section-number">7.1.1</span> LTSpice</h3>
+<div id="fig-SC_3rd_order_elliptic_LPF_LTSpice" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-SC_3rd_order_elliptic_LPF_LTSpice-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Figures/SC_3rd_order_elliptic_LPF_LTSpice.svg" class="img-fluid figure-img" style="width:100.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-SC_3rd_order_elliptic_LPF_LTSpice-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;37: 3<sup>rd</sup>-order elliptic SC filter schematic used for LTSpice.
+</figcaption>
+</figure>
+</div>
+<p>The 3<sup>rd</sup>-order SC elliptic LP filter can be simulated in LTSpice using the schematic shown in <a href="#fig-SC_3rd_order_elliptic_LPF_LTSpice" class="quarto-xref">Figure&nbsp;37</a> with the component values given in <a href="#tbl-lt_3rd-order_elliptic_lpf_cap_ratio" class="quarto-xref">Table&nbsp;14</a>.</p>
+<div class="cell" data-execution_count="35">
+<div id="tbl-lt_3rd-order_elliptic_lpf_cap_ratio" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="35">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-lt_3rd-order_elliptic_lpf_cap_ratio-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;14: Component values of the 3<sup>rd</sup>-order active low-pass SC filter of <a href="#fig-SC_3rd_order_LPF_schematic" class="quarto-xref">Figure&nbsp;31</a>.
+</figcaption>
+<div aria-describedby="tbl-lt_3rd-order_elliptic_lpf_cap_ratio-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="35">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(A\)</span></td>
+<td style="text-align: center;">100</td>
+<td style="text-align: center;"><span class="math inline">\(dB\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(f_{{ck}}\)</span></td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{11}}\)</span></td>
+<td style="text-align: center;">0.030587</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{12}}\)</span></td>
+<td style="text-align: center;">0.030587</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{13}}\)</span></td>
+<td style="text-align: center;">0.061173</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{21}}\)</span></td>
+<td style="text-align: center;">0.069483</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{22}}\)</span></td>
+<td style="text-align: center;">0.069483</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{31}}\)</span></td>
+<td style="text-align: center;">0.030587</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_{{32}}\)</span></td>
+<td style="text-align: center;">0.030587</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\beta_1\)</span></td>
+<td style="text-align: center;">0.070778</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\beta_3\)</span></td>
+<td style="text-align: center;">0.070778</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_1\)</span></td>
+<td style="text-align: center;">3.3</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_2\)</span></td>
+<td style="text-align: center;">3.3</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_3\)</span></td>
+<td style="text-align: center;">3.3</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_{{11}}=\alpha_{{11}}\,C_1\)</span></td>
+<td style="text-align: center;">101</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_{{12}}=\alpha_{{12}}\,C_1\)</span></td>
+<td style="text-align: center;">101</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_{{13}}=\alpha_{{13}}\,C_1\)</span></td>
+<td style="text-align: center;">202</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_{{14}}=\beta_1\,C_1\)</span></td>
+<td style="text-align: center;">234</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_{{21}}=\alpha_{{21}}\,C_2\)</span></td>
+<td style="text-align: center;">229</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_{{22}}=\alpha_{{22}}\,C_2\)</span></td>
+<td style="text-align: center;">229</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_{{31}}=\alpha_{{31}}\,C_3\)</span></td>
+<td style="text-align: center;">101</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_{{32}}=\alpha_{{32}}\,C_3\)</span></td>
+<td style="text-align: center;">101</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_{{33}}=\beta_3\,C_3\)</span></td>
+<td style="text-align: center;">234</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>The simulated transfer function is compared to the theoretical one in <a href="#fig-lt_3rd-order_active_elliptic_lpf" class="quarto-xref">Figure&nbsp;38</a>. Again we see a perfect match.</p>
+<div id="cell-fig-lt_3rd-order_active_elliptic_lpf" class="cell" data-execution_count="36">
+<div class="cell-output cell-output-display">
+<div id="fig-lt_3rd-order_active_elliptic_lpf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-lt_3rd-order_active_elliptic_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-lt_3rd-order_active_elliptic_lpf-output-1.png" width="538" height="515" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-lt_3rd-order_active_elliptic_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;38: Simulated transfer function of the active 3<sup>rd</sup>-order low-pass SC filter of <a href="#fig-SC_3rd_order_LPF_schematic" class="quarto-xref">Figure&nbsp;31</a>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div id="cell-fig-lt_3rd-order_elliptic_v1_v2" class="cell" data-execution_count="37">
+<div class="cell-output cell-output-display">
+<div id="fig-lt_3rd-order_elliptic_v1_v2" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-lt_3rd-order_elliptic_v1_v2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-lt_3rd-order_elliptic_v1_v2-output-1.png" width="386" height="293" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-lt_3rd-order_elliptic_v1_v2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;39: Simulated transfer function of the active 3<sup>rd</sup>-order low-pass SC filter of <a href="#fig-SC_3rd_order_LPF_schematic" class="quarto-xref">Figure&nbsp;31</a>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><a href="#fig-lt_3rd-order_elliptic_v1_v2" class="quarto-xref">Figure&nbsp;39</a> shows the transfer functions between the input and the output of the various OPAMPs corresponding to voltages <span class="math inline">\(V_1\)</span>, <span class="math inline">\(V_2\)</span> and <span class="math inline">\(V_3\)</span> in <a href="#fig-SC_3rd_order_elliptic_LPF" class="quarto-xref">Figure&nbsp;35</a>. We see that the transfer functions <span class="math inline">\(|H_1(f)|\)</span> and <span class="math inline">\(|H_2(f)|\)</span> are peaking close to the cut-off frequency. This means that the voltages <span class="math inline">\(V_1\)</span> and <span class="math inline">\(V_2\)</span> at the OPAMPs outputs may drive the next stage into saturation. We can avoid this by equalizing the transfer functions so that all the maxima are equal to <span class="math inline">\(0\,dB\)</span>. This can be done by increasing all the capacitances connected to the output of OPAMP AO1 (voltage <span class="math inline">\(V_1\)</span>) by a scaling factor <span class="math inline">\(k_1 =\)</span> 1.300. This will reduce the voltage <span class="math inline">\(V_1\)</span> while injecting the same amount of charges to the virtual ground to which the capacitances are connected to. We can do in a similar way for <span class="math inline">\(|H_2(f)|\)</span> by scaling all the capacitances connected to the output of OPAMP AO2 by a factor <span class="math inline">\(k_2 =\)</span> 2.279. The resulting equalized transfer functions are plotted in <a href="#fig-lt_3rd-order_elliptic_equalized" class="quarto-xref">Figure&nbsp;40</a>. We see that all the transfer functions have a maximum gain equal to <span class="math inline">\(0\,dB\)</span> while the input-output transfer function remains unchanged.</p>
+<div id="cell-fig-lt_3rd-order_elliptic_equalized" class="cell" data-execution_count="38">
+<div class="cell-output cell-output-display">
+<div id="fig-lt_3rd-order_elliptic_equalized" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-lt_3rd-order_elliptic_equalized-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-lt_3rd-order_elliptic_equalized-output-1.png" width="386" height="293" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-lt_3rd-order_elliptic_equalized-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;40: Simulated transfer function of the active 3<sup>rd</sup>-order low-pass SC filter of <a href="#fig-SC_3rd_order_LPF_schematic" class="quarto-xref">Figure&nbsp;31</a>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="ngspice-4" class="level3" data-number="7.1.2">
+<h3 data-number="7.1.2" class="anchored" data-anchor-id="ngspice-4"><span class="header-section-number">7.1.2</span> ngspice</h3>
+<p>We can also check the equalized SC filter with ngspice using the same schematic as in <a href="#fig-SC_3rd_order_elliptic_LPF_LTSpice" class="quarto-xref">Figure&nbsp;37</a> with the scaled components. For this simulation ngspice had trouble to find the DC operating point with the 5<sup>th</sup>-order delay model. Reducing it to the 4<sup>th</sup>-order model solved the problem. The simulation result is compared to the theoretical transfer function in <a href="#fig-ng_3rd-order_elliptic_lpf" class="quarto-xref">Figure&nbsp;41</a>. We see a perfect match despite the model for the delay had to be reduced to 4 instead of 5 for the other simulations.</p>
+<div id="cell-fig-ng_3rd-order_elliptic_lpf" class="cell" data-execution_count="39">
+<div class="cell-output cell-output-display">
+<div id="fig-ng_3rd-order_elliptic_lpf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ng_3rd-order_elliptic_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-ng_3rd-order_elliptic_lpf-output-1.png" width="538" height="515" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ng_3rd-order_elliptic_lpf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;41: Simulated transfer function of the active 3<sup>rd</sup>-order low-pass SC filter of <a href="#fig-SC_3rd_order_LPF_schematic" class="quarto-xref">Figure&nbsp;31</a>.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="non-ideal-effects" class="level1" data-number="8">
+<h1 data-number="8"><span class="header-section-number">8</span> Non-ideal effects</h1>
+<p>SC circuits are affected by many non-idealities coming from the OPAMP or OTA, the switches and the capacitances.</p>
+<section id="switches" class="level2" data-number="8.1">
+<h2 data-number="8.1" class="anchored" data-anchor-id="switches"><span class="header-section-number">8.1</span> Switches</h2>
+<p>The non-idealities of the switches icnlude:</p>
+<ul>
+<li>Finite on resistance of the MOS transistor(s),</li>
+<li>Resistance non linearity,</li>
+<li>Charge injection,</li>
+<li>Clock feedthrough and</li>
+<li>Noise.</li>
+</ul>
+<p>None of these effects can be accounted for with the proposed AC simulation. The on resistance introduces a transient that may not reach steady-state.</p>
+</section>
+<section id="opamp-or-ota" class="level2" data-number="8.2">
+<h2 data-number="8.2" class="anchored" data-anchor-id="opamp-or-ota"><span class="header-section-number">8.2</span> OPAMP or OTA</h2>
+<p>The non-idealities of the OPAMP or OTA include:</p>
+<ul>
+<li>Finite DC gain,</li>
+<li>Finite gain-bandwidth product and</li>
+<li>Noise.</li>
+</ul>
+<p>Since the proposed AC simulation assumes that the circuit has reached steady-state, the only non-idealitiythat can be simulated is the finite DC gain. We will simulate the 2<sup>nd</sup>-order low-pass filter with a very low gain but infinite bandwidth with the parameters given in <a href="#tbl-lt_2nd-order_finite_gain" class="quarto-xref">Table&nbsp;15</a>.</p>
+<div class="cell" data-execution_count="40">
+<div id="tbl-lt_2nd-order_finite_gain" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="40">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-lt_2nd-order_finite_gain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;15: Component values of the 2<sup>nd</sup>-order active low-pass SC filter of <a href="#fig-2nd-order_sc_lp_sim" class="quarto-xref">Figure&nbsp;26</a>.
+</figcaption>
+<div aria-describedby="tbl-lt_2nd-order_finite_gain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display cell-output-markdown" data-execution_count="40">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Symbol</th>
+<th style="text-align: center;">Value</th>
+<th style="text-align: center;">Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(A\)</span></td>
+<td style="text-align: center;">20</td>
+<td style="text-align: center;"><span class="math inline">\(dB\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(f_{{ck}}\)</span></td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;"><span class="math inline">\(MHz\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_1\)</span></td>
+<td style="text-align: center;">3.3</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_2\)</span></td>
+<td style="text-align: center;">3.3</td>
+<td style="text-align: center;"><span class="math inline">\(pF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(\alpha_1\)</span></td>
+<td style="text-align: center;">0.088857</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(\alpha_2\)</span></td>
+<td style="text-align: center;">0.044444</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_{{11}}=\alpha_1\,C_1\)</span></td>
+<td style="text-align: center;">293</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_{{12}}=\alpha_1\,C_1\)</span></td>
+<td style="text-align: center;">293</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><span class="math inline">\(C_2=\alpha_2\,C_2\)</span></td>
+<td style="text-align: center;">147</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><span class="math inline">\(C_{{21}}=\alpha_2\,C_2\)</span></td>
+<td style="text-align: center;">147</td>
+<td style="text-align: center;"><span class="math inline">\(fF\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div id="cell-fig-lt_2nd-order_finite_gain" class="cell" data-execution_count="41">
+<div class="cell-output cell-output-display">
+<div id="fig-lt_2nd-order_finite_gain" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-lt_2nd-order_finite_gain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="SCC_simulation_files/figure-html/fig-lt_2nd-order_finite_gain-output-1.png" width="457" height="515" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-lt_2nd-order_finite_gain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;42: Simulated transfer function of the active 3<sup>rd</sup>-order low-pass SC filter of .
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The simulation result is compare to the ideal transfer function in <a href="#fig-lt_2nd-order_finite_gain" class="quarto-xref">Figure&nbsp;42</a>. We see that the DC gain has dropped by about 1 dB.</p>
+</section>
+</section>
+<section id="conclusion" class="level1" data-number="9">
+<h1 data-number="9"><span class="header-section-number">9</span> Conclusion</h1>
+<p>This notebook has presented a technique to simulate SC circuits such as filters using two non-overlapping phases using the AC simulation of a conventional Spice simulator such as LTSpice or ngspice. The circuits during phases <span class="math inline">\(\Phi_1\)</span> and <span class="math inline">\(\Phi_2\)</span> are described separately and run concurently. They are then coupled by additional component in order to satisfy the charge conservation between phases. A special library has been developped for LTpice (including the dedicated symbols) and ngspice to this purpose. Since the ideal time delay operator available in LTSpice does not exist in ngspice, an approximation of the ideal delay has been developped for ngspice using the XSpice s_xfer function.</p>
+<p>This technique has then been ilustrated with several examples starting with the simple passive 1<sup>st</sup>-order low-pass filter. Then a 1<sup>st</sup>-order active low-pass SC filter has been designed and simulated in LTSpice and ngspice. A 3<sup>rd</sup>-order active SC low-pass filter implementing a Chebyshev approximation has been designed and simulated with LTSpice and ngspice. Finally, a 3<sup>rd</sup>-order active SC low-pass filter implementing an elliptic approximation has been designed and simulated with LTSpice and ngspice. In this last example, the order for the time delay model had to be reduced from 5 to 4 in order for ngspice to find the correct DC operating point. All the simulated results agree perfectly with the theoretical transfer functions demonstrating the validity of the approach. It is important to recall that this approach is limited to AC simulations only.</p>
+<p>Of course SC circuits can be simulated in more advanced simulators like Cadence Spectre, but this simple technique allows to quickly verifiy the design without the need to run an complex simulator.</p>
+</section>
+<section id="references" class="level1 unnumbered" data-number="10">
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">10 References</h2><div id="refs" class="references csl-bib-body" data-entry-spacing="0" role="list">
+<div id="ref-bib:ltspice:2025" class="csl-entry" role="listitem">
+<div class="csl-left-margin">[1] </div><div class="csl-right-inline">Analog Devices, <span>“<span>LTSpice</span>.”</span> <a href="https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html" class="uri">https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html</a>, 2025.</div>
+</div>
+<div id="ref-bib:ngspice:2024" class="csl-entry" role="listitem">
+<div class="csl-left-margin">[2] </div><div class="csl-right-inline">Holger Vogt, Giles Atkinson, Paolo Nenzi, <span>“<span class="nocase">Ngspice User’s Manual Version 43</span>.”</span> <a href="https://ngspice.sourceforge.io/docs/ngspice-43-manual.pdf" class="uri">https://ngspice.sourceforge.io/docs/ngspice-43-manual.pdf</a>, 2024.</div>
+</div>
+<div id="ref-bib:biolek:wseas:2007" class="csl-entry" role="listitem">
+<div class="csl-left-margin">[3] </div><div class="csl-right-inline">D. Biolek, V. Biolkova, and Z. Kolka, <span>“<span class="nocase">AC Analysis of Idealized Switched-Capacitor Circuits in Spice-Compatible Programs</span>,”</span> in <em>Proceedings of the 11th WSEAS international conference on circuits</em>, <a href="https://www.wseas.us/e-library/conferences/2007cscc/papers/561-533.pdf" class="uri">https://www.wseas.us/e-library/conferences/2007cscc/papers/561-533.pdf</a>, 2007, pp. 223–227.</div>
+</div>
+<div id="ref-bib:biolek:wseas:2008" class="csl-entry" role="listitem">
+<div class="csl-left-margin">[4] </div><div class="csl-right-inline">D. Biolek, V. Biolkova, and Z. Kolka, <span>“<span class="nocase">AC Analysis of Real Circuits with External Switching in PSpice</span>,”</span> in <em>Proceedings of the 12th WSEAS international conference on circuits</em>, <a href="https://www.wseas.us/e-library/conferences/2007cscc/papers/561-533.pdf" class="uri">https://www.wseas.us/e-library/conferences/2007cscc/papers/561-533.pdf</a>, 2008, pp. 193–196.</div>
+</div>
+<div id="ref-bib:pekar:wseas:2008" class="csl-entry" role="listitem">
+<div class="csl-left-margin">[5] </div><div class="csl-right-inline">L. Pekar and E. Kureckova, <span>“<span class="nocase">Rational Approximations for Time-Delay Systems: Case Studies</span>,”</span> in <em>Proceedings of the 13th WSEAS international conference on mathematical and computational methods in science and engineering</em>, <a href="https://www.researchgate.net/publication/262392699_Rational_approximations_for_time-delay_systems_case_studies" class="uri">https://www.researchgate.net/publication/262392699_Rational_approximations_for_time-delay_systems_case_studies</a>, 2011, pp. 217–222.</div>
+</div>
+</div></section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a></div></div></section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

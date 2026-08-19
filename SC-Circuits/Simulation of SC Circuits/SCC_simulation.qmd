@@ -1,0 +1,2781 @@
+---
+title: The Simulation of Switched Capacitor Circuits
+subtitle: Using Spice AC Simulation (Version 2)
+author: Christian Enz (christian.enz@epfl.ch)
+affiliation: EPFL
+date: 08/09/2026
+date-modified: last-modified
+date-format: "DD.MM.YYYY"
+license: CC BY-NC-SA
+abstract: |
+  This notebook presents how to simulate switched-capacitor (SC) circuits and particularly filters in the frequency domain with AC simulation using Spice simulators such as LTSpice or ngspice. 
+execute:
+  echo: false
+  warning: false
+toc: true
+number-sections: true
+number-depth: 4
+highlight-style: pygments
+bibliography: references.bib
+csl: ieee.csl
+code-links:
+  - text: Notebook code
+    icon: github
+    href: https://github.com/chrisenz/Analog-Circuit-Design/tree/main/SC-Circuits/Simulation%20of%20SC%20Circuits
+format: 
+  html:
+    include-in-header: mathjax.html
+    code-fold: true
+    html-math-method: mathjax
+    css: styles.css
+    default-image-extension: svg
+  pdf:
+    keep-tex: true
+    pdf-engine: pdflatex
+    documentclass: scrreprt
+    papersize: a4
+    default-image-extension: pdf
+    geometry:
+      - top=20mm
+      - bottom=20mm
+      - left=20mm
+      - right=20mm
+    include-in-header:
+      text: |
+        \usepackage{scrlayer-scrpage}
+        \usepackage{datetime2}
+        \DTMsetup{datesep=.}
+        \DTMsetstyle{ddmmyyyy}
+        \rohead[\thepage]{\thepage}
+        \cohead[The Simulation of Switched Capacitor Circuits]{The Simulation of Switched Capacitor Circuits}
+        \lofoot[$\copyright$ C. Enz under CC BY-NC-SA]{$\copyright$ C. Enz under CC BY-NC-SA}
+        \cofoot[]{}
+        \rofoot[\today]{\today}
+---
+
+```{python}
+# Initialization
+
+from functions import *
+from constants import *
+from PyLTSpice import SimRunner, SpiceEditor, RawRead
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import subprocess
+import shutil
+import os
+import os.path as op
+import sys
+sys.path.append(".")
+import re
+
+from IPython.display import Markdown
+from tabulate import tabulate
+
+plt.rcParams['svg.fonttype'] = 'none'
+plt.rcParams['pdf.fonttype'] = 42
+plt.rcParams['font.family'] = 'Arial'
+plt.rcParams['mathtext.fontset'] = 'custom'
+plt.rcParams['mathtext.rm'] = 'Arial'
+plt.rcParams['mathtext.it'] = 'Arial:italic'
+plt.rcParams['mathtext.bf'] = 'Arial:bold'
+
+inkscapePath = r"C:\\Program Files\\Inkscape\bin\\inkscape.exe"
+savePlotPath = "./Plots/"
+#savePlots=True
+savePlots=False
+
+lw=1
+curvelw=1
+msize=5
+textFontSize=9
+BodePlotParams = {'figure.figsize': (5,5)}
+pltStyle='plt_style_small.mplstyle'
+
+plt.style.use(pltStyle)
+
+#newSim=True
+newSim=False
+
+refloat=r'.*?([+-]?\d+([.]\d*)?([eE][+-]?\d+)?|[.]\d+([eE][+-]?\d+)?)'
+
+def saveFigures(savePath, plotName):
+#  print("Patience, saving plot!")
+  figFolder = savePath + r"\\{}.{}"
+  pngFile = figFolder.format(plotName,"png")
+  pdfFile = figFolder.format(plotName,"pdf")
+  svgFile = figFolder.format(plotName,"svg")
+  plt.savefig(pngFile, format="png", dpi=1200, bbox_inches="tight", transparent=True)
+  plt.savefig(pdfFile, format="pdf", dpi=1200, bbox_inches="tight", transparent=True)
+  plt.savefig(svgFile, format="svg", dpi=1200, bbox_inches="tight", transparent=True)
+  cmd_emf = '"{}" "{}\\{}.svg" --export-filename="{}\\{}.emf" --export-overwrite'.format(inkscapePath, savePath, plotName, savePath, plotName)
+#    cmd_emf = '"{}" "{}\{}.pdf" --export-filename="{}\{}.emf" --export-overwrite'.format(inkscapePath, savePath, plotName, savePath, plotName)
+#    cmd_pdf = '"{}" "{}\{}.svg" --export-filename="{}\{}.pdf" --export-overwrite'.format(inkscapePath, savePath, plotName, savePath, plotName)
+  subprocess.call(cmd_emf, shell=True)
+#    subprocess.call(cmd_pdf, shell=True)
+
+def diff(y, dx):
+    N=len(y)
+    dydx=np.zeros(N)
+    dydx[0]=(y[1]-y[0])/dx
+    dydx[1]=(y[2]-y[0])/(2*dx)
+    for k in range(2,N-2):
+        dydx[k]=(y[k-2]-8*y[k-1]+8*y[k+1]-y[k+2])/(12*dx)
+    dydx[N-2]=(y[N-1]-y[N-3])/(2*dx)
+    dydx[N-1]=(y[N-1]-y[N-2])/dx
+    return dydx
+```
+
+# Introduction
+This notebook presents how to simulate switched-capacitor (SC) circuits and particularly filters in the frequency domain with AC simulation using Spice simulator such as LTSpice @bib:ltspice:2025 or ngspice @bib:ngspice:2024. The following theory is based on @bib:biolek:wseas:2007 @bib:biolek:wseas:2008. Because SC circuits are not linear time invariant (non-LTI), they normally cannot be simulated in AC with a conventional Spice circuit simulator. However, we can use the special library that was developed by C. Enz for the AC simulation of SC circuit with two 50% duty-cycle non-overlapping clocks. This library basically simulates the circuits in phase $\Phi_1$ and $\Phi_2$ concurrently and then insures the charge conservation between the two circuits of phase $\Phi_1$ and phase $\Phi_2$.
+
+::: {.callout-note}
+The library for LTSpice includes symbols that can be used for schematic capture of SC circuits making the simulations of SC circuits straightforward.
+:::
+
+![Two switches controlled by two non-overlapping phases and the equivalent toggle switch.](Figures/Toggle_switch){width=40% #fig-Toggle_switch}
+
+We will focus on two phases SC circuits which operate with two non-overlapping phases $\Phi_1$ and $\Phi_2$ as shown in @fig-Toggle_switch. Phase $\Phi_1$ controls switch S<sub>1</sub>, whereas phase $\Phi_2$ controls switch S<sub>2</sub>. Switch S<sub>1</sub> is closed when phase $\Phi_1$ is high and switch S<sub>2</sub> is closed when phase $\Phi_2$ is high. Since phase $\Phi_1$ and $\Phi_2$ are non-overlapping, it means that switches S<sub>1</sub> and S<sub>2</sub> are never closed at the same time avoiding any short-circuit between the input and output. This means that they can be replaced by a toggle switch as shown in @fig-Toggle_switch.
+
+We start describing the technique used for AC simulation in Spice and illustrate it with the design of various filters.
+
+# Simulation of SC circuits with Spice
+## Continuous-time model of a switched-capacitor
+SC circuits are linear circuits but they are not time-invariant (LTI) because the circuit during one phase (say phase $\Phi_1$) is not the same than the circuit in other phases (say $\Phi_2$ for a two phases system). However, the circuit in each phase is LTI and can be simulated with Spice. The basic idea for a two non-overlapping phases SC circuit is to enter the netlist corresponding to each phase $\Phi_1$ and $\Phi_2$ and couple them with a special SC component that ensures the charge conservation between the two phases.
+
+Let's consider a SC as shown in the left figure of @fig-SC_model with the phases $\Phi_1$ and $\Phi_2$ shown on top where $T=1/f_s$ is the sampling period and $D$ the duty cycle which is usually equal to 1/2.
+
+![Switched-capacitor C and its equivalent continuous-time equivalent.](Figures/SC_model){width=60% #fig-SC_model}
+
+We can write the following charge conservation equations for capacitor $C$
+\begin{align}
+  \Delta Q_1((n+D)\,T) &= C \cdot [V_1((n+D)\,T^{-})-V_2(n\,T^{-})],\\
+  \Delta Q_2((n+1)\,T) &= C \cdot [V_2((n+1)\,T^{-})-V_1((n+D)\,T^{-})],
+\end{align}
+where $\Delta Q_1$ corresponds to the change of charge on capacitor $C$ between the end of phase $\Phi_1$ and $\Phi_2$ and $\Delta Q_2$ is the change of charge on capacitor $C$ between the end of phase $\Phi_2$ and $\Phi_1$. The above charge equations can be replaced by the average currents $\overline{I_1}$ and $\overline{I_2}$
+\begin{align}
+  \overline{I_1} &= \frac{C}{T} \cdot [V_1((n+D)\,T^{-})-V_2(n\,T^{-})],\\
+  \overline{I_2} &= \frac{C}{T} \cdot [V_2((n+1)\,T^{-})-V_1((n+D)\,T^{-})],
+\end{align}
+where the average currents $\overline{I_1}$ and $\overline{I_2}$ are defined by
+\begin{align}
+  \overline{I_1}((n+D)\,T) &= \frac{1}{T} \cdot \int_{n\,T}^{(n+D)\,T} i_c(t)\,dt = \frac{\Delta Q_1((n+D)\,T)}{T},\\
+  \overline{I_2}((n+1)\,T) &= \frac{1}{T} \cdot \int_{(n+D)\,T}^{(n+1)\,T} i_c(t)\,dt = \frac{\Delta Q_2((n+1)\,T)}{T}.
+\end{align}
+The currents can then be written in the $z$-domain as
+\begin{align}
+  \overline{I_1} &= \frac{C}{T} \cdot [V_1(z)-z^{-D}\,V_2(z)],\\
+  \overline{I_2} &= \frac{C}{T} \cdot [V_2(z)-z^{-(1-D)}\,V_1(z)].
+\end{align}
+The above equations can be modelled by the equivalent continuous-time circuit shown on the bottom right of @fig-SC_model where
+\begin{equation}
+  R_1 = R_2 = R_{eq} = \frac{T}{C}
+\end{equation}
+and
+\begin{align}
+  Y_{m1} &= G_{meq} \cdot e^{-s\,D\,T},\\
+  Y_{m2} &= G_{meq} \cdot e^{-s\,(1-D)\,T},
+\end{align}
+with
+\begin{equation}
+  G_{meq} = \frac{1}{R_{eq}.}
+\end{equation}
+
+The continuous-time equivalent is easy to implement in Spice using the Laplace instruction for implementing the time delays $e^{-s\,D\,T}$ and $e^{-s\,(1-D)\,T}$. This Laplace operator is available in LTSpice but unfortunately it is not available in ngspice. However, we can replace it by using the XSpice s_xfer element which allows implementing a transfer function given by a rational function in $s$ provided the order of the denominator is equal or larger than the order of the numerator.
+
+## LTSpice SC components library
+
+::: {#fig-ltspice_library layout-ncol=2 layout-nrow=2}
+
+![Floating switched capacitor.](Figures/LTSpice_library_cap){width=40% #fig-LTSpice_library_cap}
+
+![Grounded switched capacitor.](Figures/LTSpice_library_gnd_cap){width=30% #fig-LTSpice_library_gnd_cap}
+
+![Ideal switched OPAMP.](Figures/LTSpice_library_opamp){width=60% #fig-LTSpice_library_opamp}
+
+![Ideal switched OPAMP with grounded positive input.](Figures/LTSpice_library_gnd_opamp){width=60% #fig-LTSpice_library_gnd_opamp}
+
+LTSpice SC component library.
+:::
+
+I designed a LTSpice library including four components which symbols are illustrated in @fig-ltspice_library. The floating switched capacitor of @fig-LTSpice_library_cap calls a subcircuit in my LTSpice analog.lib library having the following code:
+```default
+* Switched capacitor
+* ------------------
+.subckt SC 1p1 2p1 1p2 2p2
+* Parameters:
+* C=1p
+* fs=1k
+* D=0.5
+.param Req={1/(fs*C)} Gmeq={1/Req}
+R1 1p1 2p1 {Req}
+G1 2p1 1p1 1p2 2p2 Laplace=Gmeq*exp(-s*D/fs)
+R2 1p2 2p2 {Req}
+G2 2p2 1p2 1p1 2p1 Laplace=Gmeq*exp(-s*(1-D)/fs)
+.ends SC
+```
+
+The gounded switched capacitor of @fig-LTSpice_library_gnd_cap uses the following subckt:
+```default
+* Switched capacitor with one grounded node
+* -----------------------------------------
+.subckt SCG 1p1 1p2 gnd
+* Parameters:
+* C=1p
+* fs=1k
+* D=0.5
+.param Req={1/(fs*C)} Gmeq={1/Req}
+R1 1p1 gnd {Req}
+G1 gnd 1p1 1p2 gnd Laplace=Gmeq*exp(-s*D/fs)
+R2 1p2 gnd {Req}
+G2 gnd 1p2 1p1 gnd Laplace=Gmeq*exp(-s*(1-D)/fs)
+.ends SCG
+```
+
+The OPAMPS need to be replaced by the switched OPAMP of @fig-LTSpice_library_opamp which call the following subckt:
+```default
+* Switched ideal OpAmp
+* --------------------
+.subckt SOPAMP in+p1 in-p1 outp1 in+p2 in-p2 outp2
+* Parameters:
+* Av=1E5
+E1 outp1 0 in+p1 in-p1 {Av}
+E2 outp2 0 in+p2 in-p2 {Av}
+.ends SOPAMP
+```
+In many single-ended SC circuits the OPAMP has its positive terminal connected to ground. These OPAMPs need to be replaced by corresponding switched OPAMP of @fig-LTSpice_library_gnd_opamp which uses the following subckt:
+```default
+* Switched ideal OpAmp with grounded positive input
+* -------------------------------------------------
+.subckt SOPAMPG in+ in-p1 outp1 in-p2 outp2
+* Parameters:
+* Av=1E5
+E1 outp1 0 in+ in-p1 {Av}
+E2 outp2 0 in+ in-p2 {Av}
+.ends SOPAMPG
+```
+The use of this library will be illustrated by many examples presented below.
+
+## Approximation of time delay in ngspice
+In the implementation of SC circuits with two non-overlapping phases for the simulation with LTSpice, we are using an ideal time delay $e^{-s \dot \Delta T}$ where $s$ is the Laplace variable, $\Delta T = D \cdot T$, with $T = 1/f_s$ the sampling period and $D$ is the duty cycle (often equal to $D=0.5$). This operator is available in LTSpice as $LAPLACE = exp(-s*D*T)$ but unfortunately it is not available in ngspice. We can however use the XSpice s_xfer model which describes the transfer function given by a rational function in $s$ with the order of the numerator $m$ smaller than the order of the denominator $n$. There are various ways to approximate a constant delay with a rational function in $s$. The one that gives the best results is the Pade approximation @bib:pekar:wseas:2008
+\begin{equation}
+  e^{-s \cdot \Delta T} \cong \frac{\sum_{k=0}^{m} p_k \cdot (s \cdot \Delta T)^k}{\sum_{k=0}^{n} q_k \cdot (s \cdot \Delta T)^k}
+\end{equation}
+The coefficients in the case $m=n$ are given by
+\begin{align}
+  q_k &= \frac{(2 n-k)!}{k!\,(n-k)!},\\
+  p_k &= (-1)^k \cdot q_k.
+\end{align}
+
+The corresponding transfer function of the ideal delay is
+\begin{equation}
+  H(\omega) = e^{-j\omega\,\Delta T}
+\end{equation}
+with a magnitude and phase given by
+\begin{align}
+  |H(\omega)| &= 1,\\
+  \Phi(\omega) &= arg(H(\omega)) = -\omega\,\Delta T.
+\end{align}
+
+An ideal delay can be characterized by a constant phase delay defined as
+\begin{equation}
+  \tau_{\Phi}(\omega) = - \frac{\Phi(\omega)}{\omega} = \Delta T
+\end{equation}
+or group delay
+\begin{equation}
+  \tau_{gd}(\omega) = - \frac{d\Phi(\omega)}{d\omega} = \Delta T
+\end{equation}
+
+We can evaluate the coefficients for an order $n=5$.
+
+```{python}
+#| label: tbl-delay_coefficients
+#| tbl-cap: Coefficients of $q[k]$ and $p[k]$ for $n=5$.
+
+from math import factorial as fact
+
+n=5
+q=np.zeros(n+1)
+p=np.zeros(n+1)
+for k in range(n+1):
+  q[k]=fact(2*n-k)/(fact(k)*fact(n-k))
+  p[k]=pow(-1,k)*q[k]
+
+#print(q)
+#print(p)
+
+table = [["0",f'{p[0]:.3e}',f'{q[0]:.3e}'],
+         ["1",f'{p[1]:.3e}',f'{q[1]:.3e}'],
+         ["2",f'{p[2]:.3e}',f'{q[2]:.3e}'],
+         ["3",f'{p[3]:.3e}',f'{q[3]:.3e}'],
+         ["4",f'{p[4]:.3e}',f'{q[4]:.3e}'],
+         ["5",f'{p[5]:.3e}',f'{q[5]:.3e}']
+         ]
+
+Markdown(tabulate(
+  table,
+  headers=["n","p[k]","q[k]"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center","center")
+))
+```
+
+The approximations up to order 5 are simulated in LTSpice and compared to the ideal delay also simulated with LTSpice. The results are presented in @fig-delay_ltspice.
+
+```{python}
+#| label: fig-delay_ltspice
+#| fig-cap: Comparison of the delay approximation to the ideal delay.
+
+if newSim:
+  LTC = SimRunner(output_folder='./Simulations/LTSpice/Delay')
+  LTC.create_netlist('./Simulations/LTSpice/Delay/Delay.asc')
+  netlist = SpiceEditor('./Simulations/LTSpice/Delay/Delay.net')
+  LTC.run(netlist)
+  LTC.wait_completion()
+
+raw = RawRead('./Simulations/LTSpice/Delay/Delay.raw')   # Read the RAW file contents from disk
+
+#print(raw.get_trace_names())            # Get and print a list of all the traces
+#print(raw.get_raw_property())           # Print all the properties found in the Header section
+
+flt = np.real(raw.get_axis())
+Npts=len(flt)
+fmin=flt[0]
+fmax=flt[Npts-1]
+df=flt[1]-flt[0]
+
+vout0 = raw.get_trace('V(out0)')
+H0magdBlt = 20*log(abs(vout0.get_wave()))
+Phi0radlt = np.unwrap(np.angle(vout0.get_wave()))
+Phi0deglt = Phi0radlt*180/pi
+H0pdlt = -Phi0radlt/(2*pi*flt)
+H0gdlt = -diff(Phi0radlt,df)/(2*pi)
+
+vout1 = raw.get_trace('V(out1)')
+H1magdBlt = 20*log(abs(vout1.get_wave()))
+Phi1radlt = np.unwrap(np.angle(vout1.get_wave()))
+Phi1deglt = Phi1radlt*180/pi
+H1pdlt = -Phi1radlt/(2*pi*flt)
+H1gdlt = -diff(Phi1radlt,df)/(2*pi)
+
+vout2 = raw.get_trace('V(out2)')
+H2magdBlt = 20*log(abs(vout2.get_wave()))
+Phi2radlt = np.unwrap(np.angle(vout2.get_wave()))
+Phi2deglt = Phi2radlt*180/pi
+H2pdlt = -Phi2radlt/(2*pi*flt)
+H2gdlt = -diff(Phi2radlt,df)/(2*pi)
+
+vout3 = raw.get_trace('V(out3)')
+H3magdBlt = 20*log(abs(vout3.get_wave()))
+Phi3radlt = np.unwrap(np.angle(vout3.get_wave()))
+Phi3deglt = Phi3radlt*180/pi
+H3pdlt = -Phi3radlt/(2*pi*flt)
+H3gdlt = -diff(Phi3radlt,df)/(2*pi)
+
+vout4 = raw.get_trace('V(out4)')
+H4magdBlt = 20*log(abs(vout4.get_wave()))
+Phi4radlt = np.unwrap(np.angle(vout4.get_wave()))
+Phi4deglt = Phi4radlt*180/pi
+H4pdlt = -Phi4radlt/(2*pi*flt)
+H4gdlt = -diff(Phi4radlt,df)/(2*pi)
+
+vout5 = raw.get_trace('V(out5)')
+H5magdBlt = 20*log(abs(vout5.get_wave()))
+Phi5radlt = np.unwrap(np.angle(vout5.get_wave()))
+Phi5deglt = Phi5radlt*180/pi
+H5pdlt = -Phi5radlt/(2*pi*flt)
+H5gdlt = -diff(Phi5radlt,df)/(2*pi)
+
+Ncurves=6
+colors=plt.cm.rainbow(np.linspace(0, 1, Ncurves))
+
+params = {'figure.figsize': (5,8)}
+plt.rcParams.update(params)
+    
+fig, axs = plt.subplots(4, sharex=True)
+
+axs[0].semilogx(flt, H0magdBlt, color=colors[0], label='ideal')
+axs[0].semilogx(flt, H1magdBlt, color=colors[1], label='1st-order')
+axs[0].semilogx(flt, H2magdBlt, color=colors[2], label='2nd-order')
+axs[0].semilogx(flt, H3magdBlt, color=colors[3], label='3rd-order')
+axs[0].semilogx(flt, H4magdBlt, color=colors[4], label='4th-order')
+axs[0].semilogx(flt, H5magdBlt, color=colors[5], label='5th-order')
+axs[0].set(ylabel='Magnitude [dB]', ylim=(-1,1))
+axs[0].legend(loc='lower left')
+
+axs[1].semilogx(flt, Phi0deglt, color=colors[0], label='ideal')
+axs[1].semilogx(flt, Phi1deglt, color=colors[1], label='1st-order')
+axs[1].semilogx(flt, Phi2deglt, color=colors[2], label='2nd-order')
+axs[1].semilogx(flt, Phi3deglt, color=colors[3], label='3rd-order')
+axs[1].semilogx(flt, Phi4deglt, color=colors[4], label='4th-order')
+axs[1].semilogx(flt, Phi5deglt, color=colors[5], label='5th-order')
+axs[1].set(ylabel='Phase [degree]', ylim=(-900,0))
+axs[1].legend(loc='lower left')
+
+axs[2].semilogx(flt, H0pdlt, color=colors[0], label='ideal')
+axs[2].semilogx(flt, H1pdlt, color=colors[1], label='1st-order')
+axs[2].semilogx(flt, H2pdlt, color=colors[2], label='2nd-order')
+axs[2].semilogx(flt, H3pdlt, color=colors[3], label='3rd-order')
+axs[2].semilogx(flt, H4pdlt, color=colors[4], label='4th-order')
+axs[2].semilogx(flt, H5pdlt, color=colors[5], label='5th-order')
+axs[2].set(ylabel='Phase delay [s]', ylim=(0,0.6))
+axs[2].legend(loc='lower left')
+
+axs[3].semilogx(flt, H0gdlt, color=colors[0], label='ideal')
+axs[3].semilogx(flt, H1gdlt, color=colors[1], label='1st-order')
+axs[3].semilogx(flt, H2gdlt, color=colors[2], label='2nd-order')
+axs[3].semilogx(flt, H3gdlt, color=colors[3], label='3rd-order')
+axs[3].semilogx(flt, H4gdlt, color=colors[4], label='4th-order')
+axs[3].semilogx(flt, H5gdlt, color=colors[5], label='5th-order')
+axs[3].set(xlabel='Frequency [Hz] (log)', xlim=(fmin,fmax))
+axs[3].set(ylabel='Group delay [s]', ylim=(0,12))
+axs[3].legend(loc='upper left')
+
+plt.subplots_adjust(hspace=0.1)
+#saveFigures(savePath, 'Chebyshev_TF')
+plt.show()
+```
+
+In the case of $D=0.5$, the phase delay is equal to 0.5. We see that the approximations progressively extends the phase delay to higher frequency. Since we usually are only interested on frequencies up to the Nyquist frequency $f_2/2$, we observe that a 3^rd^-order approximation should already be fine.
+
+We can simulate the delay block in ngspice using the s_xfer XSpice description. The simulation results are presented in @fig-ng_delay.
+
+```{python}
+#| label: fig-ng_delay
+#| fig-cap: Delay approximation with ngspice.
+
+fileName = "delay.ac"
+simulationPath = "./Simulations/ngspice/Delay/"
+simulationFile = simulationPath + fileName + ".cir"
+simulationLog = simulationPath + fileName + ".log"
+ngspiceDataFile = simulationPath + fileName + ".dat"
+
+if newSim:
+  result = subprocess.run("ngspice_con -b -o " + simulationLog + " " + simulationFile, shell=True, capture_output=True, text=True)
+
+df_sim=pd.read_table(ngspiceDataFile, sep=' +', engine='python')
+fng=df_sim['frequency'].to_numpy()
+H1magdBng=df_sim['H1magdB'].to_numpy()
+H1delayng=df_sim['H1delay'].to_numpy()
+H2magdBng=df_sim['H2magdB'].to_numpy()
+H2delayng=df_sim['H2delay'].to_numpy()
+H3magdBng=df_sim['H3magdB'].to_numpy()
+H3delayng=df_sim['H3delay'].to_numpy()
+H4magdBng=df_sim['H4magdB'].to_numpy()
+H4delayng=df_sim['H4delay'].to_numpy()
+H5magdBng=df_sim['H5magdB'].to_numpy()
+H5delayng=df_sim['H5delay'].to_numpy()
+Npts=len(fng)
+fmin=fng[0]
+fmax=fng[Npts-1]
+
+Ncurves=6
+colors=plt.cm.rainbow(np.linspace(0, 1, Ncurves))
+
+params = {'figure.figsize': (5,5)}
+plt.rcParams.update(params)
+    
+fig, axs = plt.subplots(2, sharex=True)
+lw=1.2
+
+axs[0].semilogx(flt, H0magdBlt, color=colors[0], label='ideal', marker='o', markersize=4, markevery=8)
+axs[0].semilogx(fng, H1magdBng, color=colors[1], label='1st-order')
+axs[0].semilogx(fng, H2magdBng, color=colors[2], label='2nd-order')
+axs[0].semilogx(fng, H3magdBng, color=colors[3], label='3rd-order')
+axs[0].semilogx(fng, H4magdBng, color=colors[4], label='4th-order')
+axs[0].semilogx(fng, H5magdBng, color=colors[5], label='5th-order')
+axs[0].set(xlim=(fmin,fmax), ylim=(-2,2), ylabel='Magnitude [dB]')
+#axs[0].set_yticks([-60,-40,-20,0,20,40,60,80])
+axs[0].legend(loc='lower left')
+
+axs[1].semilogx(flt, H0pdlt, color=colors[0], label='ideal', marker='o', markersize=4, markevery=8)
+axs[1].semilogx(fng, H1delayng, color=colors[1], label='1st-order')
+axs[1].semilogx(fng, H2delayng, color=colors[2], label='2nd-order')
+axs[1].semilogx(fng, H3delayng, color=colors[3], label='3rd-order')
+axs[1].semilogx(fng, H4delayng, color=colors[4], label='4th-order')
+axs[1].semilogx(fng, H5delayng, color=colors[5], label='5th-order')
+axs[1].set(xlim=(fmin,fmax), ylim=(0,0.6), xlabel='Frequency [Hz]', ylabel=r'Phase delay [s]')
+#axs[1].set_xticks([1e1,1e2,1e3,1e4,1e5,1e6,1e7,1e8])
+#axs[1].set_yticks([-180,-135,-90,-45,0])
+axs[1].legend(loc='best')
+plt.subplots_adjust(hspace=0.1)
+#saveFigures(savePath, 'open_loop_gain_response')
+plt.show()
+```
+
+# Example 1: First-order passive low-pass filter
+The simplest example is the implementation of a 1^st^-order passive RC low-pass filter as illustrated in the left schematic of @fig-Passive_RC.
+
+![Equivalence between 1^st^-order passive RC and SC filter.](Figures/Passive_RC){width=70% #fig-Passive_RC}
+
+The transfer function of the continuous-time passive RC filter is given by
+\begin{equation}
+  H_a(s) = \frac{1}{1+s\,\tau} = \frac{1}{1+s/\omega_c}
+\end{equation}
+with $\tau=1/\omega_c=R\,C$. The SC equivalent filter is shown on the right of @fig-Passive_RC where
+\begin{equation}
+  C_R = \alpha \cdot C
+\end{equation}
+with
+\begin{equation}
+  \alpha = \frac{\omega_c}{f_s} = 2\pi \, \frac{f_c}{f_s},
+\end{equation}
+where $f_s$ is the sampling frequency.
+
+![Phases and signals for the analysis of the passive SC filter.](Figures/Passive_RC_phases){width=50% #fig-Passive_RC_phases}
+
+Assuming that the output voltage during phase $\Phi_2$ settles to its final value at the end of phase $\Phi_2$, we can write the charge conservation equation between the end of phase $\Phi_2$, i.e. time $t=nT$, and the end of phase $\Phi_1$. i.e. time $(n-1/2)T$ as
+\begin{equation}
+  (C+C_R)\,V_{out}(nT) = C_R\,V_{in}((n-1/2)T) + C\,V_{out}((n-1/2)T).
+\end{equation}
+Assuming that the input and output voltages change only once per period as shown in @fig-Passive_RC_phases, we have
+\begin{align}
+  V_{in}((n-1/2)T) &= V_{in}((n-1)T),\\
+  V_{out}((n-1/2)T) &= V_{out}((n-1)T).
+\end{align}
+The above difference equation becomes
+\begin{equation}
+  (C+C_R)\,V_{out}(nT) = C_R\,V_{in}((n-1)T) + C\,V_{out}((n-1)T),
+\end{equation}
+Taking the $z$-transform leads to
+\begin{equation}
+  (C+C_R)\,V_{out}(z) = z^{-1}\,[C_R\,V_{in}(z) + C\,V_{out}(z)]
+\end{equation}
+which can be solved to derive the $z$-transfer function of the passive SC filter
+\begin{equation}
+  H(z) = \frac{\alpha\,z^{-1}}{1+\alpha-z^{-1}} = \frac{\alpha}{(1+\alpha)\,z-1}
+\end{equation}
+with
+\begin{equation}
+  \alpha = \frac{C_R}{C}.
+\end{equation}
+
+As an example, we want to implement a 1^st^-order low-pass filter of @fig-Passive_RC with the parameters given in @tbl-first-order_passive_lpf_parameters.
+
+```{python}
+#| label: tbl-first-order_passive_lpf_parameters
+#| tbl-cap: Parameters for the 1^st^-order passive low-pass filter of @fig-Passive_RC.
+
+fc=1e3
+wc=2*pi*fc
+fs=100e3
+T=1/fs
+C2=1e-12
+alpha=wc*T
+C1=alpha*C2
+
+table = [["Cut-off frequency","$f_c$",f'{fc/1e3:.0f}',"$kHz$"],
+         ["Sampling frequency","$f_s$",f'{fs/1e3:.0f}',"$kHz$"],
+         ["Capacitance","$C$",f'{C2/1e-12:.0f}',"$pF$"],
+         ["Capacitance ratio","$\\alpha \\triangleq \\omega_c/f_s$",f'{alpha:.6f}',"-"],
+         ["Switched-capacitance","$C_R$",f'{C1/1e-15:.3f}',"$fF$"]
+         ]
+Markdown(tabulate(
+  table,
+  headers=["Specification","Symbol","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("left","center","center","center")
+))
+```
+
+```{python}
+#| label: fig-first-order_passive_lpf_tf
+#| fig-cap: Transfer function magnitude of the 1^st^-order passive low-pass filter of @fig-Passive_RC.
+
+def HRC(s,fc):
+    wc=2*pi*fc
+    num=1
+    den=(1+s/wc)
+    return num/den
+
+def HSC(z,alpha):
+    num=alpha
+    den=(1+alpha)*z-1
+    return num/den
+
+Npts=1001
+fminlin=0
+fmaxlin=100e3
+fthelin=np.linspace(fminlin,fmaxlin,Npts,endpoint=True)
+logfmin=1
+logfmax=5
+fminlog=pow(10,logfmin)
+fmaxlog=pow(10,logfmax)
+fthelog=np.logspace(logfmin,logfmax,Npts,endpoint=True,base=10.0)
+HRCthelin=np.zeros(Npts,dtype=complex)
+HRCdBthelin=np.zeros(Npts)
+HSCthelin=np.zeros(Npts,dtype=complex)
+HSCdBthelin=np.zeros(Npts)
+HRCthelog=np.zeros(Npts,dtype=complex)
+HRCdBthelog=np.zeros(Npts)
+HSCthelog=np.zeros(Npts,dtype=complex)
+HSCdBthelog=np.zeros(Npts)
+
+for k in range(0,Npts):
+    jw=1j*2*pi*fthelin[k]
+    HRCthelin[k]=HRC(jw,fc)
+    HRCdBthelin[k]=20*log(abs(HRCthelin[k]))
+    jwT=jw*T
+    z=exp(jwT)
+    HSCthelin[k]=HSC(z,alpha)
+    HSCdBthelin[k]=20*log(abs(HSCthelin[k]))
+
+for k in range(0,Npts):
+    jw=1j*2*pi*fthelog[k]
+    HRCthelog[k]=HRC(jw,fc)
+    HRCdBthelog[k]=20*log(abs(HRCthelog[k]))
+    jwT=jw*T
+    z=exp(jwT)
+    HSCthelog[k]=HSC(z,alpha)
+    HSCdBthelog[k]=20*log(abs(HSCthelog[k]))
+
+lw=1.2
+params = {'figure.figsize': (9,3)}
+plt.rcParams.update(params)
+    
+fig, axs = plt.subplots(1,2)
+
+axs[0].plot(fthelin/1e3, HRCdBthelin, 'b-', label='Continuous-time')
+axs[0].plot(fthelin/1e3, HSCdBthelin, 'r-', label='Switched-capacitor')
+axs[0].set(xlabel='Frequency [kHz] (lin)', xlim=(fminlin/1e3,fmaxlin/1e3), xticks=range(0,110,10))
+axs[0].set(ylabel='$|H(f)|$ [dB]', ylim=(-40,5))
+axs[0].legend(loc='upper right')
+textstr = '\n'.join((
+    f'$f_c =$ {fc/1e3:.0f} kHz',
+    f'$f_s =$ {fs/1e3:.0f} kHz',
+    f'$C =$ {C2/1e-12:.0f} pF',
+    f'$\\alpha =$ {alpha:.6f}',
+    f'$C_R =$ {C1/1e-15:.3f} fF'))
+axs[0].text(0.5, 0.75, textstr, ha='center', va='top', transform=axs[0].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+
+axs[1].semilogx([fmin/1e3,fc/1e3],[-3,-3], 'k--', linewidth=lw)
+axs[1].semilogx([fc/1e3,fc/1e3],[-40,-3], 'k--', linewidth=lw)
+axs[1].semilogx(fthelog/1e3, HRCdBthelog, 'b-', label='Continuous-time')
+axs[1].semilogx(fthelog/1e3, HSCdBthelog, 'r-', label='Switched-capacitor')
+axs[1].set(xlabel='Frequency [kHz] (log)', xlim=(fminlog/1e3,fmaxlog/1e3))
+axs[1].set(ylabel='$|H(f))|$ [dB]', ylim=(-40,5))
+axs[1].legend(loc='lower left')
+axs[1].text(0.05, 0.3, textstr, ha='left', va='bottom', transform=axs[1].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+plt.subplots_adjust(wspace=0.25)
+#saveFigures(savePath, 'Chebyshev_TF')
+plt.show()
+```
+
+As expected, the magnitude of the transfer function shown in @fig-Passive_RC is periodic with a period $f_s =$ `{python} f'{fs/1e3:.0f}'` $kHz$. From @fig-Passive_RC, we see that the cut-off frequency of the SC filter is equal to that of the continuous-time (CT) filter. However, because of the sampled-data nature of the SC filter, the transfer function is periodic in $f_s$. The maximum attenuation is therefore only about $30\,dB$.
+
+## Simulations
+### LTSpice
+
+For the LTSpice simulations we can use the schematic shown in @fig-RC_LP.
+
+![LTSpice schematic.](Figures/RC_LP){width=50% #fig-RC_LP}
+
+::: {.callout-note}
+We may wonder why capacitor $C_2$ also needs to be modeled by a switched-capacitor in LTSpice despite the fact that it is not really switched. The reason is that we need to define two separate circuits, one that represents the circuit during phase $\Phi_1$ and the other for phase $\Phi_2$. We cannot have a schematic node, for example node 1 in the above circuit, that is common to the circuit of phase $\Phi_1$ and the circuit of phase $\Phi_2$. The two separate circuits are then coupled by the implementation of charge conservation between phase $\Phi_1$ and $\Phi_2$.
+:::
+
+We can now simulate the circuit in LTSpice with the same parameters as in @tbl-first-order_passive_lpf_parameters.
+
+```{python}
+#| label: fig-lt_1st_order_passive_lpf_lin
+#| fig-cap: Transfer function magnitude of the simulated 1^st^-order passive low-pass filter of @fig-RC_LP with linear x-axis.
+
+if newSim:
+  LTC = SimRunner(output_folder=f'./Simulations/LTSpice/LP Passive Filter/')
+  LTC.create_netlist(f'./Simulations/LTSpice/LP Passive Filter/LP_RC_lin.asc')
+  netlist = SpiceEditor(f'./Simulations/LTSpice/LP Passive Filter/LP_RC_lin.net')
+  LTC.run(netlist)
+  LTC.wait_completion()
+
+raw = RawRead(f'./Simulations/LTSpice/LP Passive Filter/LP_RC_lin_1.raw')   # Read the RAW file contents from disk
+
+voutct = raw.get_trace('V(outct)')
+voutsc = raw.get_trace('V(outsc)')
+
+fltlin = np.real(raw.get_axis())
+Npts=len(fltlin)
+fmin=0
+fmax=fltlin[Npts-1]
+HctmagdBltlin = 20*log(abs(voutct.get_wave()))
+HscmagdBltlin = 20*log(abs(voutsc.get_wave()))
+
+plt.style.use('plt_style_small.mplstyle')
+plt.plot(fthelin/1e3, HRCdBthelin,'bo', label='CT (theory)', markersize=4, markevery=20)
+plt.plot(fltlin/1e3, HctmagdBltlin,'b-', label='CT (simulation)')
+plt.plot(fthelin/1e3, HSCdBthelin,'ro', label='SC (theory)', markersize=4, markevery=20)
+plt.plot(fltlin/1e3, HscmagdBltlin,'r-', label='SC (simulation)')
+plt.xlabel('Frequency [kHz] (lin)')
+plt.xlim(fmin/1e3, fmax/1e3)
+plt.xticks(range(0,110,10))
+plt.ylabel('$|H(f)|$ [dB]')
+plt.ylim(-40, 0)
+#plt.yticks([1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,1e-4,1e-3])
+plt.legend(loc='upper center')
+textstr = '\n'.join((
+    f'$f_c =$ {fc/1e3:.0f} kHz',
+    f'$f_s =$ {fs/1e3:.0f} kHz',
+    f'$C_2 =$ {C2/1e-12:.0f} pF',
+    f'$\\alpha =$ {alpha:.6f}',
+    f'$C_1 =$ {C1/1e-15:.3f} fF'))
+plt.text(1.05, 0.5, textstr, ha='left', va='center', size=9, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+#saveFigures(savePath, 'CS_OL_ib_vs_IC_GBW_Adc_no_VS')
+plt.show()
+```
+
+With the linear x-axis in @fig-lt_1st_order_passive_lpf_lin, we can clearly see that the LTSpice AC simulation captures the sampled-data nature of the transfer function of the SC circuit which is now periodic with a period $f_s$. It then obviously deviates from the CT transfer function for frequencies above about $f_s/10$.
+
+We can now simulate and plot the same circuit but with a log scale to check whether the cut-off frequency is correct.
+
+```{python}
+#| label: fig-lt_1st_order_passive_lpf_log
+#| fig-cap: Transfer function magnitude of the simulated 1^st^-order low-pass filter of @fig-RC_LP with log x-axis.
+
+if newSim:
+  LTC = SimRunner(output_folder=f'./Simulations/LTSpice/LP Passive Filter/')
+  LTC.create_netlist(f'./Simulations/LTSpice/LP Passive Filter/LP_RC_log.asc')
+  netlist = SpiceEditor(f'./Simulations/LTSpice/LP Passive Filter/LP_RC_log.net')
+  LTC.run(netlist)
+  LTC.wait_completion()
+
+raw = RawRead(f'./Simulations/LTSpice/LP Passive Filter/LP_RC_log_1.raw')   # Read the RAW file contents from disk
+
+voutct = raw.get_trace('V(outct)')
+voutsc = raw.get_trace('V(outsc)')
+
+fltlog = np.real(raw.get_axis())
+Npts=len(fltlog)
+fminlog=fltlog[0]
+fmaxlog=fltlog[Npts-1]
+HctmagdBltlog = 20*log(abs(voutct.get_wave()))
+HscmagdBltlog = 20*log(abs(voutsc.get_wave()))
+
+plt.style.use('plt_style_small.mplstyle')
+plt.semilogx([fminlog/1e3,fmaxlog/1e3],[0,0],'k--', linewidth=lw)
+plt.semilogx([fminlog/1e3,fc/1e3],[-3,-3],'k--', linewidth=lw)
+plt.semilogx([fc/1e3,fc/1e3],[-40,-3],'k--', linewidth=lw)
+plt.semilogx(fthelog/1e3, HRCdBthelog,'bo', label='CT (theory)', markersize=4, markevery=20)
+plt.semilogx(fltlog/1e3, HctmagdBltlog,'b-', label='CT (simulation)')
+plt.semilogx(fthelog/1e3, HSCdBthelog,'ro', label='SC (theory)', markersize=4, markevery=20)
+plt.semilogx(fltlog/1e3, HscmagdBltlog,'r-', label='SC (simulation)')
+plt.xlabel('Frequency [kHz] (log)')
+plt.xlim(fminlog/1e3,fmaxlog/1e3)
+#plt.xticks(range(0,110,10))
+plt.ylabel('$|H(f)|$ [dB]')
+plt.ylim(-40,5)
+#plt.yticks([1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,1e-4,1e-3])
+plt.legend(loc='lower left')
+textstr = '\n'.join((
+    f'$f_c =$ {fc/1e3:.0f} kHz',
+    f'$f_s =$ {fs/1e3:.0f} kHz',
+    f'$C_2 =$ {C2/1e-12:.0f} pF',
+    f'$\\alpha =$ {alpha:.6f}',
+    f'$C_1 =$ {C1/1e-15:.3f} fF'))
+plt.text(1.05, 0.5, textstr, ha='left', va='center', size=9, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+#saveFigures(savePath, 'CS_OL_ib_vs_IC_GBW_Adc_no_VS')
+plt.show()
+```
+
+The results shown in @fig-lt_1st_order_passive_lpf_lin and @fig-lt_1st_order_passive_lpf_log show that the simulations perfectly match the theoretical results and that the cut-off frequency is correct and that the asymptotic slope of -20dB/dec above the cut-off frequency is correct as well, up to about $f_s/10$.
+
+We now will now simulate the circuit of @fig-RC_LP with the ngspice simulator.
+
+### ngspice
+We first have a look at the simulations with a linear scale for the frequency axis.
+
+```{python}
+#| label: fig-ng_1st_order_passive_lpf_ct_lin
+#| fig-cap: Transfer function magnitude of the simulated 1^st^-order low-pass filter compared to the passive $RC$ circuit with linear x-axis.
+
+fileName = "LP_RC_lin.ac"
+simulationPath = "./Simulations/ngspice/LP Passive Filter/"
+simulationFile = simulationPath + fileName + ".cir"
+simulationLog = simulationPath + fileName + ".log"
+ngspiceDataFile = simulationPath + fileName + ".dat"
+
+if newSim:
+  result = subprocess.run(f"""ngspice_con -b -o "{simulationLog}" "{simulationFile}" """, shell=True, capture_output=True, text=True)
+
+df_sim=pd.read_table(ngspiceDataFile, sep=' +', engine='python')
+fnglin=df_sim['frequency'].to_numpy()
+HctmagdBnglin=df_sim['HctmagdB'].to_numpy()
+HscmagdBnglin=df_sim['HscmagdB'].to_numpy()
+Npts=len(fnglin)
+fminlin=0
+fmaxlin=fnglin[Npts-1]
+
+plt.plot(fthelin/1e3, HRCdBthelin,'bo', label='CT (theory)', markersize=4, markevery=20)
+plt.plot(fnglin/1e3, HctmagdBnglin,'b-', label='CT (simulation)')
+plt.plot(fthelin/1e3, HSCdBthelin,'ro', label='SC (theory)', markersize=4, markevery=20)
+plt.plot(fnglin/1e3, HscmagdBnglin,'r-', label='SC (simulation)')
+plt.xlabel('Frequency [kHz] (lin)')
+plt.xlim(fminlin/1e3,fmaxlin/1e3)
+plt.xticks(range(0,110,10))
+plt.ylabel('$|H(f)|$ [dB]')
+plt.ylim(-40,5)
+#plt.yticks([1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,1e-4,1e-3])
+plt.legend(loc='upper center')
+textstr = '\n'.join((
+    f'$f_c =$ {fc/1e3:.0f} kHz',
+    f'$f_s =$ {fs/1e3:.0f} kHz',
+    f'$C_2 =$ {C2/1e-12:.0f} pF',
+    f'$\\alpha =$ {alpha:.6f}',
+    f'$C_1 =$ {C1/1e-15:.3f} fF'))
+plt.text(1.05, 0.5, textstr, ha='left', va='center', size=9, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+#saveFigures(savePath, 'CS_OL_ib_vs_IC_GBW_Adc_no_VS')
+plt.show()
+```
+
+From @fig-ng_1st_order_passive_lpf_ct_lin, we see that the ngspice simulation perfectly matches the theoretical data.
+
+We can check the effect of the various order for the delay model in ngspice.
+
+```{python}
+#| label: fig-ng_1st_order_passive_lpf_all
+#| fig-cap: ngspice transfer function magnitude simulation of the 1^st^-order passive low-pass filter with different delay approximation orders.
+
+fileName = "LP_RC_lin_all.ac"
+simulationPath = "./Simulations/ngspice/LP Passive Filter/"
+simulationFile = simulationPath + fileName + ".cir"
+simulationLog = simulationPath + fileName + ".log"
+ngspiceDataFile = simulationPath + fileName + ".dat"
+
+if newSim:
+  result = subprocess.run(f"""ngspice_con -b -o "{simulationLog}" "{simulationFile}" """, shell=True, capture_output=True, text=True)
+
+df_sim=pd.read_table(ngspiceDataFile, sep=' +', engine='python')
+fng=df_sim['frequency'].to_numpy()
+HctmagdBng=df_sim['HctmagdB'].to_numpy()
+Hsc1magdBng=df_sim['Hsc1magdB'].to_numpy()
+Hsc2magdBng=df_sim['Hsc2magdB'].to_numpy()
+Hsc3magdBng=df_sim['Hsc3magdB'].to_numpy()
+Hsc4magdBng=df_sim['Hsc4magdB'].to_numpy()
+Hsc5magdBng=df_sim['Hsc5magdB'].to_numpy()
+Npts=len(fng)
+fmin=0
+fmax=fng[Npts-1]
+
+Ncurves=6
+colors=plt.cm.rainbow(np.linspace(0, 1, Ncurves))
+
+plt.plot(fng/1e3, HctmagdBng, color=colors[0], label='CT')
+plt.plot(fng/1e3, Hsc1magdBng, color=colors[1], label='SC (1st-order)')
+plt.plot(fng/1e3, Hsc2magdBng, color=colors[2], label='SC (2nd-order)')
+plt.plot(fng/1e3, Hsc3magdBng, color=colors[3], label='SC (3rd-order)')
+plt.plot(fng/1e3, Hsc4magdBng, color=colors[4], label='SC (4st-order)')
+plt.plot(fng/1e3, Hsc5magdBng, color=colors[5], label='SC (5st-order)')
+plt.xlabel('Frequency [kHz] (lin)')
+plt.xlim(fmin/1e3,fmax/1e3)
+plt.ylabel('$|H(f)|$ [dB]')
+plt.ylim(-40,5)
+#plt.yticks([1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,1e-4,1e-3])
+#plt.legend(loc='lower left')
+plt.legend(loc='upper left', fontsize=9, bbox_to_anchor=(1, 0.5))
+textstr = '\n'.join((
+    f'$f_c =$ {fc/1e3:.0f} kHz',
+    f'$f_s =$ {fs/1e3:.0f} kHz',
+    f'$C_2 =$ {C2/1e-12:.0f} pF',
+    f'$\\alpha =$ {alpha:.6f}',
+    f'$C_1 =$ {C1/1e-15:.3f} fF'))
+plt.text(1.05, 0.95, textstr, ha='left', va='top', size=9, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+#saveFigures(savePath, 'CS_OL_ib_vs_IC_GBW_Adc_no_VS')
+plt.show()
+```
+
+We can observe in @fig-ng_1st_order_passive_lpf_all that the 1^st^-order delay model shows a large discrepancy and is therefore not sufficient. The 2^nd^-order delay model already does a good job up to the Nyquist frequency which is what we need. The 3^rd^-order and 4^st^-order delay models show discrepancy above $3f_s/2$. We will keep the 5^th^-order delay model since it does not penalize the simulation time.
+
+```{python}
+#| label: fig-ng_1st_order_passive_lpf_ct_log
+#| fig-cap: Transfer function magnitude of the simulated 1^st^-order low-pass filter compared to the passive $RC$ circuit with log x-axis.
+
+fileName = "LP_RC_log.ac"
+simulationPath = "./Simulations/ngspice/LP Passive Filter/"
+simulationFile = simulationPath + fileName + ".cir"
+simulationLog = simulationPath + fileName + ".log"
+ngspiceDataFile = simulationPath + fileName + ".dat"
+
+if newSim:
+  result = subprocess.run(f"""ngspice_con -b -o "{simulationLog}" "{simulationFile}" """, shell=True, capture_output=True, text=True)
+
+df_sim=pd.read_table(ngspiceDataFile, sep=' +', engine='python')
+fnglog=df_sim['frequency'].to_numpy()
+HctmagdBnglog=df_sim['HctmagdB'].to_numpy()
+HscmagdBnglog=df_sim['HscmagdB'].to_numpy()
+Npts=len(fnglog)
+fminlog=fnglog[0]
+fmaxlog=fnglog[Npts-1]
+
+plt.semilogx([fminlog/1e3,fmaxlog/1e3],[0,0],'k--', linewidth=lw)
+plt.semilogx([fminlog/1e3,fc/1e3],[-3,-3],'k--', linewidth=lw)
+plt.semilogx([fc/1e3,fc/1e3],[-40,-3],'k--', linewidth=lw)
+plt.semilogx(fthelog/1e3, HRCdBthelog,'bo', label='CT (theory)', markersize=4, markevery=20)
+plt.semilogx(fnglog/1e3, HctmagdBnglog,'b-', label='CT (simulation)')
+plt.semilogx(fthelog/1e3, HSCdBthelog,'ro', label='SC (theory)', markersize=4, markevery=20)
+plt.semilogx(fnglog/1e3, HscmagdBnglog,'r-', label='SC (simulation)')
+plt.xlabel('Frequency [kHz] (log)')
+plt.xlim(fminlog/1e3,fmaxlog/1e3)
+#plt.xticks(range(0,110,10))
+plt.ylabel('$|H(f)|$ [dB]')
+plt.ylim(-40,5)
+#plt.yticks([1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,1e-4,1e-3])
+plt.legend(loc='lower left')
+textstr = '\n'.join((
+    f'$f_c =$ {fc/1e3:.0f} kHz',
+    f'$f_s =$ {fs/1e3:.0f} kHz',
+    f'$C_2 =$ {C2/1e-12:.0f} pF',
+    f'$\\alpha =$ {alpha:.6f}',
+    f'$C_1 =$ {C1/1e-15:.3f} fF'))
+plt.text(1.05, 0.5, textstr, ha='left', va='center', size=9, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+#saveFigures(savePath, 'CS_OL_ib_vs_IC_GBW_Adc_no_VS')
+plt.show()
+
+```
+
+The plot of @fig-ng_1st_order_passive_lpf_ct_log shows that the ngspice simulation perfectly matches the theoretical result and that the cut-off frequency is correct and that the asymptotic slope of -20dB/dec above the cut-off frequency is correct as well, up to about $f_s/10$.
+
+We can now proceed with the simplest active SC filter, namely a 1^st^-order LP filter.
+
+# Example 2: First-order active low-pass filter
+The schematic of the general 1^st^-order SC section is shown in @fig-1st-order_schematic1.
+
+![1^st^-order LP filter with the zero inside the unit circle.](Figures/1st-order_schematic1){width=50% #fig-1st-order_schematic1}
+
+The $z$-transfer function is given by
+\begin{equation}
+  H(z) = -\frac{(\alpha_1 + \alpha_2)\,z - \alpha_1}{(1 + \alpha_3)\,z - 1}
+\end{equation}
+From the above $z$-transfer function, we observe that the zero $z_z = \alpha_1/(\alpha_1+\alpha_2) < 1$ is always inside the unit circle. The corresponding approximate $s$-domain transfer assuming $z \cong 1 + s\,T$ is given by
+\begin{equation}
+  H_a(s) \cong -K \cdot \frac{1 + s/\omega_z}{1 + s/\omega_p}
+\end{equation}
+The approximate design equations for $\omega_z\,T \ll 1$ and $\omega_p\,T \ll 1$ are given by
+\begin{align}
+  \alpha_1 &\cong K,\\
+  \alpha_2 &\cong K\,\omega_z\,T,\\
+  \alpha_3 &\cong \omega_p\,T.
+\end{align}
+
+With the circuit of @fig-1st-order_schematic1, we cannot disable the zero to implement a simple LP transfer function. Another 1^st^-order section having the zero outside the unit circle is shown in @fig-1st-order_schematic2.
+
+![1^st^-order LP filter with the zero outside the unit circle.](Figures/1st-order_schematic2){width=50% #fig-1st-order_schematic2}
+
+The $z$-transfer function is given by
+\begin{equation}
+  H(z) = -\frac{\alpha_1\,z - (\alpha_1 + \alpha_2)}{(1 + \alpha_3)\,z - 1}
+\end{equation}
+From the above $z$-transfer function, we observe that the zero $z_z = 1+\alpha_2/\alpha_1 > 1$ is now outside the unit circle. The corresponding approximate $s$-domain transfer assuming $z \cong 1 + s\,T$ is given by
+\begin{equation}
+  H_a(s) \cong K \cdot \frac{1 + s/\omega_z}{1 + s/\omega_p}
+\end{equation}
+The approximate design equations for $\omega_z\,T \ll 1$ and $\omega_p\,T \ll 1$ are given by
+\begin{align}
+  \alpha_1 &\cong K\,\frac{\omega_p\,T}{\omega_z\,T},\\
+  \alpha_2 &\cong K\,\omega_p\,T,\\
+  \alpha_3 &\cong \omega_p\,T.
+\end{align}
+
+A LP transfer function without zero can now be implemented  setting $\omega_z\,T \rightarrow \infty$ by choosing $\alpha_1 = 0$. If additionally the gain in the passband is unity $K = 1$, then $\alpha_2 = \alpha_3 = \alpha$ resulting in the schematic shown in @fig-1st-order_schematic3.
+
+![1^st^-order LP filter.](Figures/1st-order_schematic3){width=50% #fig-1st-order_schematic3}
+
+As an example, we want to implement a 1^st^-order LP filter with the parameters given in @tbl-first-order_active_lpf_parameters.
+
+```{python}
+#| label: tbl-first-order_active_lpf_parameters
+#| tbl-cap: Parameters for the 1^st^-order low-pass filter of @fig-1st-order_schematic3.
+
+K=1
+fc=1e3
+wc=2*pi*fc
+fck=200e3
+T=1/fck
+C=3.3e-12
+alpha=wc*T
+C2=alpha*C
+C3=alpha*C
+AdB=100
+A=pow(10,AdB/20)
+
+table = [["Scaling factor","$K$",f'{K:.0f}',"-"],
+         ["Cut-off frequency","$f_c$",f'{fc/1e3:.0f}',"$kHz$"],
+         ["Clock frequency","$f_{{ck}}$",f'{fck/1e3:.0f}',"$kHz$"],
+         ["Integrating capacitance","$C$",f'{C/1e-12:.1f}',"$pF$"],
+         ["Capacitance ratio","$\\alpha_2 = \\alpha_3 = \\alpha = \\omega_c\\,T$",f'{alpha:.6f}',"-"],
+         ["Switched-capacitance","$C_2 = \\alpha \\cdot C$",f'{C2/1e-15:.3f}',"$fF$"],
+         ["Switched-capacitance","$C_3 = \\alpha \\cdot C$",f'{C3/1e-15:.3f}',"$fF$"]
+         ]
+Markdown(tabulate(
+  table,
+  headers=["Specification","Symbol","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("left","center","center","center")
+))
+```
+
+```{python}
+#| label: fig-1st-order_active_lpf
+#| fig-cap: Theoretical transfer function of the 1^st^-order active low-pass filter of @fig-1st-order_schematic3.
+
+def Hsc1(z,alpha2,alpha3):
+    num=alpha2
+    den=(1+alpha3)*z-1
+    return num/den
+
+def Ha1(s,K,fc):
+    wc=2*pi*fc
+    num=K
+    den=(1+s/wc)
+    return num/den
+
+Npts=101
+logfmin=1
+logfmax=5
+fmin=pow(10,logfmin)
+fmax=pow(10,logfmax)
+fthe=np.logspace(logfmin,logfmax,Npts,endpoint=True,base=10.0)
+Hctthe=np.zeros(Npts,dtype=complex)
+HctdBthe=np.zeros(Npts)
+Hscthe=np.zeros(Npts,dtype=complex)
+HscdBthe=np.zeros(Npts)
+
+for k in range(0,Npts):
+    jw=1j*2*pi*fthe[k]
+    Hctthe[k]=Ha1(jw,K,fc)
+    HctdBthe[k]=20*log(abs(Hctthe[k]))
+    jwT=jw*T
+    z=exp(jwT)
+    Hscthe[k]=Hsc1(z,alpha,alpha)
+    HscdBthe[k]=20*log(abs(Hscthe[k]))
+
+plt.semilogx([fmin,fc], [-3,-3], 'k--', linewidth=lw)
+plt.semilogx([fc,fc], [-40,-3], 'k--', linewidth=lw)
+plt.semilogx(fthe, HctdBthe, 'b-', label='Continuous-time')
+plt.semilogx(fthe, HscdBthe,'ro-', label='Switched-capacitor', markersize=4, markevery=2)
+plt.xlabel('Frequency [Hz] (log)')
+plt.xlim(fmin,fmax)
+plt.ylabel('$|H(f)|$ [dB]')
+plt.ylim(-40,5)
+#plt.yticks([1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,1e-4,1e-3])
+plt.legend(loc='lower left')
+textstr = '\n'.join((
+    f'$f_c =$ {fc/1e3:.0f} kHz',
+    f'$f_{{ck}} =$ {fck/1e3:.0f} kHz',
+    f'$\\alpha_2 =$ {alpha:.6f}',
+    f'$\\alpha_3 =$ {alpha:.6f}'))
+plt.text(1.05, 0.5, textstr, ha='left', va='center', size=9, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+#saveFigures(savePath, 'CS_OL_ib_vs_IC_GBW_Adc_no_VS')
+plt.show()
+```
+
+## Simulations
+For the Spice simulation we will assume that the OPAMP have a DC gain $A =$ `{python} f'{AdB:.0f}'` and infinite bandwidth.
+
+### LTSpice
+The 1^st^-order LP SC filter of @fig-1st-order_schematic3 can be simulated in LTSpice using the dedicated library. The corresponding schematic is shown below.
+
+![Schematic of the 1^st^-order LP SC filter for LTSpice simulation.](Figures/SC_1st_order_LP_LTSpice){width=65% #fig-SC_1st_order_LP_LTSpice}
+
+Notice that the integrating capacitor $C$, which is actually not switched, is also modelled by a switched-capacitor (SC1 in the above schematic). As explained above, this is because the circuits during phase $\Phi_1$ and $\Phi_2$ need to be completely separated without any common nodes except the ground. We also need a special amplifier that has two different negative inputs and two different outputs, one for phase $\Phi_1$ and the other for phase $\Phi_2$.
+
+The simulation result is presented in @fig-lt_1st-order_active_lpf and compared to the theoretical transfer and the continuous-time (CT) equivalent. We see that the simulated transfer function perfectly matches the theoretical transfer function.
+
+```{python}
+#| label: fig-lt_1st-order_active_lpf
+#| fig-cap: Simulated transfer function of the active 1^st^-order low-pass SC filter of @fig-SC_1st_order_LP_LTSpice.
+
+if newSim:
+  LTC = SimRunner(output_folder=f'./Simulations/LTSpice/1st-order LP')
+  LTC.create_netlist(f'./Simulations/LTSpice/1st-order LP/SC_1st_order_LP.asc')
+  netlist = SpiceEditor(f'./Simulations/LTSpice/1st-order LP/SC_1st_order_LP.net')
+  LTC.run(netlist)
+  LTC.wait_completion()
+
+raw = RawRead(f'./Simulations/LTSpice/1st-order LP/SC_1st_order_LP_1.raw')   # Read the RAW file contents from disk
+
+vout1 = raw.get_trace('V(out1)')
+vout2 = raw.get_trace('V(out2)')
+
+flt = np.real(raw.get_axis())
+Npts=len(flt)
+fmin=flt[0]
+fmax=flt[Npts-1]
+Hph1magdBlt = 20*log(abs(vout1.get_wave()))
+Hph2magdBlt = 20*log(abs(vout2.get_wave()))
+
+plt.semilogx([fmin,fc], [-3,-3], 'k--', linewidth=lw)
+plt.semilogx([fc,fc], [-40,-3], 'k--', linewidth=lw)
+plt.semilogx(fthe, HctdBthe, 'b-', label='Theory (CT)')
+plt.semilogx(fthe, HscdBthe, 'r-', label='Theory (SC)')
+plt.semilogx(flt, Hph1magdBlt, 'ro', label='Simulation', markersize=4, markevery=8)
+#plt.semilogx(fltspice,Hph2magdBltspice,'b-', label='Simulation (phase 2)')
+plt.xlabel('Frequency [Hz] (log)')
+plt.xlim(fmin,fmax)
+plt.ylabel('$|H(f)|$ [dB]')
+plt.ylim(-40,5)
+#plt.yticks([1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,1e-4,1e-3])
+plt.legend(loc='lower left')
+textstr = '\n'.join((
+    f'$f_c =$ {fc/1e3:.0f} kHz',
+    f'$f_{{ck}} =$ {fck/1e3:.0f} kHz',
+    f'$\\alpha_2 =$ {alpha:.6f}',
+    f'$\\alpha_3 =$ {alpha:.6f}',
+    f'$C =$ {C/1e-12:.1f} pF',
+    f'$C_2 =$ {C2/1e-15:.0f} fF',
+    f'$C_3 =$ {C3/1e-15:.0f} fF'))
+plt.text(1.05, 0.5, textstr, ha='left', va='center', size=9, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+#saveFigures(savePath, 'CS_OL_ib_vs_IC_GBW_Adc_no_VS')
+plt.show()
+```
+
+We now will simulate the same circuit with ngspice.
+
+### ngspice
+We simulate the same circuit of @fig-SC_1st_order_LP_LTSpice with ngspice. The simulation result is presented in @fig-ng_1st-order_active_lpf and compared to the theoretical and CT equivalent transfer functions. We can observe that the simulated transfer function perfectly matches the theoretical transfer function.
+
+```{python}
+#| label: fig-ng_1st-order_active_lpf
+#| fig-cap: Simulated transfer function of the active 1^st^-order low-pass SC filter of @fig-SC_1st_order_LP_LTSpice.
+
+circuitName="SC_1st_order_LP"
+simtype = ".ac"
+fileName = circuitName + simtype
+simulationPath = "./Simulations/ngspice/1st-order LP/"
+simulationFile = simulationPath + fileName + ".cir"
+simulationLog = simulationPath + fileName + ".log"
+simulationData = simulationPath + fileName + ".dat"
+
+fmin=10
+fmax=1e5
+Ndec=100
+
+A=1e5
+order=5
+
+if newSim:
+  paramstr = '\n'.join((
+    f'.param A={A:.0e} fs={fck/1e3:.0f}k T={{1/fs}} D=0.5 DT={{D*T}} order={order:.0f}',
+    f'.param C={C/1e-12:.3f}p alpha={alpha:.6f} C2={{alpha*C}} C3={{alpha*C}}'
+  ))
+  # Write the transistors sizes and bias to the ngspice directory
+  with open(simulationPath + circuitName + ".par", 'w') as f:
+    f.write(paramstr)
+  simpar = '\n'.join((
+    f'.csparam fmin={fmin:.3e}',
+    f'.csparam fmax={fmax:.3e}',
+    f'.csparam Ndec={Ndec:.0f}'
+  ))
+  simparFile = simulationPath + "simulation.ac.par"
+  with open(simparFile, 'w') as f:
+    f.write(simpar)
+  #print('Starting NGSpice simulation...\n')
+  result = subprocess.run(f"""ngspice_con -b -o "{simulationLog}" "{simulationFile}" """, shell=True, capture_output=True, text=True)
+
+fileName = "SC_1st_order_LP.ac"
+simulationPath = "./Simulations/ngspice/1st-order LP/"
+simulationFile = simulationPath + fileName + ".cir"
+simulationLog = simulationPath + fileName + ".log"
+ngspiceDataFile = simulationPath + fileName + ".dat"
+
+if newSim:
+  result = subprocess.run(f"""ngspice_con -b -o "{simulationLog}" "{simulationFile}" """, shell=True, capture_output=True, text=True)
+
+df_sim=pd.read_table(ngspiceDataFile, sep=' +', engine='python')
+fng=df_sim['frequency'].to_numpy()
+Hph1magdBng=df_sim['Hph1magdB'].to_numpy()
+Hph2magdBng=df_sim['Hph2magdB'].to_numpy()
+Npts=len(fng)
+fmin=fng[0]
+fmax=fng[Npts-1]
+
+plt.semilogx([fmin,fc], [-3,-3], 'k--', linewidth=lw)
+plt.semilogx([fc,fc], [-40,-3], 'k--', linewidth=lw)
+plt.semilogx(fthe, HctdBthe, 'b-', label='Theory (CT)')
+plt.semilogx(fthe, HscdBthe, 'r-', label='Theory (SC)')
+plt.semilogx(fng, Hph1magdBng, 'ro', label='Simulation', markersize=4, markevery=8)
+plt.xlabel('Frequency [Hz] (log)')
+plt.xlim(fmin,fmax)
+plt.ylabel('$|H(f)|$ [dB]')
+plt.ylim(-40,5)
+#plt.yticks([1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,1e-4,1e-3])
+plt.legend(loc='lower left')
+textstr = '\n'.join((
+    f'$f_c =$ {fc/1e3:.0f} kHz',
+    f'$f_{{ck}} =$ {fck/1e3:.0f} kHz',
+    f'$\\alpha_2 =$ {alpha:.6f}',
+    f'$\\alpha_3 =$ {alpha:.6f}',
+    f'$C =$ {C/1e-12:.1f} pF',
+    f'$C_2 =$ {C2/1e-15:.0f} fF',
+    f'$C_3 =$ {C3/1e-15:.0f} fF'))
+plt.text(1.05, 0.5, textstr, ha='left', va='center', size=9, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+#saveFigures(savePath, 'CS_OL_ib_vs_IC_GBW_Adc_no_VS')
+plt.show()
+```
+
+```{python}
+#| label: fig-1st-order_active_lpf_comp
+#| fig-cap: Simulated transfer function of the active 1^st^-order low-pass SC filter of @fig-SC_1st_order_LP_LTSpice.
+
+plt.semilogx([fmin,fc], [-3,-3], 'k--', linewidth=lw)
+plt.semilogx([fc,fc], [-40,-3], 'k--', linewidth=lw)
+plt.semilogx(flt, Hph1magdBlt,'ro', label='LTSpice', markersize=4, markevery=8)
+plt.semilogx(fng, Hph1magdBng,'b-', label='ngspice')
+plt.xlabel('Frequency [Hz] (log)')
+plt.xlim(fmin,fmax)
+plt.ylabel('$|H(f)|$ [dB]')
+plt.ylim(-40,5)
+#plt.yticks([1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,1e-4,1e-3])
+plt.legend(loc='lower left')
+textstr = '\n'.join((
+    f'$f_c =$ {fc/1e3:.0f} kHz',
+    f'$f_{{ck}} =$ {fck/1e3:.0f} kHz',
+    f'$\\alpha_2 =$ {alpha:.6f}',
+    f'$\\alpha_3 =$ {alpha:.6f}',
+    f'$C =$ {C/1e-12:.1f} pF',
+    f'$C_2 =$ {C2/1e-15:.0f} fF',
+    f'$C_3 =$ {C3/1e-15:.0f} fF'))
+plt.text(1.05, 0.5, textstr, ha='left', va='center', size=9, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+#saveFigures(savePath, 'CS_OL_ib_vs_IC_GBW_Adc_no_VS')
+plt.show()
+```
+
+As shown in @fig-1st-order_active_lpf_comp, the ngspice simulation results perfectly match the LTSpice results.
+
+# Example 3: Second-order active low-pass filter
+
+```{python}
+fc=20e3
+fck=2e6
+```
+
+![2^nd^-order LC ladder.](Figures/2nd-order_lc_ladder){width=40% #fig-2nd-order_lc_ladder}
+
+The next example is the simplest LC ladder filter shown in @fig-2nd-order_lc_ladder which includes only one inductor and one capacitor. In this case the load termination is infinite and therefore there is no $6\,dB$ loss to correct for. The LC ladder component values for implementing a Butterworth approximation with a $-3\,dB$ cut-off frequency at $f_c =$ `{python} f'{fc/1e3:.0f}'` $kHz$ are given in @tbl-2nd-order_lc_component_values.
+
+```{python}
+#| label: tbl-2nd-order_lc_component_values
+#| tbl-cap: Component values of the 3^rd^-order LC filter for implementing a Butterworth approximation.
+
+R=1
+L=5.627e-6
+C=11.25e-6
+
+table = [["$R$",f'{R:.0f}',"$\\Omega$"],
+         ["$L$",f'{L/1e-6:.6f}',"$\\mu H$"],
+         ["$C$",f'{C/1e-6:.6f}',"$\\mu F$"]
+         ]
+
+Markdown(tabulate(
+  table,
+  headers=["Symbol","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center","center")
+))
+```
+
+![2^nd^-order SC LP filter.](Figures/2nd-order_sc_lp_filter){width=40% #fig-2nd-order_sc_lp_filter}
+
+It can be shown that the transfer function can be implemented by the SC filter shown in @fig-2nd-order_sc_lp_filter. From charge conservation analysis, it can be shown that the theoretical transfer function is given by
+\begin{equation}
+  H_{SC}(z) = \frac{a_1\,z}{b_2\,z^2 + b_1\,z + b_0}
+\end{equation}
+with
+\begin{align}
+  a_1 &= \alpha_1\,\alpha_2,\\
+  b_0 &= 1,\\
+  b_1 &= \alpha_1\,\alpha_2-\alpha_1-2,\\
+  b_2 &= \alpha_1+1.
+\end{align}
+where
+\begin{align}
+  \alpha_1 &= \frac{1}{f_s\,\tau_1},\\
+  \alpha_2 &= \frac{1}{f_s\,\tau_2},
+\end{align}
+with
+\begin{align}
+  \tau_1 &= \frac{L}{R},\\
+  \tau_2 &= R \cdot C.
+\end{align}
+The integrators time constants and capacitance ratios for a clock frequency $f_{ck} =$ `{python} f'{fck/1e6:.0f}'` $MHz$ are given in @tbl-2nd-order_sc_cap_ratioes.
+
+```{python}
+#| label: tbl-2nd-order_sc_cap_ratioes
+#| tbl-cap: Capacitance ratios of the 2^nd^-order Butterworth LP filter of @fig-2nd-order_sc_lp_filter.
+
+tau1=L/R
+tau2=R*C
+
+T=1/fck
+alpha1=1/(tau1*fck)
+alpha2=1/(tau2*fck)
+
+table = [["$\\tau_1$",f'{tau1/1e-6:.6f}',"$\\mu s$"],
+         ["$\\tau_2$",f'{tau2/1e-6:.6f}',"$\\mu s$"],
+         ["$\\alpha_1$",f'{alpha1:.6f}',"-"],
+         ["$\\alpha_2$",f'{alpha2:.6f}',"-"]
+         ]
+
+Markdown(tabulate(
+  table,
+  headers=["Symbol","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center","center")
+))
+```
+
+The theroretical transfer function \eqref{eqn:sc_elliptic_tf} is compared to that of the LC passive filter in @fig-2nd-order_lp_theoretical_tf. We see a perfect agreement except at high frequency where we observe the deviation due to the sampled-data nature of the SC filter.
+
+```{python}
+#| label: fig-2nd-order_lp_theoretical_tf
+#| fig-cap: Theoretical transfer function magnitude of the 2^nd^-order active low-pass SC filter of @fig-2nd-order_sc_lp_filter.
+
+def Hlc5(s,tau1,tau2):
+  b0=1
+  b1=tau2
+  b2=tau1*tau2
+  den=b2*s**2+b1*s+b0
+  return 1/den
+
+def Hsc5(z,alpha1,alpha2):
+  a1=alpha1*alpha2
+  b0=1
+  b1=alpha1*alpha2-alpha1-2
+  b2=alpha1+1
+  num=a1*z
+  den=b2*z**2+b1*z+b0
+  return num/den
+
+Npts=1001
+logfmin=3
+logfmax=6
+fmin=pow(10,logfmin)
+fmax=pow(10,logfmax)
+fthe=np.logspace(logfmin,logfmax,Npts,endpoint=True,base=10.0)
+
+Hscthe=np.zeros(Npts,dtype=complex)
+HscdBthe=np.zeros(Npts)
+Hlcthe=np.zeros(Npts,dtype=complex)
+HlcdBthe=np.zeros(Npts)
+
+for k in range(0,Npts):
+  jw=1j*2*pi*fthe[k]
+  Hlcthe[k]=Hlc5(jw,tau1,tau2)
+  HlcdBthe[k]=20*log(abs(Hlcthe[k]))
+  jwT=1j*2*pi*fthe[k]*T
+  z=exp(jwT)
+  Hscthe[k]=Hsc5(z,alpha1,alpha2)
+  HscdBthe[k]=20*log(abs(Hscthe[k]))
+
+params = {'figure.figsize': (5,6)}
+plt.rcParams.update(params)
+    
+fig, axs = plt.subplots(2, sharex=True)
+
+axs[0].semilogx([0,fc], [-3,-3], 'k--', linewidth=lw)
+axs[0].semilogx([fc,fc], [-60,-3], 'k--', linewidth=lw)
+axs[0].semilogx(fthe,HscdBthe,'ro', markersize=4, markevery=15)
+axs[0].semilogx(fthe,HlcdBthe,'b-')
+axs[0].set(ylabel='$|H(f)|$ [dB]',ylim=(-60,10))
+
+axs[1].semilogx(fthe,HscdBthe,'ro', markersize=4, markevery=8)
+axs[1].semilogx(fthe,HlcdBthe,'b-')
+axs[1].set(xlabel='Frequency [Hz] (log)',xlim=(fmin,fmax))
+axs[1].set(ylabel='$|H(f)|$ [dB]',ylim=(-4,1))
+axs[1].semilogx([0,fc], [-3,-3], 'k--', linewidth=lw)
+axs[1].semilogx([fc,fc], [-4,1], 'k--', linewidth=lw)
+textstr1 = '\n'.join((
+  f'Butterworth',
+  f'$f_c =$ {fc/1e3:.0f} kHz',
+  f'$\\tau_1 =$ {tau1/1e-6:.3f} $\\mu s$',
+  f'$\\tau_2 =$ {tau2/1e-6:.3f} $\\mu s$',
+  f'$f_{{ck}} =$ {fck/1e6:.0f} MHz',
+  f'$\\alpha_1 =$ {alpha1:.6f}',
+  f'$\\alpha_2 =$ {alpha2:.6f}'))
+axs[1].text(0.7, 0.5, textstr1, ha='left', va='center', transform=axs[1].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+
+plt.subplots_adjust(hspace=0.1)
+#saveFigures(savePlotPath, '2nd-order_lp_theoretical_tf')
+plt.show()
+```
+
+We can now check the design by LTspice and ngspice simulations.
+
+## Simulations
+### LTSpice
+
+![Schematic of the 2^nd^-order LP SC filter used for LTSpice simulations](Figures/2nd-order_sc_lp_sim){width=60% #fig-2nd-order_sc_lp_sim}
+
+The 2^nd^-order SC Butterworth LP filter can be simulated in LTSpice using the schematic shown in @fig-2nd-order_sc_lp_sim. The simulation result are compared to the theoretical transfer function in @fig-lt_2nd-order_active_lpf. We see a perfect match even at high frequency.
+
+```{python}
+#| label: tbl-lt_2nd-order_active_lpf_cap_ratio
+#| tbl-cap: Component values of the 2^nd^-order active low-pass SC filter of @fig-2nd-order_sc_lp_sim.
+
+Adc=1e5
+AdcdB=20*log(Adc)
+C1=3.3e-12
+C2=C1
+
+table = [["$A$",f'{AdcdB:.0f}',"$dB$"],
+         ["$f_{{ck}}$",f'{fck/1e6:.0f}',"$MHz$"],
+         ["$C_1$",f'{C1/1e-12:.1f}',"$pF$"],
+         ["$C_2$",f'{C2/1e-12:.1f}',"$pF$"],
+         ["$\\alpha_1$",f'{alpha1:.6f}',"-"],
+         ["$\\alpha_2$",f'{alpha2:.6f}',"-"],
+         ["$C_{{11}}=\\alpha_1\\,C_1$",f'{alpha1*C1/1e-15:.0f}',"$fF$"],
+         ["$C_{{12}}=\\alpha_1\\,C_1$",f'{alpha1*C1/1e-15:.0f}',"$fF$"],
+         ["$C_2=\\alpha_2\\,C_2$",f'{alpha2*C2/1e-15:.0f}',"$fF$"],
+         ["$C_{{21}}=\\alpha_2\\,C_2$",f'{alpha2*C2/1e-15:.0f}',"$fF$"]
+         ]
+
+Markdown(tabulate(
+  table,
+  headers=["Symbol","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center","center")
+))
+```
+
+
+```{python}
+#| label: fig-lt_2nd-order_active_lpf
+#| fig-cap: Simulated transfer function of the active 3^rd^-order low-pass SC filter of .
+
+if newSim:
+  LTC = SimRunner(output_folder='./Simulations/LTSpice/2nd-order LP/')
+  LTC.create_netlist('./Simulations/LTSpice/2nd-order LP/2nd-order_LP.asc')
+  netlist = SpiceEditor('./Simulations/LTSpice/2nd-order LP/2nd-order_LP.net')
+  netlist.set_parameters(A=Adc, fs=fck, C1=C1, a1=alpha1, a2=alpha2)
+  LTC.run(netlist)
+  LTC.wait_completion()
+
+raw = RawRead('./Simulations/LTSpice/2nd-order LP/2nd-order_LP_1.raw')   # Read the RAW file contents from disk
+
+vout1 = raw.get_trace('V(out1)')
+vout2 = raw.get_trace('V(out2)')
+
+fsim = np.real(raw.get_axis())
+HscdBsim = 20*log(abs(vout1.get_wave()))
+
+params = {'figure.figsize': (5,6)}
+plt.rcParams.update(params)
+    
+fig, axs = plt.subplots(2, sharex=True)
+
+axs[0].semilogx([0,fc], [-3,-3], 'k--', linewidth=lw)
+axs[0].semilogx([fc,fc], [-60,-3], 'k--', linewidth=lw)
+axs[0].semilogx(fsim, HscdBsim, 'ro', label='Simulation', markersize=4, markevery=5)
+axs[0].semilogx(fthe, HscdBthe, 'b-', label='Theory')
+axs[0].set(ylabel='$|H(f)|$ [dB]',ylim=(-60,10))
+axs[0].legend(loc='lower left')
+
+axs[1].semilogx([0,fc], [-3,-3], 'k--', linewidth=lw)
+axs[1].semilogx([fc,fc], [-4,1], 'k--', linewidth=lw)
+axs[1].semilogx(fsim, HscdBsim, 'ro', label='Simulation', markersize=4, markevery=2)
+axs[1].semilogx(fthe, HscdBthe, 'b-', label='Theory')
+axs[1].set(xlabel='Frequency [Hz] (log)',xlim=(fmin,fmax))
+axs[1].set(ylabel='$|H(f)|$ [dB]',ylim=(-4,1))
+axs[1].legend(loc='center left')
+textstr1 = '\n'.join((
+  f'Butterworth',
+  f'$f_c =$ {fc/1e3:.0f} kHz',
+  f'$\\tau_1 =$ {tau1/1e-6:.3f} $\\mu s$',
+  f'$\\tau_2 =$ {tau2/1e-6:.3f} $\\mu s$',
+  f'$f_{{ck}} =$ {fck/1e6:.0f} MHz',
+  f'$\\alpha_1 =$ {alpha1:.6f}',
+  f'$\\alpha_2 =$ {alpha2:.6f}',
+  f'$C_1 =$ {C1/1e-12:.1f} pF',
+  f'$C_2 =$ {C1/1e-12:.1f} pF',
+   f'$A =$ {AdB:.0f} dB'))
+axs[1].text(0.7, 0.5, textstr1, ha='left', va='center', transform=axs[1].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+
+plt.subplots_adjust(hspace=0.1)
+#saveFigures(savePlotPath, '2nd-order_active_lpf_ltspice')
+plt.show()
+```
+
+
+### ngspice
+The ngspice simulation is performed with the same circuit as the LTSpice circuit of @fig-2nd-order_sc_lp_sim with the same component values as in @tbl-lt_3rd-order_active_lpf_cap_ratio. The ngspice simulation result is presented in @fig-ng_2nd-order_sc_lpf. Similarly to the LTSpice, we see a perfect match between the simulated and the theoretical transfer functions.
+
+
+```{python}
+#| label: tbl-ng_2nd-order_active_lpf_cap_ratio
+#| tbl-cap: Component values of the 2^nd^-order active low-pass SC filter of @fig-2nd-order_sc_lp_sim.
+
+Adc=10
+AdcdB=20*log(Adc)
+C1=3.3e-12
+C2=C1
+
+table = [["$A$",f'{AdcdB:.0f}',"$dB$"],
+         ["$f_{{ck}}$",f'{fck/1e6:.0f}',"$MHz$"],
+         ["$C_1$",f'{C1/1e-12:.1f}',"$pF$"],
+         ["$C_2$",f'{C2/1e-12:.1f}',"$pF$"],
+         ["$\\alpha_1$",f'{alpha1:.6f}',"-"],
+         ["$\\alpha_2$",f'{alpha2:.6f}',"-"],
+         ["$C_{{11}}=\\alpha_1\\,C_1$",f'{alpha1*C1/1e-15:.0f}',"$fF$"],
+         ["$C_{{12}}=\\alpha_1\\,C_1$",f'{alpha1*C1/1e-15:.0f}',"$fF$"],
+         ["$C_2=\\alpha_2\\,C_2$",f'{alpha2*C2/1e-15:.0f}',"$fF$"],
+         ["$C_{{21}}=\\alpha_2\\,C_2$",f'{alpha2*C2/1e-15:.0f}',"$fF$"]
+         ]
+
+Markdown(tabulate(
+  table,
+  headers=["Symbol","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center","center")
+))
+```
+
+```{python}
+#| label: fig-ng_2nd-order_sc_lpf
+#| fig-cap: Simulated transfer function of the active 2^nd^-order low-pass SC filter of @fig-2nd-order_sc_lp_sim.
+
+circuitName="SC_2nd_order_LP"
+simtype = ".ac"
+fileName = circuitName + simtype
+simulationPath = "./Simulations/ngspice/2nd-order LP/"
+simulationFile = simulationPath + fileName + ".cir"
+simulationLog = simulationPath + fileName + ".log"
+simulationData = simulationPath + fileName + ".dat"
+
+fmin=1e3
+fmax=1e6
+Ndec=100
+
+Adc=1e5
+order=5
+
+if newSim:
+  paramstr = '\n'.join((
+    f'.param A={Adc:.0e} fs={fck/1e6:.0f}MEG T={{1/fs}} D=0.5 DT={{D*T}} order={order:.0f}',
+    f'.param alpha1={alpha1:.6f} alpha2={alpha2:.6f}',
+    f'.param C1={C1/1e-12:.3f}p C11={{alpha1*C1}} C12={{alpha1*C1}}',
+    f'.param C2={{C1}} C21={{alpha2*C2}}'
+  ))
+  # Write the transistors sizes and bias to the ngspice directory
+  with open(simulationPath + circuitName + ".par", 'w') as f:
+    f.write(paramstr)
+  simpar = '\n'.join((
+    f'.csparam fmin={fmin:.3e}',
+    f'.csparam fmax={fmax:.3e}',
+    f'.csparam Ndec={Ndec:.0f}'
+  ))
+  simparFile = simulationPath + "simulation.ac.par"
+  with open(simparFile, 'w') as f:
+    f.write(simpar)
+  #print('Starting NGSpice simulation...\n')
+  result = subprocess.run(f"""ngspice_con -b -o "{simulationLog}" "{simulationFile}" """, shell=True, capture_output=True, text=True)
+
+df_sim=pd.read_table(simulationData, sep=' +', engine='python')
+fsim=df_sim['frequency'].to_numpy()
+HscdBsim=df_sim['Hph1magdB'].to_numpy()
+Npts=len(fsim)
+fmin=fsim[0]
+fmax=fsim[Npts-1]
+
+params = {'figure.figsize': (5,6)}
+plt.rcParams.update(params)
+    
+fig, axs = plt.subplots(2, sharex=True)
+
+axs[0].semilogx([0,fc], [-3,-3], 'k--', linewidth=lw)
+axs[0].semilogx([fc,fc], [-60,-3], 'k--', linewidth=lw)
+axs[0].semilogx(fsim, HscdBsim, 'ro', label='Simulation', markersize=4, markevery=5)
+axs[0].semilogx(fthe, HscdBthe, 'b-', label='Theory')
+axs[0].set(ylabel='$|H(f)|$ [dB]',ylim=(-60,10))
+axs[0].legend(loc='lower left')
+
+axs[1].semilogx([0,fc], [-3,-3], 'k--', linewidth=lw)
+axs[1].semilogx([fc,fc], [-4,1], 'k--', linewidth=lw)
+axs[1].semilogx(fsim, HscdBsim, 'ro', label='Simulation', markersize=4, markevery=2)
+axs[1].semilogx(fthe, HscdBthe, 'b-', label='Theory')
+axs[1].set(xlabel='Frequency [Hz] (log)',xlim=(fmin,fmax))
+axs[1].set(ylabel='$|H(f)|$ [dB]',ylim=(-4,1))
+axs[1].legend(loc='center left')
+textstr1 = '\n'.join((
+  f'Butterworth',
+  f'$f_c =$ {fc/1e3:.0f} kHz',
+  f'$\\tau_1 =$ {tau1/1e-6:.3f} $\\mu s$',
+  f'$\\tau_2 =$ {tau2/1e-6:.3f} $\\mu s$',
+  f'$f_{{ck}} =$ {fck/1e6:.0f} MHz',
+  f'$\\alpha_1 =$ {alpha1:.6f}',
+  f'$\\alpha_2 =$ {alpha2:.6f}',
+  f'$C_1 =$ {C1/1e-12:.1f} pF',
+  f'$C_2 =$ {C1/1e-12:.1f} pF',
+   f'$A =$ {AdB:.0f} dB'))
+axs[1].text(0.7, 0.5, textstr1, ha='left', va='center', transform=axs[1].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+
+plt.subplots_adjust(hspace=0.1)
+#saveFigures(savePath, 'Chebyshev_TF')
+plt.show()
+```
+
+# Example 4: Third-order active low-pass filter
+The third example is the 3^rd^-order low-pass filter shown in @fig-SC_3rd_order_LPF.
+
+![Complete 3^rd^-order SC LP filter including the -6 dB DC gain correction.](Figures/SC_3rd_order_LPF){width=60% #fig-SC_3rd_order_LPF}
+
+From charge conservation analysis, it can be shown that the theoretical transfer function is given by
+\begin{equation}
+  H(z) = \frac{a_2\,z^2}{b_3\,z^3 + b_2\,z^2 + b_1\,z + b_0}
+\end{equation}
+with
+\begin{align}
+  a_2 &= (\alpha_{11}+\alpha_{12})\,\alpha_2\,\alpha_3,\\
+  b_0 &= -1,\\
+  b_1 &= 3+\alpha_{12}-\alpha_{11}\,\alpha_2+\alpha_3-\alpha_2\,\alpha_3,\\
+  b_2 &= -3-2\,\alpha_{12}+\alpha_{11}\,\alpha_2-2\alpha_3-\alpha_{12}\,\alpha_3+\alpha_2\,\alpha_3+\alpha_{11}\,\alpha_2\,\alpha_3+\alpha_{12}\,\alpha_2\,\alpha_3,\\
+  b_3 &= (1+\alpha_{12})(1+\alpha_3).
+\end{align}
+
+The specifications of the filter are given in @tbl-3rd-order_active_lpf_specs                                                                                                                      .
+
+```{python}
+#| label: tbl-3rd-order_active_lpf_specs
+#| tbl-cap: Specifications of the 3^rd^-order active low-pass filter.
+
+fp=20e3
+wp=2*pi*fp
+fs=120e3
+ws=2*pi*fs
+fck=2e6
+Gp=-1
+Gs=-40
+
+table = [["Cut-off frequency","$f_p$",f'{fp/1e3:.0f}',"$kHz$"],
+         ["Stop-band frequency","$f_s$",f'{fs/1e3:.0f}',"$kHz$"],
+         ["Clock frequency","$f_{{ck}}$",f'{fck/1e6:.0f}',"$MHz$"],
+         ["Pass-band gain","$G_p$",f'{Gp:.0f}',"$dB$"],
+         ["Stop-band gain","$G_s$",f'{Gs:.0f}',"$dB$"]
+         ]
+Markdown(tabulate(
+  table,
+  headers=["Specification","Symbol","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("left","center","center","center")
+))
+```
+
+The capacitance ratios for a Chebyshev approximation and a clock frequency $f_s =$ `{python} f'{fck/1e6:.0f}'` $MHz$ are given in @tbl-3rd-order_active_lpf_cap_ratio.
+
+```{python}
+#| label: tbl-3rd-order_active_lpf_cap_ratio
+#| tbl-cap: Capacitance ratioes of the 3^rd^-order active low-pass SC filter of @fig-SC_3rd_order_LPF.
+
+Ap=-Gp
+As=-Gs
+Omegas=fs/fp
+epsilon=sqrt(pow(10,Ap/10)-1)
+Nest=Nestimate(Omegas,Ap,As)
+N=int(np.ceil(Nest))
+h=pow(1/epsilon+sqrt(1+(1/epsilon)**2),1/N)
+xi=h-1/h
+
+Rterm='RS'
+# Rterm='RL
+#Rterm='test'
+X=np.zeros(N)
+Y=np.zeros(N)
+CL=np.zeros(N)
+
+for n in range(1,N+1):
+    CL[n-1]=(16*sin((2*n-1)/(2*N)*pi)*sin((2*n+1)/(2*N)*pi))/(xi**2+(2*sin(n/N*pi))**2)
+
+if Rterm=='RS':
+# Starting from RS
+    RS=1
+    X[0]=4*sin(pi/(2*N))/(xi*RS)
+    Y[N-1]=X[0]
+    for n in range(1,N):
+        X[n]=CL[n-1]/X[n-1]
+        Y[N-n-1]=X[n]
+    if np.mod(N,2)==0:
+        RL=xi*X[N-1]/(4*sin(pi/(2*N)))
+    else:
+        RL=4*sin(pi/(2*N))/(xi*X[N-1])
+# Starting from RL
+elif Rterm=='RL':
+    print('Starting from RL')
+    if np.mod(N,2)==0:
+        X[0]=4*RL*sin(pi/(2*N))/xi
+    else:
+        X[0]=4*sin(pi/(2*N))/(RL*xi)
+    Y[N-1]=X[0]
+    for n in range(1,N):
+        X[n]=CL[n-1]/X[n-1]
+        Y[N-n-1]=X[n]
+else:
+    print('Rterm should be set to RS if RS is known (starting from the source) or to RL if RL is known (starting from the load)')
+
+Cnorm=np.zeros(N)
+Lnorm=np.zeros(N)
+for n in range(0,N,2):
+    Cnorm[n]=X[n]
+
+for n in range(1,N,2):
+    Lnorm[n]=X[n]
+
+Rnorm=1
+tau1=Rnorm*Cnorm[0]/wp
+tau2=Lnorm[1]/(Rnorm*wp)
+tau3=Rnorm*Cnorm[2]/wp
+
+T=1/fck
+alpha11=1/(tau1*fck)
+alpha12=alpha11
+alpha2=1/(tau2*fck)
+alpha3=1/(tau1*fck)
+
+table = [["$\\tau_1$",f'{tau1/1e-6:.6f}',"$\\mu s$"],
+         ["$\\tau_2$",f'{tau2/1e-6:.6f}',"$\\mu s$"],
+         ["$\\tau_3$",f'{tau3/1e-6:.6f}',"$\\mu s$"],
+         ["$f_s$",f'{fck/1e6:.0f}',"$MHz$"],
+         ["$\\alpha_{{11}}$",f'{alpha11:.6f}',"-"],
+         ["$\\alpha_{{12}}$",f'{alpha12:.6f}',"-"],
+         ["$\\alpha_2$",f'{alpha2:.6f}',"-"],
+         ["$\\alpha_3$",f'{alpha3:.6f}',"-"]
+         ]
+
+Markdown(tabulate(
+  table,
+  headers=["Symbol","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center","center")
+))
+```
+
+The transfer function magnitude corresponding to the parameters given in @tbl-3rd-order_active_lpf_cap_ratio is shown in @fig-3rd-order_active_lpf_theoretical_tf.
+
+```{python}
+#| label: fig-3rd-order_active_lpf_theoretical_tf
+#| fig-cap: Theoretical transfer function magnitude of the 3^rd^-order active low-pass SC filter of @fig-SC_3rd_order_LPF.
+
+
+def Hsc(z,alpha11,alpha12,alpha2,alpha3):
+    b0=(alpha11+alpha12)*alpha2*alpha3
+    a0=-1
+    a1=3+alpha12+alpha3-alpha11*alpha2-alpha2*alpha3
+    a2=-3-2*alpha12-2*alpha3-alpha12*alpha3+alpha11*alpha2+alpha2*alpha3+alpha12*alpha2*alpha3+alpha11*alpha2*alpha3
+    a3=(1+alpha12)*(1+alpha3)
+    num=b0
+    den=a3*z**3+a2*z**2+a1*z+a0
+    return num/den
+
+Npts=1001
+logfmin=3
+logfmax=6
+fmin=pow(10,logfmin)
+fmax=pow(10,logfmax)
+fthe=np.logspace(logfmin,logfmax,Npts,endpoint=True,base=10.0)
+
+Hscthe=np.zeros(Npts,dtype=complex)
+HscdBthe=np.zeros(Npts)
+Tmagthe=np.zeros(Npts)
+TmagdBthe=np.zeros(Npts)
+
+for k in range(0,Npts):
+    jwT=1j*2*pi*fthe[k]*T
+    z=exp(jwT)
+    Hscthe[k]=Hsc(z,alpha11,alpha12,alpha2,alpha3)
+    HscdBthe[k]=20*log(abs(Hscthe[k]))
+    Omega=fthe[k]/fp
+    Tmagthe[k]=Tche(Omega,epsilon,N)
+    TmagdBthe[k]=20*log(Tmagthe[k])
+
+params = {'figure.figsize': (5,6)}
+plt.rcParams.update(params)
+    
+fig, axs = plt.subplots(2, sharex=True)
+
+axs[0].semilogx(fthe,HscdBthe,'ro', markersize=4, markevery=15)
+axs[0].semilogx(fthe,TmagdBthe,'b-')
+axs[0].set(ylabel='$|H(f)|$ [dB]',ylim=(-100,10))
+axs[0].add_patch(patches.Rectangle((fs, -40), 980000, 50, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[0].add_patch(patches.Rectangle((fmin, 0), 999000, 10, fill=True, color='0.9'))
+axs[0].add_patch(patches.Rectangle((fmin, -100), 19000, 99, fill=True, facecolor='0.9', edgecolor='0.7'))
+textstr1 = '\n'.join((
+    f'$f_p =$ {fp/1e3:.0f} kHz',
+    f'$f_s =$ {fs/1e3:.0f} kHz',
+    f'$G_p =$ {Gp:.0f} dB',
+    f'$G_s =$ {Gs:.0f} dB'))
+axs[0].text(0.03, 0.05, textstr1, ha='left', va='bottom', transform=axs[0].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+
+axs[1].semilogx(fthe,HscdBthe,'ro', markersize=4, markevery=8)
+axs[1].semilogx(fthe,TmagdBthe,'b-')
+axs[1].set(xlabel='Frequency [Hz] (log)',xlim=(fmin,fmax))
+axs[1].set(ylabel='$|H(f)|$ [dB]',ylim=(-4,1))
+axs[1].add_patch(patches.Rectangle((fs, -4), 980000, 5, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[1].add_patch(patches.Rectangle((fmin, 0), 999000, 1, fill=True, color='0.9')) 
+axs[1].add_patch(patches.Rectangle((fmin, -4), 19000, 3, fill=True, facecolor='0.9', edgecolor='0.7')) 
+
+plt.subplots_adjust(hspace=0.1)
+#saveFigures(savePlotPath, '3rd-order_active_lpf_theoretical_tf')
+plt.show()
+```
+
+## Simulations
+### LTSpice
+The LTSpice simulations are done with the schematic shown in @fig-SC_3rd_order_LPF_schematic with the capacitance values and capacitance ratios given in @tbl-lt_3rd-order_active_lpf_cap_ratio.
+
+![Schematic used for the LTSpice simulation.](Figures/SC_3rd_order_LPF_schematic){width=80% #fig-SC_3rd_order_LPF_schematic}
+
+The simulated magnitude of the transfer function is compared to the theoretical one in @fig-lt_3rd-order_active_lpf.
+
+```{python}
+#| label: tbl-lt_3rd-order_active_lpf_cap_ratio
+#| tbl-cap: Component values of the 3^rd^-order active low-pass SC filter of @fig-SC_3rd_order_LPF_schematic.
+
+A=1e5
+AdB=20*log(A)
+C1=3.3e-12
+C2=C1
+C3=C1
+
+table = [["$A$",f'{AdB:.0f}',"$dB$"],
+         ["$f_{{ck}}$",f'{fck/1e6:.0f}',"$MHz$"],
+         ["$\\alpha_{{11}}$",f'{alpha11:.6f}',"-"],
+         ["$\\alpha_{{12}}$",f'{alpha12:.6f}',"-"],
+         ["$\\alpha_2$",f'{alpha2:.6f}',"-"],
+         ["$\\alpha_3$",f'{alpha3:.6f}',"-"],
+         ["$C_1$",f'{C1/1e-12:.1f}',"$pF$"],
+         ["$C_2$",f'{C2/1e-12:.1f}',"$pF$"],
+         ["$C_3$",f'{C3/1e-12:.1f}',"$pF$"],
+         ["$C_{{11}}=\\alpha_{{11}}\\,C_1$",f'{alpha11*C1/1e-15:.0f}',"$fF$"],
+         ["$C_{{12}}=\\alpha_{{12}}\\,C_1$",f'{alpha12*C1/1e-15:.0f}',"$fF$"],
+         ["$C_{{22}}=\\alpha_2\\,C_2$",f'{alpha2*C2/1e-15:.0f}',"$fF$"],
+         ["$C_{{33}}=\\alpha_3\\,C_3$",f'{alpha3*C3/1e-15:.0f}',"$fF$"],
+         ]
+
+Markdown(tabulate(
+  table,
+  headers=["Symbol","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center","center")
+))
+```
+
+```{python}
+#| label: fig-lt_3rd-order_active_lpf
+#| fig-cap: Simulated transfer function of the active 3^rd^-order low-pass SC filter of @fig-SC_3rd_order_LPF_schematic.
+
+if newSim:
+  LTC = SimRunner(output_folder='./Simulations/LTSpice/3rd-order LP/')
+  LTC.create_netlist('./Simulations/LTSpice/3rd-order LP/SC_3rd_order_LPF.asc')
+  netlist = SpiceEditor('./Simulations/LTSpice/3rd-order LP/SC_3rd_order_LPF.net')
+  netlist.set_parameters(A=A, fs=fck, C1=C1, C2=C2, C3=C3, a11=alpha11, a12=alpha12, a2=alpha2, a3=alpha3)
+  LTC.run(netlist)
+  LTC.wait_completion()
+
+raw = RawRead('./Simulations/LTSpice/3rd-order LP/SC_3rd_order_LPF_1.raw')   # Read the RAW file contents from disk
+
+vout1 = raw.get_trace('V(out1)')
+vout2 = raw.get_trace('V(out2)')
+
+xdata = np.real(raw.get_axis())
+ydata = 20*log(abs(vout1.get_wave()))
+
+params = {'figure.figsize': (5,6)}
+plt.rcParams.update(params)
+    
+fig, axs = plt.subplots(2, sharex=True)
+
+axs[0].semilogx(xdata,ydata,'ro', label='Simulation', markersize=4, markevery=5)
+axs[0].semilogx(fthe,HscdBthe,'b-', label='Theory')
+axs[0].set(ylabel='$|H(f)|$ [dB]',ylim=(-100,10))
+axs[0].add_patch(patches.Rectangle((fs, -40), 980000, 50, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[0].add_patch(patches.Rectangle((fmin, 0), 999000, 10, fill=True, color='0.9'))
+axs[0].add_patch(patches.Rectangle((fmin, -100), 19000, 99, fill=True, facecolor='0.9', edgecolor='0.7'))
+textstr1 = '\n'.join((
+    f'$f_p =$ {fp/1e3:.0f} kHz',
+    f'$f_s =$ {fs/1e3:.0f} kHz',
+    f'$G_p =$ {Gp:.0f} dB',
+    f'$G_s =$ {Gs:.0f} dB'))
+axs[0].text(0.76, 0.93, textstr1, ha='left', va='top', transform=axs[0].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+axs[0].legend(loc='lower left')
+
+axs[1].semilogx(xdata,ydata,'ro', label='Simulation', markersize=4, markevery=2)
+axs[1].semilogx(fthe,HscdBthe,'b-', label='Theory')
+axs[1].set(xlabel='Frequency [Hz] (log)',xlim=(fmin,fmax))
+axs[1].set(ylabel='$|H(f)|$ [dB]',ylim=(-4,1))
+axs[1].add_patch(patches.Rectangle((fs, -4), 980000, 5, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[1].add_patch(patches.Rectangle((fmin, 0), 999000, 1, fill=True, color='0.9')) 
+axs[1].add_patch(patches.Rectangle((fmin, -4), 19000, 3, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[1].legend(loc='lower left')
+textstr2 = '\n'.join((
+    f'$f_{{ck}} =$ {fck/1e6:.0f} MHz',
+    f'$C_1 =$ {C1/1e-12:.1f} pF',
+    f'$C_2 =$ {C2/1e-12:.1f} pF',
+    f'$C_3 =$ {C3/1e-12:.1f} pF',
+    f'$\\alpha_{{11}} =$ {alpha11:.6f}',
+    f'$\\alpha_{{12}} =$ {alpha12:.6f}',
+    f'$\\alpha_2 =$ {alpha2:.6f}',
+    f'$\\alpha_3 =$ {alpha3:.6f}',
+    f'$A =$ {AdB:.0f} dB'))
+axs[1].text(0.75, 0.93, textstr2, ha='left', va='top', transform=axs[1].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+
+plt.subplots_adjust(hspace=0.1)
+#saveFigures(savePlotPath, '3rd-order_active_sc_lpf_ltspice')
+plt.show()
+```
+
+From @fig-lt_3rd-order_active_lpf, we see that the LTSpice simulation perfectly matches the theoretical transfer function.
+
+### ngspice
+The ngspice simulation is performed with the same circuit as the LTSpice circuit of @fig-SC_3rd_order_LPF_schematic with the same component values of @tbl-lt_3rd-order_active_lpf_cap_ratio. The ngspice simulation result is presented in @fig-ng_3rd-order_active_lpf. Similarly to the LTSpice, we see a perfect match between the simulated and the theoretical transfer functions.
+
+```{python}
+#| label: fig-ng_3rd-order_active_lpf
+#| fig-cap: Simulated transfer function of the active 3^rd^-order low-pass SC filter of @fig-SC_3rd_order_LPF_schematic.
+
+circuitName="SC_3rd_order_LP"
+simtype = ".ac"
+fileName = circuitName + simtype
+simulationPath = "./Simulations/ngspice/3rd-order LP/"
+simulationFile = simulationPath + fileName + ".cir"
+simulationLog = simulationPath + fileName + ".log"
+simulationData = simulationPath + fileName + ".dat"
+
+fmin=1e3
+fmax=1e6
+Ndec=100
+
+Adc=1e5
+order=4
+
+if newSim:
+  paramstr = '\n'.join((
+    f'.param A={Adc:.0e} fs={fck/1e6:.0f}MEG T={{1/fs}} D=0.5 DT={{D*T}} order={order:.0f}',
+    f'.param alpha11={alpha11:.6f} alpha12={alpha12:.6f} alpha2={alpha2:.6f} alpha3={alpha3:.6f}',
+    f'.param C1={C1/1e-12:.3f}p C11={{alpha11*C1}} C12={{alpha12*C1}}',
+    f'.param C2={{C1}} C22={{alpha2*C2}}',
+    f'.param C3={{C1}} C33={{alpha3*C3}}'
+  ))
+  # Write the transistors sizes and bias to the ngspice directory
+  with open(simulationPath + circuitName + ".par", 'w') as f:
+    f.write(paramstr)
+  simpar = '\n'.join((
+    f'.csparam fmin={fmin:.3e}',
+    f'.csparam fmax={fmax:.3e}',
+    f'.csparam Ndec={Ndec:.0f}'
+  ))
+  simparFile = simulationPath + "simulation.ac.par"
+  with open(simparFile, 'w') as f:
+    f.write(simpar)
+  #print('Starting NGSpice simulation...\n')
+  result = subprocess.run(f"""ngspice_con -b -o "{simulationLog}" "{simulationFile}" """, shell=True, capture_output=True, text=True)
+
+df_sim=pd.read_table(simulationData, sep=' +', engine='python')
+fsim=df_sim['frequency'].to_numpy()
+HscdBsim1=df_sim['Hph1magdB'].to_numpy()
+HscdBsim2=df_sim['Hph2magdB'].to_numpy()
+Npts=len(fsim)
+fmin=fsim[0]
+fmax=fsim[Npts-1]
+
+params = {'figure.figsize': (5,6)}
+plt.rcParams.update(params)
+    
+fig, axs = plt.subplots(2, sharex=True)
+
+axs[0].semilogx(fsim, HscdBsim1, 'ro', label='Simulation', markersize=4, markevery=5)
+axs[0].semilogx(fthe, HscdBthe, 'b-', label='Theory')
+axs[0].set(ylabel='$|H(f)|$ [dB]',ylim=(-100,10))
+axs[0].add_patch(patches.Rectangle((fs, -40), 980000, 50, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[0].add_patch(patches.Rectangle((fmin, 0), 999000, 10, fill=True, color='0.9'))
+axs[0].add_patch(patches.Rectangle((fmin, -100), 19000, 99, fill=True, facecolor='0.9', edgecolor='0.7'))
+textstr1 = '\n'.join((
+    f'$f_p =$ {fp/1e3:.0f} kHz',
+    f'$f_s =$ {fs/1e3:.0f} kHz',
+    f'$G_p =$ {Gp:.0f} dB',
+    f'$G_s =$ {Gs:.0f} dB'))
+axs[0].text(0.76, 0.93, textstr1, ha='left', va='top', transform=axs[0].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+axs[0].legend(loc='lower left')
+
+axs[1].semilogx(fsim, HscdBsim1, 'ro', label='Simulation', markersize=4, markevery=2)
+axs[1].semilogx(fthe, HscdBthe, 'b-', label='Theory')
+axs[1].set(xlabel='Frequency [Hz] (log)', xlim=(fmin,fmax))
+axs[1].set(ylabel='$|H(f)|$ [dB]',ylim=(-4,1))
+axs[1].add_patch(patches.Rectangle((fs, -4), 980000, 5, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[1].add_patch(patches.Rectangle((fmin, 0), 999000, 1, fill=True, color='0.9')) 
+axs[1].add_patch(patches.Rectangle((fmin, -4), 19000, 3, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[1].legend(loc='lower left')
+textstr2 = '\n'.join((
+    f'$f_{{ck}} =$ {fck/1e6:.0f} MHz',
+    f'$C_1 =$ {C1/1e-12:.1f} pF',
+    f'$C_2 =$ {C2/1e-12:.1f} pF',
+    f'$C_3 =$ {C3/1e-12:.1f} pF',
+    f'$\\alpha_{{11}} =$ {alpha11:.6f}',
+    f'$\\alpha_{{12}} =$ {alpha12:.6f}',
+    f'$\\alpha_2 =$ {alpha2:.6f}',
+    f'$\\alpha_3 =$ {alpha3:.6f}',
+    f'$A =$ {AdB:.0f} dB'))
+axs[1].text(0.75, 0.93, textstr2, ha='left', va='top', transform=axs[1].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+
+plt.subplots_adjust(hspace=0.1)
+#saveFigures(savePath, 'Chebyshev_TF')
+plt.show()
+
+```
+
+# Example 5: Third-order elliptic low-pass filter
+
+![LC 3^rd^-order elliptic LP filter.](Figures/LC_3rd_order_elliptic_LPF){width=40% #fig-LC_3rd_order_elliptic_LPF}
+
+The last example is a 3^rd^-order elliptic low-pass filter including transmission zeroes. It is based on the passive LC filter shown in @fig-LC_3rd_order_elliptic_LPF. The component values to satisfy the specifications given in @tbl-3rd-order_active_elliptic_specs are given in @tbl-3rd-order_lc_component_values.
+
+```{python}
+#| label: tbl-3rd-order_active_elliptic_specs
+#| tbl-cap: Specifications of the 3^rd^-order active low-pass ellicptic filter.
+
+fp=20e3
+wp=2*pi*fp
+fs=120e3
+ws=2*pi*fs
+fck=2e6
+Gp=-1
+Gs=-40
+
+table = [["Cut-off frequency","$f_p$",f'{fp/1e3:.0f}',"$kHz$"],
+         ["Stop-band frequency","$f_s$",f'{fs/1e3:.0f}',"$kHz$"],
+         ["Clock frequency","$f_{{ck}}$",f'{fck/1e6:.0f}',"$MHz$"],
+         ["Pass-band gain","$G_p$",f'{Gp:.0f}',"$dB$"],
+         ["Stop-band gain","$G_s$",f'{Gs:.0f}',"$dB$"]
+         ]
+Markdown(tabulate(
+  table,
+  headers=["Specification","Symbol","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("left","center","center","center")
+))
+```
+
+```{python}
+#| label: tbl-3rd-order_lc_component_values
+#| tbl-cap: Component values of the 3^rd^-order LC filter of @fig-LC_3rd_order_elliptic_LPF.
+
+Rlc1=1
+Clc1=15.19e-6
+Clc2=1.157e-6
+Clc3=15.19e-6
+Llc2=7.196e-6
+Rlc3=1
+
+table = [["$C_1$",f'{Clc1/1e-6:.6f}',"$\\mu F$"],
+         ["$C_2$",f'{Clc2/1e-6:.6f}',"$\\mu F$"],
+         ["$C_3$",f'{Clc3/1e-6:.6f}',"$\\mu F$"],
+         ["$L_2$",f'{Llc2/1e-6:.6f}',"$\\mu H$"],
+         ["$R_1$",f'{Rlc1:.0f}',"$\\Omega$"],
+         ["$R_3$",f'{Rlc1:.0f}',"$\\Omega$"]
+         ]
+
+Markdown(tabulate(
+  table,
+  headers=["Symbol","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center","center")
+))
+```
+
+It can be shown that the corresponding SC filter achieving the desired elliptic transfer function is obtained as shown in @fig-SC_3rd_order_elliptic_LPF. It is basically identical to the SC low-pass filter of @fig-SC_3rd_order_LPF to which the two additional non-switched capacitors $\beta_1\,C_1$ and $\beta_3\,C_3$ have been added to realize the transimission zero.
+
+![3^rd^-order SC elliptic LP filter.](Figures/SC_3rd_order_elliptic_LPF){width=80% #fig-SC_3rd_order_elliptic_LPF}
+
+From charge conservation analysis, it can be shown that the theoretical $z$-transfer function is given by
+\begin{equation}\label{eqn:sc_elliptic_tf}
+  H(z) = \frac{a_3\,z^3 + a_2\,z^2 + a_1\,z + a_0}{b_3\,z^3 + b_2\,z^2 + b_1\,z + b_0}
+\end{equation}
+with
+\begin{align}
+  a_0 &= 0,\\
+  a_1 &= \alpha_{13}\,\beta_3,\\
+  a_2 &= \alpha_{13}\,(\alpha_{21}\,\alpha_{31}-2\,\beta_3),\\
+  a_3 &= \alpha_{13}\,\beta_3,\\
+  b_0 &= 1-\beta_1\,\beta_3,\\
+  b_1 &= -3-\alpha_{12}+\alpha_{11}\,\alpha_{21}+\alpha_{22}\,\alpha_{31}-\alpha_{32}-\alpha_{21}\,\alpha_{31}\,\beta_1-\alpha_{11}\,\alpha_{22}\,\beta_3+3\,\beta_1\,\beta_3,\\
+  b_2 &= 3+2\,\alpha_{12}-\alpha_{11}\,\alpha_{21}-\alpha_{22}\,\alpha_{31}-\alpha_{12}\,\alpha_{22}\,\alpha_{31}\\
+  &+2\,\alpha_{32}+\alpha_{12}\,\alpha_{32}-\alpha_{11}\,\alpha_{21}\,\alpha_{32}+\alpha_{21}\,\alpha_{31}\,\beta_1+\alpha_{11}\alpha_{22}\,\beta_3-3\,\beta_1\,\beta_3,\\
+  b_3 &= -1-\alpha_{12}-\alpha_{32}-\alpha_{12}\,\alpha_{32}+\beta_1\,\beta_3.
+\end{align}
+where
+\begin{align}
+  \alpha_{11} &= \frac{1}{f_s\,\tau_1},\\
+  \alpha_{12} &= \alpha_{11},\\
+  \alpha_{13} &= 2\,\alpha_{11},\\
+  \alpha_{21} &= \frac{1}{f_s\,\tau_2},\\
+  \alpha_{22} &= \alpha_{21},\\
+  \alpha_{31} &= \frac{1}{f_s\,\tau_3},\\
+  \alpha_{32} &= \alpha_{31},\\
+  \beta_1 &= \frac{C_2}{C_2'},\\
+  \beta_3 &= \frac{C_2}{C_3'},
+\end{align}
+with
+\begin{align}
+  \tau_1 &= R_1 \cdot C_1',\\
+  \tau_2 &= \frac{L_2}{R_1},\\
+  \tau_3 &= R_1 \cdot C_3',
+\end{align}
+and
+\begin{align}
+  C_2' &= C_1 + C_2,\\
+  C_3' &= C_3 + C_2.
+\end{align}
+
+The SC filter capacitance ratios for achieving the specification of @tbl-3rd-order_active_elliptic_specs with a clock frequency $f_s =$ `{python} f'{fck/1e6:.0f}'` $MHz$ are given in @tbl-3rd-order_elliptic_sc_cap_ratioes. We can observe that the capacitance ratios are close but not equal to those of the 3^rd^-order SC low-pass filter without transmission zeroes given in @tbl-3rd-order_active_lpf_cap_ratio.
+
+```{python}
+#| label: tbl-3rd-order_elliptic_sc_cap_ratioes
+#| tbl-cap: Capacitance ratios of the 3^rd^-order SC elliptic filter of @fig-SC_3rd_order_elliptic_LPF.
+
+C1prime=Clc1+Clc2
+C3prime=Clc3+Clc2
+tau1=Rlc1*C1prime
+tau2=Llc2/Rlc1
+tau3=Rlc1*C3prime
+r=Rlc1/Rlc3
+c1=Clc2/C1prime
+c3=Clc2/C3prime
+
+T=1/fck
+alpha11=1/(tau1*fck)
+alpha12=alpha11
+alpha13=2*alpha11
+alpha21=1/(tau2*fck)
+alpha22=alpha21
+alpha31=1/(tau3*fck)
+alpha32=alpha31
+beta1=Clc2/C1prime
+beta3=Clc2/C3prime
+
+table = [["$\\tau_1$",f'{tau1/1e-6:.6f}',"$\\mu s$"],
+         ["$\\tau_2$",f'{tau2/1e-6:.6f}',"$\\mu s$"],
+         ["$\\tau_3$",f'{tau3/1e-6:.6f}',"$\\mu s$"],
+         ["$f_{{ck}}$",f'{fck/1e6:.0f}',"$MHz$"],
+         ["$\\alpha_{{11}}$",f'{alpha11:.6f}',"-"],
+         ["$\\alpha_{{12}}$",f'{alpha12:.6f}',"-"],
+         ["$\\alpha_{{13}}$",f'{alpha13:.6f}',"-"],
+         ["$\\alpha_{{21}}$",f'{alpha21:.6f}',"-"],
+         ["$\\alpha_{{22}}$",f'{alpha22:.6f}',"-"],
+         ["$\\alpha_{{31}}$",f'{alpha31:.6f}',"-"],
+         ["$\\alpha_{{32}}$",f'{alpha32:.6f}',"-"],
+         ["$\\beta_1$",f'{beta1:.6f}',"-"],
+         ["$\\beta_3$",f'{beta3:.6f}',"-"],
+         ]
+
+Markdown(tabulate(
+  table,
+  headers=["Symbol","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center","center")
+))
+```
+
+The theoretical transfer function \eqref{eqn:sc_elliptic_tf} is compared to that of the LC passive filter corrected for the $-6\,dB$ loss in @fig-3rd-order_active_elliptic_lpf_theoretical_tf. We see a perfect agreement except at high frequency where we observe the deviation due to the sampled-data nature of the SC filter.
+
+```{python}
+#| label: fig-3rd-order_active_elliptic_lpf_theoretical_tf
+#| fig-cap: Theoretical transfer function magnitude of the 3^rd^-order active low-pass SC filter of @fig-SC_3rd_order_LPF.
+
+def Hlc4(s,tau1,tau2,tau3,r,c1,c3):
+  a0=2
+  a1=0
+  a2=2*c3*tau2*tau3
+  a3=0
+  b0=1+r
+  b1=(1-c1)*tau1+r*tau2+(1-c3)*tau3
+  b2=tau2*(r*tau1+tau3)
+  b3=(1-c1*c3)*tau1*tau2*tau3
+  num=a3*s**3+a2*s**2+a1*s+a0
+  den=b3*s**3+b2*s**2+b1*s+b0
+  return num/den
+
+def Hsc4(z,alpha11,alpha12,alpha13,alpha21,alpha22,alpha31,alpha32,beta1,beta3):
+  a0=0
+  a1=alpha13*beta3
+  a2=alpha13*(alpha21*alpha31-2*beta3)
+  a3=alpha13*beta3
+  b0=1-beta1*beta3
+  b1=-3-alpha12+alpha11*alpha21+alpha22*alpha31-alpha32-alpha21*alpha31*beta1-alpha11*alpha22*beta3+3*beta1*beta3
+  b2=3+2*alpha12-alpha11*alpha21-alpha22*alpha31-alpha12*alpha22*alpha31+2*alpha32+alpha12*alpha32-alpha11*alpha21*alpha32+alpha21*alpha31*beta1+alpha11*alpha22*beta3-3*beta1*beta3
+  b3=-1-alpha12-alpha32-alpha12*alpha32+beta1*beta3
+  num=a3*z**3+a2*z**2+a1*z+a0
+  den=b3*z**3+b2*z**2+b1*z+b0
+  return num/den
+
+Npts=1001
+logfmin=3
+logfmax=6
+fmin=pow(10,logfmin)
+fmax=pow(10,logfmax)
+fthe=np.logspace(logfmin,logfmax,Npts,endpoint=True,base=10.0)
+
+Hscthe=np.zeros(Npts,dtype=complex)
+HscdBthe=np.zeros(Npts)
+Hlcthe=np.zeros(Npts,dtype=complex)
+HlcdBthe=np.zeros(Npts)
+
+for k in range(0,Npts):
+  jw=1j*2*pi*fthe[k]
+  Hlcthe[k]=Hlc4(jw,tau1,tau2,tau3,r,c1,c3)
+  HlcdBthe[k]=20*log(abs(Hlcthe[k]))
+  jwT=1j*2*pi*fthe[k]*T
+  z=exp(jwT)
+  Hscthe[k]=Hsc4(z,alpha11,alpha12,alpha13,alpha21,alpha22,alpha31,alpha32,beta1,beta3)
+  HscdBthe[k]=20*log(abs(Hscthe[k]))
+
+params = {'figure.figsize': (5,6)}
+plt.rcParams.update(params)
+    
+fig, axs = plt.subplots(2, sharex=True)
+
+axs[0].semilogx(fthe,HscdBthe,'ro', markersize=4, markevery=15)
+axs[0].semilogx(fthe,HlcdBthe,'b-')
+axs[0].set(ylabel='$|H(f)|$ [dB]',ylim=(-60,10))
+axs[0].add_patch(patches.Rectangle((fs, -40), 980000, 50, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[0].add_patch(patches.Rectangle((fmin, 0), 999000, 10, fill=True, color='0.9'))
+axs[0].add_patch(patches.Rectangle((fmin, -60), 19000, 99, fill=True, facecolor='0.9', edgecolor='0.7'))
+textstr1 = '\n'.join((
+    f'$f_p =$ {fp/1e3:.0f} kHz',
+    f'$f_s =$ {fs/1e3:.0f} kHz',
+    f'$G_p =$ {Gp:.0f} dB',
+    f'$G_s =$ {Gs:.0f} dB'))
+axs[0].text(0.03, 0.05, textstr1, ha='left', va='bottom', transform=axs[0].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+
+axs[1].semilogx(fthe,HscdBthe,'ro', markersize=4, markevery=8)
+axs[1].semilogx(fthe,HlcdBthe,'b-')
+axs[1].set(xlabel='Frequency [Hz] (log)',xlim=(fmin,fmax))
+axs[1].set(ylabel='$|H(f)|$ [dB]',ylim=(-4,1))
+axs[1].add_patch(patches.Rectangle((fs, -4), 980000, 5, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[1].add_patch(patches.Rectangle((fmin, 0), 999000, 1, fill=True, color='0.9')) 
+axs[1].add_patch(patches.Rectangle((fmin, -4), 19000, 3, fill=True, facecolor='0.9', edgecolor='0.7')) 
+
+plt.subplots_adjust(hspace=0.1)
+#saveFigures(savePlotPath, '3rd-order_active_elliptic_lpf_theoretical_tf')
+plt.show()
+```
+
+We can now check the design by LTspice and ngspice simulations.
+
+## Simulations
+### LTSpice
+
+![3^rd^-order elliptic SC filter schematic used for LTSpice.](Figures/SC_3rd_order_elliptic_LPF_LTSpice){width=100% #fig-SC_3rd_order_elliptic_LPF_LTSpice}
+
+The 3^rd^-order SC elliptic LP filter can be simulated in LTSpice using the schematic shown in @fig-SC_3rd_order_elliptic_LPF_LTSpice with the component values given in @tbl-lt_3rd-order_elliptic_lpf_cap_ratio.
+
+```{python}
+#| label: tbl-lt_3rd-order_elliptic_lpf_cap_ratio
+#| tbl-cap: Component values of the 3^rd^-order active low-pass SC filter of @fig-SC_3rd_order_LPF_schematic.
+
+A=1e5
+AdB=20*log(A)
+C1=3.3e-12
+C2=C1
+C3=C1
+
+table = [["$A$",f'{AdB:.0f}',"$dB$"],
+         ["$f_{{ck}}$",f'{fck/1e6:.0f}',"$MHz$"],
+         ["$\\alpha_{{11}}$",f'{alpha11:.6f}',"-"],
+         ["$\\alpha_{{12}}$",f'{alpha12:.6f}',"-"],
+         ["$\\alpha_{{13}}$",f'{alpha13:.6f}',"-"],
+         ["$\\alpha_{{21}}$",f'{alpha21:.6f}',"-"],
+         ["$\\alpha_{{22}}$",f'{alpha22:.6f}',"-"],
+         ["$\\alpha_{{31}}$",f'{alpha31:.6f}',"-"],
+         ["$\\alpha_{{32}}$",f'{alpha32:.6f}',"-"],
+         ["$\\beta_1$",f'{beta1:.6f}',"-"],
+         ["$\\beta_3$",f'{beta3:.6f}',"-"],
+         ["$C_1$",f'{C1/1e-12:.1f}',"$pF$"],
+         ["$C_2$",f'{C2/1e-12:.1f}',"$pF$"],
+         ["$C_3$",f'{C3/1e-12:.1f}',"$pF$"],
+         ["$C_{{11}}=\\alpha_{{11}}\\,C_1$",f'{alpha11*C1/1e-15:.0f}',"$fF$"],
+         ["$C_{{12}}=\\alpha_{{12}}\\,C_1$",f'{alpha12*C1/1e-15:.0f}',"$fF$"],
+         ["$C_{{13}}=\\alpha_{{13}}\\,C_1$",f'{alpha13*C1/1e-15:.0f}',"$fF$"],
+         ["$C_{{14}}=\\beta_1\\,C_1$",f'{beta1*C1/1e-15:.0f}',"$fF$"],
+         ["$C_{{21}}=\\alpha_{{21}}\\,C_2$",f'{alpha21*C2/1e-15:.0f}',"$fF$"],
+         ["$C_{{22}}=\\alpha_{{22}}\\,C_2$",f'{alpha22*C2/1e-15:.0f}',"$fF$"],
+         ["$C_{{31}}=\\alpha_{{31}}\\,C_3$",f'{alpha31*C3/1e-15:.0f}',"$fF$"],
+         ["$C_{{32}}=\\alpha_{{32}}\\,C_3$",f'{alpha32*C3/1e-15:.0f}',"$fF$"],
+         ["$C_{{33}}=\\beta_3\\,C_3$",f'{beta3*C3/1e-15:.0f}',"$fF$"],
+         ]
+
+Markdown(tabulate(
+  table,
+  headers=["Symbol","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center","center")
+))
+```
+
+The simulated transfer function is compared to the theoretical one in @fig-lt_3rd-order_active_elliptic_lpf. Again we see a perfect match.
+
+```{python}
+#| label: fig-lt_3rd-order_active_elliptic_lpf
+#| fig-cap: Simulated transfer function of the active 3^rd^-order low-pass SC filter of @fig-SC_3rd_order_LPF_schematic.
+
+if newSim:
+  LTC = SimRunner(output_folder='./Simulations/LTSpice/3rd-order elliptic LP/')
+  LTC.create_netlist('./Simulations/LTSpice/3rd-order elliptic LP/3rd-order_elliptic_LP_unscaled.asc')
+  netlist = SpiceEditor('./Simulations/LTSpice/3rd-order elliptic LP/3rd-order_elliptic_LP_unscaled.net')
+  netlist.set_parameters(A=A, fs=fck, C1=C1, a11=alpha11, a12=alpha12, a13=alpha13, b1=beta1, a21=alpha21, a22=alpha22, a31=alpha31, a32=alpha32, b3=beta3)
+  LTC.run(netlist)
+  LTC.wait_completion()
+
+raw = RawRead('./Simulations/LTSpice/3rd-order elliptic LP/3rd-order_elliptic_LP_unscaled_1.raw')   # Read the RAW file contents from disk
+
+vout1 = raw.get_trace('V(out1)')
+vout2 = raw.get_trace('V(out2)')
+
+fsim = np.real(raw.get_axis())
+HscdBsim = 20*log(abs(vout1.get_wave()))
+
+params = {'figure.figsize': (5,6)}
+plt.rcParams.update(params)
+    
+fig, axs = plt.subplots(2, sharex=True)
+
+axs[0].semilogx(fsim, HscdBsim, 'ro', label='Simulation', markersize=4, markevery=5)
+axs[0].semilogx(fthe, HscdBthe, 'b-', label='Theory')
+axs[0].set(ylabel='$|H(f)|$ [dB]',ylim=(-60,10))
+axs[0].legend(loc='lower left')
+axs[0].add_patch(patches.Rectangle((fs, -40), 980000, 50, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[0].add_patch(patches.Rectangle((fmin, 0), 999000, 10, fill=True, color='0.9'))
+axs[0].add_patch(patches.Rectangle((fmin, -60), 19000, 99, fill=True, facecolor='0.9', edgecolor='0.7'))
+textstr1 = '\n'.join((
+  f'$f_p =$ {fp/1e3:.0f} kHz',
+  f'$f_s =$ {fs/1e3:.0f} kHz',
+  f'$G_p =$ {Gp:.0f} dB',
+  f'$G_s =$ {Gs:.0f} dB'))
+axs[0].text(0.76, 0.93, textstr1, ha='left', va='top', transform=axs[0].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+textstr2 = '\n'.join((
+  f'$\\alpha_{{11}} =$ {alpha11:.6f}',
+  f'$\\alpha_{{12}} =$ {alpha12:.6f}',
+  f'$\\alpha_{{13}} =$ {alpha13:.6f}',
+  f'$\\alpha_{{21}} =$ {alpha21:.6f}',
+  f'$\\alpha_{{22}} =$ {alpha22:.6f}',
+  f'$\\alpha_{{31}} =$ {alpha31:.6f}',
+  f'$\\alpha_{{32}} =$ {alpha32:.6f}',
+  f'$\\beta_1 =$ {beta1:.6f}',
+  f'$\\beta_3 =$ {beta3:.6f}'))
+axs[0].text(1.03, 0.5, textstr2, ha='left', va='center', transform=axs[0].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+
+axs[1].semilogx(fsim, HscdBsim, 'ro', label='Simulation', markersize=4, markevery=2)
+axs[1].semilogx(fthe, HscdBthe, 'b-', label='Theory')
+axs[1].set(xlabel='Frequency [Hz] (log)',xlim=(fmin,fmax))
+axs[1].set(ylabel='$|H(f)|$ [dB]',ylim=(-4,1))
+axs[1].add_patch(patches.Rectangle((fs, -4), 980000, 5, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[1].add_patch(patches.Rectangle((fmin, 0), 999000, 1, fill=True, color='0.9')) 
+axs[1].add_patch(patches.Rectangle((fmin, -4), 19000, 3, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[1].legend(loc='lower left')
+textstr3 = '\n'.join((
+    f'$f_{{ck}} =$ {fck/1e6:.0f} MHz',
+    f'$C_1 =$ {C1/1e-12:.1f} pF',
+    f'$C_2 =$ {C2/1e-12:.1f} pF',
+    f'$C_3 =$ {C3/1e-12:.1f} pF',
+    f'$A =$ {AdB:.0f} dB'))
+axs[1].text(1.03, 0.5, textstr3, ha='left', va='center', transform=axs[1].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+
+plt.subplots_adjust(hspace=0.1)
+#saveFigures(savePlotPath, '3rd-order_sc_elliptic_lpf_ltspice')
+plt.show()
+```
+
+
+```{python}
+#| label: fig-lt_3rd-order_elliptic_v1_v2
+#| fig-cap: Simulated transfer function of the active 3^rd^-order low-pass SC filter of @fig-SC_3rd_order_LPF_schematic.
+
+v1 = raw.get_trace('V(1p1)')
+v2 = raw.get_trace('V(2p1)')
+vout1 = raw.get_trace('V(out1)')
+vout2 = raw.get_trace('V(out2)')
+
+fsim = np.real(raw.get_axis())
+H1scdBsim = 20*log(abs(v1.get_wave()))
+H2scdBsim = 20*log(abs(v2.get_wave()))
+HscdBsim = 20*log(abs(vout1.get_wave()))
+
+H1scdBmax=max(H1scdBsim)
+H2scdBmax=max(H2scdBsim)
+k1=pow(10,H1scdBmax/20)
+k2=pow(10,H2scdBmax/20)
+
+plt.style.use(pltStyle)
+plt.semilogx(fsim, HscdBsim, 'r-', label='$V_{{out}}$')
+plt.semilogx(fsim, H1scdBsim, 'b-', label='$V_1$')
+plt.semilogx(fsim, H2scdBsim, 'm-', label='$V_2$')
+plt.xlim(fmin,fmax)
+#plt.xticks(np.arange(0.3,1.2,0.1))
+plt.xlabel('Frequency [Hz] (log)')
+plt.ylim(-10,10)
+#plt.yticks(np.arange(0,1.2,0.1))
+plt.ylabel('$|H_{{1,2}}(f))|$ [dB]')
+#plt.grid(False)
+plt.legend(loc='lower right')
+textstr = '\n'.join((
+  f'$|H_1|_{{max}} =$ {H1scdBmax:.3f} $dB$',
+  f'$|H_2|_{{max}} =$ {H2scdBmax:.3f} $dB$',
+  f'$k_1 =$ {k1:.3f}',
+  f'$k_2 =$ {k2:.3f}'))
+plt.text(0.6, 0.93, textstr, ha='left', va='top', size=textFontSize, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+#saveFigures(savePlotPath, '3rd-order_elliptic_v1_v2')
+plt.show()
+```
+
+@fig-lt_3rd-order_elliptic_v1_v2 shows the transfer functions between the input and the output of the various OPAMPs corresponding to voltages $V_1$, $V_2$ and $V_3$ in @fig-SC_3rd_order_elliptic_LPF. We see that the transfer functions $|H_1(f)|$ and $|H_2(f)|$ are peaking close to the cut-off frequency. This means that the voltages $V_1$ and $V_2$ at the OPAMPs outputs may drive the next stage into saturation. We can avoid this by equalizing the transfer functions so that all the maxima are equal to $0\,dB$. This can be done by increasing all the capacitances connected to the output of OPAMP AO1 (voltage $V_1$) by a scaling factor $k_1 =$ `{python} f'{k1:.3f}'`. This will reduce the voltage $V_1$ while injecting the same amount of charges to the virtual ground to which the capacitances are connected to. We can do in a similar way for $|H_2(f)|$ by scaling all the capacitances connected to the output of OPAMP AO2 by a factor $k_2 =$ `{python} f'{k2:.3f}'`. The resulting equalized transfer functions are plotted in @fig-lt_3rd-order_elliptic_equalized. We see that all the transfer functions have a maximum gain equal to $0\,dB$ while the input-output transfer function remains unchanged.
+
+```{python}
+#| label: fig-lt_3rd-order_elliptic_equalized
+#| fig-cap: Simulated transfer function of the active 3^rd^-order low-pass SC filter of @fig-SC_3rd_order_LPF_schematic.
+
+if newSim:
+  LTC = SimRunner(output_folder='./Simulations/LTSpice/3rd-order elliptic LP/')
+  LTC.create_netlist('./Simulations/LTSpice/3rd-order elliptic LP/3rd-order_elliptic_LP_scaled.asc')
+  netlist = SpiceEditor('./Simulations/LTSpice/3rd-order elliptic LP/3rd-order_elliptic_LP_scaled.net')
+  netlist.set_parameters(A=Adc, fs=fck, C1=C1, k1=k1, k2=k2, a11=alpha11, a12=alpha12, a13=alpha13, b1=beta1, a21=alpha21, a22=alpha22, a31=alpha31, a32=alpha32, b3=beta3)
+  LTC.run(netlist)
+  LTC.wait_completion()
+
+raw = RawRead('./Simulations/LTSpice/3rd-order elliptic LP/3rd-order_elliptic_LP_scaled.raw')   # Read the RAW file contents from disk
+
+v1 = raw.get_trace('V(1p1)')
+v2 = raw.get_trace('V(2p1)')
+vout1 = raw.get_trace('V(out1)')
+vout2 = raw.get_trace('V(out2)')
+
+fsim = np.real(raw.get_axis())
+H1scdBsim = 20*log(abs(v1.get_wave()))
+H2scdBsim = 20*log(abs(v2.get_wave()))
+HscdBsim = 20*log(abs(vout1.get_wave()))
+
+plt.style.use(pltStyle)
+plt.semilogx(fsim, HscdBsim, 'r-', label='$V_{{out}}$')
+plt.semilogx(fsim, H1scdBsim, 'b-', label='$V_1$')
+plt.semilogx(fsim, H2scdBsim, 'm-', label='$V_2$')
+plt.xlim(fmin,fmax)
+#plt.xticks(np.arange(0.3,1.2,0.1))
+plt.xlabel('Frequency [Hz] (log)')
+plt.ylim(-10,10)
+#plt.yticks(np.arange(0,1.2,0.1))
+plt.ylabel('$|H_{{1,2}}(f))|$ [dB]')
+#plt.grid(False)
+plt.legend(loc='lower right')
+textstr = '\n'.join((
+  f'$|H_1|_{{max}} =$ {H1scdBmax:.3f} $dB$',
+  f'$|H_2|_{{max}} =$ {H2scdBmax:.3f} $dB$',
+  f'$k_1 =$ {k1:.3f}',
+  f'$k_2 =$ {k2:.3f}'))
+plt.text(0.6, 0.93, textstr, ha='left', va='top', size=textFontSize, transform=plt.gca().transAxes,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+#saveFigures(savePlotPath, '3rd-order_elliptic_equalized')
+plt.show()
+```
+
+### ngspice
+We can also check the equalized SC filter with ngspice using the same schematic as in @fig-SC_3rd_order_elliptic_LPF_LTSpice with the scaled components. For this simulation ngspice had trouble to find the DC operating point with the 5^th^-order delay model. Reducing it to the 4^th^-order model solved the problem. The simulation result is compared to the theoretical transfer function in @fig-ng_3rd-order_elliptic_lpf. We see a perfect match despite the model for the delay had to be reduced to 4 instead of 5 for the other simulations.
+
+```{python}
+#| label: fig-ng_3rd-order_elliptic_lpf
+#| fig-cap: Simulated transfer function of the active 3^rd^-order low-pass SC filter of @fig-SC_3rd_order_LPF_schematic.
+
+circuitName="SC_3rd_order_elliptic_LP"
+simtype = ".ac"
+fileName = circuitName + simtype
+simulationPath = "./Simulations/ngspice/3rd-order elliptic LP/"
+simulationFile = simulationPath + fileName + ".cir"
+simulationLog = simulationPath + fileName + ".log"
+simulationData = simulationPath + fileName + ".dat"
+
+fmin=1e3
+fmax=1e6
+Ndec=100
+
+order=4
+
+#k1val=1
+#k2val=1
+
+if newSim:
+  paramstr = '\n'.join((
+    f'.param A={A:.0e} fs={fck/1e6:.0f}MEG T={{1/fs}} D=0.5 DT={{D*T}} order={order:.0f}',
+    f'.param alpha11={alpha11:.6f} alpha12={alpha12:.6f} alpha13={alpha13:.6f} beta1={beta1:.6f}',
+    f'.param alpha21={alpha21:.6f} alpha22={alpha22:.6f}',
+    f'.param alpha31={alpha31:.6f} alpha32={alpha32:.6f} beta3={beta3:.6f}',
+    f'.param C1={C1/1e-12:.3f}p C11={{alpha11*C1}} C12={{alpha12*C1}} C13={{alpha13*C1}} C14={{beta1*C1}}',
+    f'.param C2={{C1}} C21={{alpha21*C2}} C22={{alpha22*C2}}',
+    f'.param C3={{C1}} C31={{alpha31*C3}} C32={{alpha32*C3}} C33={{beta3*C3}}',
+    f'.param k1={k1:.3f} k2={k2:.3f}'
+  ))
+  # Write the transistors sizes and bias to the ngspice directory
+  with open(simulationPath + circuitName + ".par", 'w') as f:
+    f.write(paramstr)
+  simpar = '\n'.join((
+    f'.csparam fmin={fmin:.3e}',
+    f'.csparam fmax={fmax:.3e}',
+    f'.csparam Ndec={Ndec:.0f}'
+  ))
+  simparFile = simulationPath + "simulation.ac.par"
+  with open(simparFile, 'w') as f:
+    f.write(simpar)
+  #print('Starting NGSpice simulation...\n')
+  result = subprocess.run(f"""ngspice_con -b -o "{simulationLog}" "{simulationFile}" """, shell=True, capture_output=True, text=True)
+
+df_sim=pd.read_table(simulationData, sep=' +', engine='python')
+fsim=df_sim['frequency'].to_numpy()
+HscdBsim1=df_sim['Hph1magdB'].to_numpy()
+HscdBsim2=df_sim['Hph2magdB'].to_numpy()
+Npts=len(fsim)
+fmin=fsim[0]
+fmax=fsim[Npts-1]
+
+
+params = {'figure.figsize': (5,6)}
+plt.rcParams.update(params)
+    
+fig, axs = plt.subplots(2, sharex=True)
+
+axs[0].semilogx(fsim, HscdBsim, 'ro', label='Simulation', markersize=4, markevery=5)
+axs[0].semilogx(fthe, HscdBthe, 'b-', label='Theory')
+axs[0].set(ylabel='$|H(f)|$ [dB]',ylim=(-60,10))
+axs[0].legend(loc='lower left')
+axs[0].add_patch(patches.Rectangle((fs, -40), 980000, 50, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[0].add_patch(patches.Rectangle((fmin, 0), 999000, 10, fill=True, color='0.9'))
+axs[0].add_patch(patches.Rectangle((fmin, -60), 19000, 99, fill=True, facecolor='0.9', edgecolor='0.7'))
+textstr1 = '\n'.join((
+  f'$f_p =$ {fp/1e3:.0f} kHz',
+  f'$f_s =$ {fs/1e3:.0f} kHz',
+  f'$G_p =$ {Gp:.0f} dB',
+  f'$G_s =$ {Gs:.0f} dB'))
+axs[0].text(0.76, 0.93, textstr1, ha='left', va='top', transform=axs[0].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+textstr2 = '\n'.join((
+  f'$\\alpha_{{11}} =$ {alpha11:.6f}',
+  f'$\\alpha_{{12}} =$ {alpha12:.6f}',
+  f'$\\alpha_{{13}} =$ {alpha13:.6f}',
+  f'$\\alpha_{{21}} =$ {alpha21:.6f}',
+  f'$\\alpha_{{22}} =$ {alpha22:.6f}',
+  f'$\\alpha_{{31}} =$ {alpha31:.6f}',
+  f'$\\alpha_{{32}} =$ {alpha32:.6f}',
+  f'$\\beta_1 =$ {beta1:.6f}',
+  f'$\\beta_3 =$ {beta3:.6f}'))
+axs[0].text(1.03, 0.5, textstr2, ha='left', va='center', transform=axs[0].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+
+axs[1].semilogx(fsim, HscdBsim, 'ro', label='Simulation', markersize=4, markevery=2)
+axs[1].semilogx(fthe, HscdBthe, 'b-', label='Theory')
+axs[1].set(xlabel='Frequency [Hz] (log)',xlim=(fmin,fmax))
+axs[1].set(ylabel='$|H(f)|$ [dB]',ylim=(-4,1))
+axs[1].add_patch(patches.Rectangle((fs, -4), 980000, 5, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[1].add_patch(patches.Rectangle((fmin, 0), 999000, 1, fill=True, color='0.9')) 
+axs[1].add_patch(patches.Rectangle((fmin, -4), 19000, 3, fill=True, facecolor='0.9', edgecolor='0.7'))
+axs[1].legend(loc='lower left')
+textstr3 = '\n'.join((
+    f'$f_{{ck}} =$ {fck/1e6:.0f} MHz',
+    f'$C_1 =$ {C1/1e-12:.1f} pF',
+    f'$C_2 =$ {C2/1e-12:.1f} pF',
+    f'$C_3 =$ {C3/1e-12:.1f} pF',
+    f'$A =$ {AdB:.0f} dB'))
+axs[1].text(1.03, 0.5, textstr3, ha='left', va='center', transform=axs[1].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+
+plt.subplots_adjust(hspace=0.1)
+#saveFigures(savePath, 'Chebyshev_TF')
+plt.show()
+```
+
+# Non-ideal effects
+SC circuits are affected by many non-idealities coming from the OPAMP or OTA, the switches and the capacitances.
+
+## Switches
+The non-idealities of the switches icnlude:
+
+* Finite on resistance of the MOS transistor(s),
+* Resistance non linearity,
+* Charge injection,
+* Clock feedthrough and
+* Noise.
+
+None of these effects can be accounted for with the proposed AC simulation. The on resistance introduces a transient that may not reach steady-state.
+
+## OPAMP or OTA
+The non-idealities of the OPAMP or OTA include:
+
+* Finite DC gain,
+* Finite gain-bandwidth product and
+* Noise.
+
+Since the proposed AC simulation assumes that the circuit has reached steady-state, the only non-idealitiythat can be simulated is the finite DC gain. We will simulate the 2^nd^-order low-pass filter with a very low gain but infinite bandwidth with the parameters given in @tbl-lt_2nd-order_finite_gain.
+
+```{python}
+#| label: tbl-lt_2nd-order_finite_gain
+#| tbl-cap: Component values of the 2^nd^-order active low-pass SC filter of @fig-2nd-order_sc_lp_sim.
+
+R=1
+L=5.627e-6
+C=11.25e-6
+tau1=L/R
+tau2=R*C
+fc=20e3
+fck=2e6
+T=1/fck
+alpha1=1/(tau1*fck)
+alpha2=1/(tau2*fck)
+A=10
+AdB=20*log(A)
+C1=3.3e-12
+C2=C1
+
+table = [["$A$",f'{AdB:.0f}',"$dB$"],
+         ["$f_{{ck}}$",f'{fck/1e6:.0f}',"$MHz$"],
+         ["$C_1$",f'{C1/1e-12:.1f}',"$pF$"],
+         ["$C_2$",f'{C2/1e-12:.1f}',"$pF$"],
+         ["$\\alpha_1$",f'{alpha1:.6f}',"-"],
+         ["$\\alpha_2$",f'{alpha2:.6f}',"-"],
+         ["$C_{{11}}=\\alpha_1\\,C_1$",f'{alpha1*C1/1e-15:.0f}',"$fF$"],
+         ["$C_{{12}}=\\alpha_1\\,C_1$",f'{alpha1*C1/1e-15:.0f}',"$fF$"],
+         ["$C_2=\\alpha_2\\,C_2$",f'{alpha2*C2/1e-15:.0f}',"$fF$"],
+         ["$C_{{21}}=\\alpha_2\\,C_2$",f'{alpha2*C2/1e-15:.0f}',"$fF$"]
+         ]
+
+Markdown(tabulate(
+  table,
+  headers=["Symbol","Value","Unit"],
+  numalign="center",
+  stralign="center",
+  colalign=("center","center","center")
+))
+```
+
+
+```{python}
+#| label: fig-lt_2nd-order_finite_gain
+#| fig-cap: Simulated transfer function of the active 3^rd^-order low-pass SC filter of .
+
+def Hsc5(z,alpha1,alpha2):
+  a1=alpha1*alpha2
+  b0=1
+  b1=alpha1*alpha2-alpha1-2
+  b2=alpha1+1
+  num=a1*z
+  den=b2*z**2+b1*z+b0
+  return num/den
+
+Npts=1001
+logfmin=3
+logfmax=6
+fmin=pow(10,logfmin)
+fmax=pow(10,logfmax)
+fthe=np.logspace(logfmin,logfmax,Npts,endpoint=True,base=10.0)
+
+Hscthe=np.zeros(Npts,dtype=complex)
+HscdBthe=np.zeros(Npts)
+
+for k in range(0,Npts):
+  jw=1j*2*pi*fthe[k]
+  jwT=1j*2*pi*fthe[k]*T
+  z=exp(jwT)
+  Hscthe[k]=Hsc5(z,alpha1,alpha2)
+  HscdBthe[k]=20*log(abs(Hscthe[k]))
+
+if newSim:
+  LTC = SimRunner(output_folder='./Simulations/LTSpice/Non-ideal effects/Finite gain/')
+  LTC.create_netlist('./Simulations/LTSpice/Non-ideal effects/Finite gain/2nd-order_LP.asc')
+  netlist = SpiceEditor('./Simulations/LTSpice/Non-ideal effects/Finite gain/2nd-order_LP.net')
+  netlist.set_parameters(A=A, fs=fck, C1=C1, a1=alpha1, a2=alpha2)
+  LTC.run(netlist)
+  LTC.wait_completion()
+
+raw = RawRead('./Simulations/LTSpice/Non-ideal effects/Finite gain/2nd-order_LP_1.raw')   # Read the RAW file contents from disk
+
+vout1 = raw.get_trace('V(out1)')
+vout2 = raw.get_trace('V(out2)')
+
+fsim = np.real(raw.get_axis())
+HscdBsim = 20*log(abs(vout1.get_wave()))
+
+params = {'figure.figsize': (5,6)}
+plt.rcParams.update(params)
+    
+fig, axs = plt.subplots(2, sharex=True)
+
+axs[0].semilogx([0,fc], [-3,-3], 'k--', linewidth=lw)
+axs[0].semilogx([fc,fc], [-60,-3], 'k--', linewidth=lw)
+axs[0].semilogx(fsim, HscdBsim, 'r-', label='Simulation', markersize=4, markevery=5)
+axs[0].semilogx(fthe, HscdBthe, 'b-', label='Theory')
+axs[0].set(ylabel='$|H(f)|$ [dB]',ylim=(-60,10))
+axs[0].legend(loc='lower left')
+
+axs[1].semilogx([0,fc], [-3,-3], 'k--', linewidth=lw)
+axs[1].semilogx([fc,fc], [-4,1], 'k--', linewidth=lw)
+axs[1].semilogx(fsim, HscdBsim, 'r-', label='Simulation', markersize=4, markevery=2)
+axs[1].semilogx(fthe, HscdBthe, 'b-', label='Theory')
+axs[1].set(xlabel='Frequency [Hz] (log)',xlim=(fmin,fmax))
+axs[1].set(ylabel='$|H(f)|$ [dB]',ylim=(-4,1))
+#axs[1].legend(loc='center left')
+textstr1 = '\n'.join((
+  f'Butterworth',
+  f'$f_c =$ {fc/1e3:.0f} kHz',
+  f'$\\tau_1 =$ {tau1/1e-6:.3f} $\\mu s$',
+  f'$\\tau_2 =$ {tau2/1e-6:.3f} $\\mu s$',
+  f'$f_{{ck}} =$ {fck/1e6:.0f} MHz',
+  f'$\\alpha_1 =$ {alpha1:.6f}',
+  f'$\\alpha_2 =$ {alpha2:.6f}',
+  f'$C_1 =$ {C1/1e-12:.1f} pF',
+  f'$C_2 =$ {C1/1e-12:.1f} pF',
+   f'$A =$ {AdB:.0f} dB'))
+axs[1].text(0.7, 0.5, textstr1, ha='left', va='center', transform=axs[1].transAxes, size=9,
+         bbox={'facecolor':'w', 'alpha':1.0, 'pad':5})
+
+plt.subplots_adjust(hspace=0.1)
+#saveFigures(savePlotPath, '2nd-order_active_lpf_ltspice')
+plt.show()
+```
+
+The simulation result is compare to the ideal transfer function in @fig-lt_2nd-order_finite_gain. We see that the DC gain has dropped by about 1 dB.
+
+# Conclusion
+This notebook has presented a technique to simulate SC circuits such as filters using two non-overlapping phases using the AC simulation of a conventional Spice simulator such as LTSpice or ngspice. The circuits during phases $\Phi_1$ and $\Phi_2$ are described separately and run concurently. They are then coupled by additional component in order to satisfy the charge conservation between phases. A special library has been developped for LTpice (including the dedicated symbols) and ngspice to this purpose. Since the ideal time delay operator available in LTSpice does not exist in ngspice, an approximation of the ideal delay has been developped for ngspice using the XSpice s_xfer function.
+
+This technique has then been ilustrated with several examples starting with the simple passive 1^st^-order low-pass filter. Then a 1^st^-order active low-pass SC filter has been designed and simulated in LTSpice and ngspice. A 3^rd^-order active SC low-pass filter implementing a Chebyshev approximation has been designed and simulated with LTSpice and ngspice. Finally, a 3^rd^-order active SC low-pass filter implementing an elliptic approximation has been designed and simulated with LTSpice and ngspice. In this last example, the order for the time delay model had to be reduced from 5 to 4 in order for ngspice to find the correct DC operating point. All the simulated results agree perfectly with the theoretical transfer functions demonstrating the validity of the approach. It is important to recall that this approach is limited to AC simulations only.
+
+Of course SC circuits can be simulated in more advanced simulators like Cadence Spectre, but this simple technique allows to quickly verifiy the design without the need to run an complex simulator.
+
+# References
