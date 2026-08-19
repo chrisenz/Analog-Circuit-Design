@@ -1,6 +1,6 @@
 # AC simulation of SC circuits with a standard Spice simulator
 
-This directory contains all the tools to do AC simulation of switched-capacitor (SC) circuits with LTSpice or ngspice. The quarto notebook explains the theory behind this technique and gives several SC filter examples. The LTSpice examples includes the schematic which can be captured in LTSpice using the ![dedicated library](/Simulation%20of%20SC%20Circuits/lib/LTSpice). Note that this library also includes other models, symbols and subcircuits than the ones discussed below. The LTSpice library contains three directories: cmp, sub and sym. In order for the LTSpice examples to work, for Windows 11, you should place the lib directory in the user directory of LTSpice, for example C:\Users\<your name>\Documents\LTSpice.
+This directory contains all the tools to do AC simulation of switched-capacitor (SC) circuits with LTSpice or ngspice. The quarto notebook explains the theory behind this technique and gives several SC filter examples. The LTSpice examples includes the schematic which can be captured in LTSpice using the ![dedicated library](/SC-Circuits//Simulation%20of%20SC%20Circuits/lib/LTSpice). Note that this library also includes other models, symbols and subcircuits than the ones discussed below. The LTSpice library contains three directories: cmp, sub and sym. In order for the LTSpice examples to work, for Windows 11, you should place the lib directory in the user directory of LTSpice, for example C:\Users\<your name>\Documents\LTSpice.
 
 ## LTSpice library description
 The library includes the following 4 symbols:
@@ -25,7 +25,7 @@ R2 1p2 2p2 {Req}
 G2 2p2 1p2 1p1 2p1 Laplace=Gmeq\*exp(-s\*(1-D)/fs)  
 .ends SC
 
-This subcircuit corresponds to the two port network described in the ![quarto pdf file](/Simulation%20of%20SC%20Circuits/SCC_simulation.pdf). It couples phase $\Phi_1$ and $\Phi_2$ for ensuring charge conservation.
+This subcircuit corresponds to the two port network described in the ![quarto pdf file](/SC-Circuits/Simulation%20of%20SC%20Circuits/SCC_simulation.pdf). It couples phase $\Phi_1$ and $\Phi_2$ for ensuring charge conservation.
 
 ### Switched-capacitor with one side grounded
 
